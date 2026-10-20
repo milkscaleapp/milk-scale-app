@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-key="app_title">Milk Scale App</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #6c757d;
+            --border-color: #e0e0e0;
+            --success-bg: #e8f5e9;
+            --success-text: #2e7d32;
+            --danger-bg: #ffebee;
+            --danger-text: #c62828;
+            --warning-color: #ff9800;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --success-bg: #1b3820;
+            --success-text: #81c784;
+            --danger-bg: #3c1e1e;
+            --danger-text: #e57373;
+        }
+
+        body {
+            font-family: 'Noto Sans Devanagari', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 12px 0 30px 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            background: var(--card-bg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            max-width: 480px;
+            margin: 0 auto 15px auto;
+            border-radius: 10px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: none;
+            background: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: rgba(0, 123, 255, 0.05);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--card-bg);
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .app-header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .clear-button {
+            background-color: var(--warning-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 4px;
+            font-size: 22px;
+        }
+
+        .main-page-settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            background-color: rgba(255, 152, 0, 0.08);
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .delete-lines-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .delete-lines-section-label {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .delete-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .delete-serial-input {
+            width: 44px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: 600;
+            height: 32px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .delete-lines-btn {
+            background-color: #dc3545;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 0 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            height: 32px;
+            font-family: inherit;
+        }
+
+        .header-row {
+            display: flex;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 4px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        #table-body {
+            max-height: 360px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            gap: 4px;
+        }
+
+        .cell { text-align: center; box-sizing: border-box; }
+        .cell:nth-child(1) { flex: 0 0 10%; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+        .cell:nth-child(2) { flex: 0 0 28%; }
+        .cell:nth-child(3) { flex: 0 0 28%; }
+        .cell:nth-child(4) { flex: 0 0 34%; max-width: 34%; overflow: hidden; }
+
+        .input-row input {
+            width: 100%;
+            padding: 6px 4px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            box-sizing: border-box;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .badhotri-box {
+            width: 100%;
+            height: 33px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .badhotri-box.positive { background-color: var(--success-bg); color: var(--success-text); }
+        .badhotri-box.negative { background-color: var(--danger-bg); color: var(--danger-text); }
+
+        .add-line-row { display: flex; justify-content: center; margin: 8px 0 12px 0; }
+        .add-line-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .results-section { display: flex; gap: 10px; margin-bottom: 10px; }
+        .result-card {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .result-card p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        .result-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+        .big-blue-text { color: var(--primary-color); }
+        .big-green-text { color: var(--success-text); }
+
+        .total-combined {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            border: 1px solid rgba(46, 125, 50, 0.3);
+            margin-bottom: 12px;
+        }
+
+        .rate-section {
+            background-color: var(--bg-color);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .rate-calculation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        #rate-per-kg {
+            width: 70px;
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        .total-amount-box {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        .form-row { display: flex; gap: 10px; }
+        .form-row .form-group { flex: 1; }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 5px;
+            font-family: inherit;
+        }
+
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-whatsapp { background: #25D366; color: white; margin-top: 10px; }
+
+        .entry-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 20% auto;
+            padding: 16px;
+            width: 85%;
+            max-width: 360px;
+            border-radius: 12px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px; right: 14px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .owner-card {
+            background: var(--success-bg);
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(46, 125, 50, 0.3);
+            max-width: 480px;
+        }
+
+        footer { text-align: center; padding: 10px; font-size: 0.85rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('scale')">
+            <i class="fa-solid fa-calculator"></i> स्केल बोर्ड
+        </button>
+        <button class="tab-btn" onclick="switchTab('entry')">
+            <i class="fa-solid fa-pen-to-square"></i> दूध एंट्री
+        </button>
+        <button class="tab-btn" onclick="switchTab('bill')">
+            <i class="fa-solid fa-file-invoice"></i> बिल व पर्ची
+        </button>
+    </div>
+
+    <!-- Scale Tab -->
+    <div id="scale" class="tab-content active">
+        <div class="container">
+            <header class="app-header">
+                <h1>Milk Scale App</h1> 
+                <div class="header-buttons">
+                    <button class="clear-button" id="clear-all-btn">Clear</button>
+                </div>
+            </header>
+            
+            <div class="main-page-settings-row">
+                <div class="delete-lines-container">
+                    <span class="delete-lines-section-label">पंक्ति हटाएँ:</span>
+                    <div class="delete-controls"> 
+                        <input type="text" inputmode="numeric" id="delete-start-serial" placeholder="शुरू" class="delete-serial-input">
+                        <span>से</span>
+                        <input type="text" inputmode="numeric" id="delete-end-serial" placeholder="अंत" class="delete-serial-input">
+                        <button class="delete-lines-btn" id="delete-lines-btn-main">हटाएँ</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-row">
+                <div style="flex: 0 0 10%;">Sr.</div> 
+                <div style="flex: 0 0 28%;">दूध (Kg)</div>
+                <div style="flex: 0 0 28%;">सैंपल</div>
+                <div style="flex: 0 0 34%;">बढ़ोतरी (Gm)</div>
+            </div>
+
+            <div id="table-body"></div>
+                
+            <div class="add-line-row"> 
+                <button class="add-line-button" id="add-line-btn">+</button>
+            </div>
+
+            <div class="results-section">
+                <div class="result-card">
+                    <p>कुल दूध</p>
+                    <div class="result-value big-blue-text" id="total-milk-kg">0 Kg</div>
+                </div>
+                <div class="result-card">
+                    <p>कुल बढ़ोतरी</p>
+                    <div class="result-value big-green-text" id="total-badhotri-gm">0 Gm</div>
+                </div>
+            </div>
+
+            <div class="total-combined">
+                <span>दूध + बढ़ोतरी = </span>
+                <span id="combined-total-value">0 Kg</span>
+            </div>
+
+            <div class="rate-section">
+                <div class="rate-calculation">
+                    <span id="quantity-for-rate">(0)</span> 
+                    <span>×</span>
+                    <input type="text" inputmode="decimal" id="rate-per-kg" placeholder="दर">
+                    <span>=</span>
+                </div>
+                <div class="total-amount-box">
+                    <span>₹</span><span id="final-price">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entry Tab -->
+    <div id="entry" class="tab-content">
+        <div class="container">
+            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-user-plus"></i> ग्राहक जोड़ें</h2>
+            <div class="form-row" style="margin-bottom: 20px;">
+                <div class="form-group" style="flex: 2;">
+                    <input type="text" id="custName" class="form-control" placeholder="ग्राहक का नाम">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <button class="btn btn-primary" onclick="addCustomer()"><i class="fa-solid fa-plus"></i> जोड़ें</button>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+
+            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-plus-circle"></i> नई दूध एंट्री</h2>
+            <div class="form-group">
+                <label>ग्राहक चुनें:</label>
+                <select id="entryCustomer" class="form-control"></select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>समय:</label>
+                    <select id="entryShift" class="form-control">
+                        <option value="सुबह">सुबह</option>
+                        <option value="शाम">शाम</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>दूध (Kg):</label>
+                    <input type="number" id="entryLitre" class="form-control" placeholder="मात्रा" step="0.1">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>सैंपल / फैट:</label>
+                    <input type="number" id="entryFat" class="form-control" placeholder="सैंपल" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>रेट (₹):</label>
+                    <input type="number" id="entryRate" class="form-control" placeholder="रेट" step="0.5">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveMilkEntry()"><i class="fa-solid fa-floppy-disk"></i> सेव करें</button>
+        </div>
+    </div>
+
+    <!-- Bill Tab -->
+    <div id="bill" class="tab-content">
+        <div class="container">
+            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-receipt"></i> ग्राहक का बही-खाता</h2>
+            <div class="form-group">
+                <label>ग्राहक चुनें:</label>
+                <select id="billCustomer" class="form-control" onchange="loadCustomerBill()"></select>
+            </div>
+
+            <div id="billSummary" style="display: none;">
+                <div class="total-combined" style="margin: 15px 0;">
+                    <div>कुल दूध: <strong id="billTotalLitre">0</strong> Kg</div>
+                    <div style="font-size: 1.4rem; margin-top: 5px;">कुल बकाया: ₹<span id="billTotalAmount">0.00</span></div>
+                </div>
+
+                <div id="billEntriesList"></div>
+
+                <button class="btn btn-whatsapp" onclick="sendWhatsAppBill()">
+                    <i class="fa-brands fa-whatsapp"></i> व्हाट्सएप पर पर्ची भेजें
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="owner-card">
+        <h3 style="margin: 0 0 5px 0;">ऐप निर्माता: नकुल कुमार</h3>
+        <p style="font-size: 0.9rem; margin: 0;">पशुपालक और डेयरी भाइयों के लिए 100% नि:शुल्क डिजिटल सेवा।</p>
+    </div>
+
+    <footer>
+        <p>© 2026 Milk Scale App. सर्वाधिकार सुरक्षित।</p>
+    </footer>
+
+    <script>
+        // Storage protection
+        if (navigator.storage && navigator.storage.persist) {
+            navigator.storage.persist();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        let customers = JSON.parse(localStorage.getItem('ms_customers')) || ["रामपाल सिंह", "सुरेश शर्मा"];
+        let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
+
+        function populateCustomerDropdowns() {
+            const entrySelect = document.getElementById('entryCustomer');
+            const billSelect = document.getElementById('billCustomer');
+            if(!entrySelect || !billSelect) return;
+
+            entrySelect.innerHTML = '<option value="">-- ग्राहक चुनें --</option>';
+            billSelect.innerHTML = '<option value="">-- ग्राहक चुनें --</option>';
+
+            customers.forEach(cust => {
+                entrySelect.innerHTML += `<option value="${cust}">${cust}</option>`;
+                billSelect.innerHTML += `<option value="${cust}">${cust}</option>`;
+            });
+        }
+
+        function addCustomer() {
+            const name = document.getElementById('custName').value.trim();
+            if (!name) return alert('कृपया नाम दर्ज करें!');
+            if (!customers.includes(name)) {
+                customers.push(name);
+                localStorage.setItem('ms_customers', JSON.stringify(customers));
+                populateCustomerDropdowns();
+                document.getElementById('custName').value = '';
+                alert('ग्राहक जोड़ा गया!');
+            }
+        }
+
+        function saveMilkEntry() {
+            const cust = document.getElementById('entryCustomer').value;
+            const shift = document.getElementById('entryShift').value;
+            const litre = parseFloat(document.getElementById('entryLitre').value);
+            const fat = parseFloat(document.getElementById('entryFat').value) || 0;
+            const rate = parseFloat(document.getElementById('entryRate').value);
+
+            if (!cust || isNaN(litre) || isNaN(rate)) return alert('सही डेटा भरें!');
+
+            const newEntry = {
+                id: Date.now(), customer: cust, date: new Date().toLocaleDateString('hi-IN'),
+                shift: shift, litre: litre, fat: fat, rate: rate, total: litre * rate
+            };
+
+            entries.push(newEntry);
+            localStorage.setItem('ms_entries', JSON.stringify(entries));
+            alert('एंट्री सेव हो गई!');
+            document.getElementById('entryLitre').value = '';
+            document.getElementById('entryFat').value = '';
+            document.getElementById('entryRate').value = '';
+        }
+
+        function loadCustomerBill() {
+            const cust = document.getElementById('billCustomer').value;
+            const billSummary = document.getElementById('billSummary');
+            const entriesList = document.getElementById('billEntriesList');
+            if (!cust) { billSummary.style.display = 'none'; return; }
+
+            const custEntries = entries.filter(e => e.customer === cust);
+            let totalLitre = 0, totalAmount = 0;
+            entriesList.innerHTML = '';
+
+            custEntries.forEach(item => {
+                totalLitre += item.litre;
+                totalAmount += item.total;
+                entriesList.innerHTML += `
+                    <div class="entry-item">
+                        <div>
+                            <strong>${item.date} (${item.shift})</strong><br>
+                            ${item.litre} Kg | सैंपल: ${item.fat} | ₹${item.rate}/Kg
+                        </div>
+                        <div><strong style="color: var(--success-text);">₹${item.total.toFixed(2)}</strong></div>
+                    </div>`;
+            });
+
+            document.getElementById('billTotalLitre').innerText = totalLitre.toFixed(1);
+            document.getElementById('billTotalAmount').innerText = totalAmount.toFixed(2);
+            billSummary.style.display = 'block';
+        }
+
+        function sendWhatsAppBill() {
+            const cust = document.getElementById('billCustomer').value;
+            const totalLitre = document.getElementById('billTotalLitre').innerText;
+            const totalAmount = document.getElementById('billTotalAmount').innerText;
+            let msg = `*मिल्क स्केल ऐप - दूध का हिसाब*\nग्राहक: *${cust}*\nकुल दूध: *${totalLitre} Kg*\nकुल बकाया: *₹${totalAmount}*\n\n_मिल्क स्केल ऐप द्वारा निर्मित_`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateCustomerDropdowns();
+            const tableBody = document.getElementById('table-body');
+            const ratePerKgInput = document.getElementById('rate-per-kg');
+
+            function updateCalculations() {
+                let totalMilk = 0, totalBadhotriGm = 0;
+                document.querySelectorAll('#table-body .input-row').forEach((row, index) => {
+                    row.querySelector('.cell:first-child').innerText = index + 1;
+                    const milk = parseFloat(row.querySelector('.milk-kg-input').value) || 0;
+                    const sample = parseFloat(row.querySelector('.sample-input').value) || 0;
+                    const badhotriBox = row.querySelector('.badhotri-box');
+
+                    if (milk > 0) totalMilk += milk;
+                    
+                    let bGm = 0;
+                    if (milk > 0 && sample > 0) {
+                        bGm = Math.round(milk * 15 * (sample - 65));
+                        totalBadhotriGm += bGm;
+                        badhotriBox.innerText = `${bGm} Gm`;
+                        badhotriBox.className = 'badhotri-box ' + (bGm < 0 ? 'negative' : 'positive');
+                    } else {
+                        badhotriBox.innerText = '0 Gm';
+                        badhotriBox.className = 'badhotri-box';
+                    }
+                });
+
+                document.getElementById('total-milk-kg').innerText = `${totalMilk.toFixed(2)} Kg`;
+                document.getElementById('total-badhotri-gm').innerText = `${totalBadhotriGm} Gm`;
+
+                const combinedMilkKg = totalMilk + (totalBadhotriGm / 1000.0);
+                document.getElementById('combined-total-value').innerText = `${combinedMilkKg.toFixed(3)} Kg`;
+                document.getElementById('quantity-for-rate').innerText = `(${combinedMilkKg.toFixed(2)})`;
+
+                const rate = parseFloat(ratePerKgInput.value) || 0;
+                document.getElementById('final-price').innerText = (combinedMilkKg * rate).toFixed(2);
+            }
+
+            function createRow(milk = '', sample = '') {
+                const row = document.createElement('div');
+                row.className = 'input-row';
+                row.innerHTML = `
+                    <div class="cell">1</div>
+                    <div class="cell"><input type="text" inputmode="decimal" class="milk-kg-input" placeholder="0" value="${milk}"></div>
+                    <div class="cell"><input type="text" inputmode="decimal" class="sample-input" placeholder="0" value="${sample}"></div>
+                    <div class="cell"><div class="badhotri-box">0 Gm</div></div>
+                `;
+                tableBody.appendChild(row);
+                row.querySelectorAll('input').forEach(i => i.addEventListener('input', updateCalculations));
+            }
+
+            for (let i = 0; i < 5; i++) createRow();
+            document.getElementById('add-line-btn').onclick = () => { createRow(); updateCalculations(); };
+            ratePerKgInput.addEventListener('input', updateCalculations);
+            document.getElementById('clear-all-btn').onclick = () => {
+                tableBody.innerHTML = '';
+                for (let i = 0; i < 5; i++) createRow();
+                updateCalculations();
+            };
+            document.getElementById('delete-lines-btn-main').onclick = () => {
+                const start = parseInt(document.getElementById('delete-start-serial').value);
+                const end = parseInt(document.getElementById('delete-end-serial').value);
+                const rows = document.querySelectorAll('#table-body .input-row');
+                if (start > 0 && end >= start) {
+                    for (let i = Math.min(end, rows.length) - 1; i >= start - 1; i--) rows[i].remove();
+                    if (document.querySelectorAll('#table-body .input-row').length === 0) createRow();
+                    updateCalculations();
+                }
+            };
+        });
+    </script>
+</body>
+</html>
