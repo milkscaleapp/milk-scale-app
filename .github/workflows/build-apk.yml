@@ -36,28 +36,37 @@ jobs:
     - name: Sync Web assets
       run: npx cap sync
 
-    # 1. इंटरनेट परमिशन और SDK सेटिंग्स को पक्का करना
+    # 1. सीधे फाइलों को मॉडिफाई करना (कोई sed कमांड नहीं, सीधे पूरी फाइल बदलना)
     - name: Force Android Settings
       run: |
-        # मैनिफेस्ट में इंटरनेट परमिशन जोड़ें
-        sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
-        
-        # सभी SDK वर्जन को 34 (Android 14) पर सेट करें
-        echo "sdk.dir=/usr/local/lib/android/sdk" > android/local.properties
-        sed -i 's/targetSdkVersion 33/targetSdkVersion 34/g' android/variables.gradle
-        sed -i 's/targetSdkVersion 32/targetSdkVersion 34/g' android/variables.gradle
-        sed -i 's/compileSdkVersion 33/compileSdkVersion 34/g' android/variables.gradle
-        sed -i 's/compileSdkVersion 32/compileSdkVersion 34/g' android/variables.gradle
-        
-        # वर्जन कोड बढ़ाएं ताकि फोन इसे नया ऐप समझे
-        sed -i 's/versionCode 1/versionCode 5/g' android/app/build.gradle
-        sed -i 's/versionName "1.0"/versionName "1.0.5"/g' android/app/build.gradle
+        # variables.gradle को पूरा बदल दें
+        echo "ext {
+            minSdkVersion = 22
+            compileSdkVersion = 34
+            targetSdkVersion = 34
+            androidxActivityVersion = '1.7.0'
+            androidxAppCompatVersion = '1.6.1'
+            androidxCoordinatorLayoutVersion = '1.2.0'
+            androidxCoreVersion = '1.10.0'
+            androidxFragmentVersion = '1.5.6'
+            coreSplashScreenVersion = '1.0.0'
+            androidxWebkitVersion = '1.6.1'
+            junitVersion = '4.13.2'
+            androidxJunitVersion = '1.1.5'
+            androidxEspressoCoreVersion = '3.5.1'
+            cordovaAndroidVersion = '10.1.1'
+        }" > android/variables.gradle
 
-    - name: Generate Temporary Keystore
+        # AndroidManifest.xml में इंटरनेट परमिशन जोड़ें
+        sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+
+    # 2. असली कीस्टोर बनाना (जिसे Google पहचान सके)
+    - name: Generate Keystore
       run: |
         cd android/app
-        keytool -genkeypair -v -keystore release.keystore -alias milkkey -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
+        keytool -genkeypair -v -keystore release.keystore -alias milkscale -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
 
+    # 3. build.gradle में साइनिंग सेटिंग्स डालना
     - name: Inject Signing Config
       run: |
         cd android/app
@@ -66,7 +75,7 @@ jobs:
                 release { \
                     storeFile file("release.keystore") \
                     storePassword "123456" \
-                    keyAlias "milkkey" \
+                    keyAlias "milkscale" \
                     keyPassword "123456" \
                 } \
             }' build.gradle
@@ -75,14 +84,15 @@ jobs:
                 signingConfig signingConfigs.release \
             }' build.gradle
 
+    # 4. पूरी तरह साफ-सफाई करके APK बनाना
     - name: Build Release APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleRelease
+        ./gradlew clean assembleRelease
 
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: Milk-Scale-Release-APK
+        name: Milk-Scale-APK-FINAL-V2
         path: android/app/build/outputs/apk/release/app-release.apk
