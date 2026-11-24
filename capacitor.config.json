@@ -1,0 +1,9 @@
+{
+  "appId": "com.milkscaleapp.app",
+  "appName": "Milk Scale",
+  "webDir": "www",
+  "server": {
+    "url": "https://milkscaleapp.github.io/milk-scale-app/",
+    "cleartext": true
+  }
+}
