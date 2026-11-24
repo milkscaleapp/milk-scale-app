@@ -36,23 +36,29 @@ jobs:
     - name: Sync Web assets
       run: npx cap sync
 
-    # 1. इंटरनेट परमिशन और आधुनिक Android सपोर्ट
-    - name: Add Internet Permission and SDK settings
+    # 1. इंटरनेट परमिशन और SDK सेटिंग्स को पक्का करना
+    - name: Force Android Settings
       run: |
+        # मैनिफेस्ट में इंटरनेट परमिशन जोड़ें
         sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
         
-        # Target SDK और Min SDK को आधुनिक एंड्रॉइड के लिए सेट करना
+        # सभी SDK वर्जन को 34 (Android 14) पर सेट करें
+        echo "sdk.dir=/usr/local/lib/android/sdk" > android/local.properties
         sed -i 's/targetSdkVersion 33/targetSdkVersion 34/g' android/variables.gradle
         sed -i 's/targetSdkVersion 32/targetSdkVersion 34/g' android/variables.gradle
         sed -i 's/compileSdkVersion 33/compileSdkVersion 34/g' android/variables.gradle
         sed -i 's/compileSdkVersion 32/compileSdkVersion 34/g' android/variables.gradle
+        
+        # वर्जन कोड बढ़ाएं ताकि फोन इसे नया ऐप समझे
+        sed -i 's/versionCode 1/versionCode 5/g' android/app/build.gradle
+        sed -i 's/versionName "1.0"/versionName "1.0.5"/g' android/app/build.gradle
 
     - name: Generate Temporary Keystore
       run: |
         cd android/app
         keytool -genkeypair -v -keystore release.keystore -alias milkkey -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
 
-    - name: Inject Signing Config into build.gradle
+    - name: Inject Signing Config
       run: |
         cd android/app
         sed -i '/android {/a \
