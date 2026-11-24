@@ -40,18 +40,19 @@ jobs:
       run: |
         sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-    # यहाँ हमने कीस्टोर को android फोल्डर के मुख्य हिस्से (root) में बनाया है
+    # यहाँ हमने कीस्टोर को बिल्कुल सही जगह (android/app/) पर बनाया है
     - name: Generate Temporary Keystore
       run: |
-        keytool -genkeypair -v -keystore android/release.keystore -alias milkkey -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
+        cd android/app
+        keytool -genkeypair -v -keystore release.keystore -alias milkkey -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
 
-    # यहाँ हमने पाथ (Path) को ठीक किया है
+    # अब Gradle को सही रास्ता (app/release.keystore) बता दिया है
     - name: Build Release APK
       run: |
         cd android
         chmod +x gradlew
         ./gradlew assembleRelease \
-          -Pandroid.injected.signing.store.file=release.keystore \
+          -Pandroid.injected.signing.store.file=app/release.keystore \
           -Pandroid.injected.signing.store.password=123456 \
           -Pandroid.injected.signing.key.alias=milkkey \
           -Pandroid.injected.signing.key.password=123456
