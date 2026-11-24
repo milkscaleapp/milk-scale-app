@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Release APK
 
 on:
   push:
@@ -27,8 +27,6 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    # Setup Android SDK वाला स्टेप हटा दिया गया है क्योंकि यह GitHub runner में पहले से है।
-
     - name: Create dummy www folder
       run: mkdir -p www
 
@@ -38,14 +36,27 @@ jobs:
     - name: Sync Web assets
       run: npx cap sync
 
-    - name: Build Android APK (Debug)
+    - name: Add Internet Permission
+      run: |
+        sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+
+    - name: Generate Temporary Keystore
+      run: |
+        cd android/app
+        keytool -genkeypair -v -keystore release.keystore -alias milkkey -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
+
+    - name: Build Release APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleRelease \
+          -Pandroid.injected.signing.store.file=app/release.keystore \
+          -Pandroid.injected.signing.store.password=123456 \
+          -Pandroid.injected.signing.key.alias=milkey \
+          -Pandroid.injected.signing.key.password=123456
 
-    - name: Upload APK
+    - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: Milk-Scale-APK
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        name: Milk-Scale-Release-APK
+        path: android/app/build/outputs/apk/release/app-release.apk
