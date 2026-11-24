@@ -5,5 +5,8 @@
   "server": {
     "url": "https://milkscaleapp.github.io/milk-scale-app/",
     "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
   }
 }
