@@ -40,22 +40,36 @@ jobs:
       run: |
         sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-    # 1. कीस्टोर बनाएं (सही तरीके से)
+    # 1. कीस्टोर को बिल्कुल सही जगह (android/app/) पर बनाएं
     - name: Generate Temporary Keystore
       run: |
         cd android/app
         keytool -genkeypair -v -keystore release.keystore -alias milkkey -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
 
-    # 2. Gradle को सिर्फ फाइल का नाम बताएं, क्योंकि वह पहले से app फोल्डर में है
+    # 2. build.gradle फाइल में कीस्टोर की जानकारी सीधे डालें (सबसे पक्का तरीका)
+    - name: Inject Signing Config into build.gradle
+      run: |
+        cd android/app
+        sed -i '/android {/a \
+            signingConfigs { \
+                release { \
+                    storeFile file("release.keystore") \
+                    storePassword "123456" \
+                    keyAlias "milkkey" \
+                    keyPassword "123456" \
+                } \
+            }' build.gradle
+        sed -i '/buildTypes {/a \
+            release { \
+                signingConfig signingConfigs.release \
+            }' build.gradle
+
+    # 3. रिलीज़ APK बनाएं
     - name: Build Release APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleRelease \
-          -Pandroid.injected.signing.store.file=release.keystore \
-          -Pandroid.injected.signing.store.password=123456 \
-          -Pandroid.injected.signing.key.alias=milkkey \
-          -Pandroid.injected.signing.key.password=123456
+        ./gradlew assembleRelease
 
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
