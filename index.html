@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title data-key="app_title">Milk Scale App</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,6 +46,7 @@
             padding: 12px 0 30px 0;
             min-height: 100vh;
             box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .tab-nav {
@@ -130,15 +131,6 @@
             border-radius: 20px;
             cursor: pointer;
             font-size: 13px;
-        }
-
-        .settings-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            padding: 4px;
-            font-size: 22px;
         }
 
         .main-page-settings-row {
@@ -377,6 +369,7 @@
 
         .btn-primary { background: var(--primary-color); color: white; }
         .btn-whatsapp { background: #25D366; color: white; margin-top: 10px; }
+        .btn-danger { background: #dc3545; color: white; padding: 6px 10px; font-size: 14px; width: auto; margin: 0; }
 
         .entry-item {
             display: flex;
@@ -386,32 +379,15 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 200;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: var(--card-bg);
-            margin: 20% auto;
-            padding: 16px;
-            width: 85%;
-            max-width: 360px;
-            border-radius: 12px;
-            position: relative;
-            box-sizing: border-box;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 10px; right: 14px;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-muted);
+        .customer-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 5px;
         }
 
         .owner-card {
@@ -425,6 +401,14 @@
         }
 
         footer { text-align: center; padding: 10px; font-size: 0.85rem; color: var(--text-muted); }
+        
+        .dark-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -447,6 +431,7 @@
             <header class="app-header">
                 <h1>Milk Scale App</h1> 
                 <div class="header-buttons">
+                    <button class="dark-toggle" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
                     <button class="clear-button" id="clear-all-btn">Clear</button>
                 </div>
             </header>
@@ -509,14 +494,18 @@
     <!-- Entry Tab -->
     <div id="entry" class="tab-content">
         <div class="container">
-            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-user-plus"></i> ग्राहक जोड़ें</h2>
-            <div class="form-row" style="margin-bottom: 20px;">
-                <div class="form-group" style="flex: 2;">
+            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-user-plus"></i> ग्राहक जोड़ें / प्रबंधित करें</h2>
+            <div class="form-row" style="margin-bottom: 10px;">
+                <div class="form-group" style="flex: 2; margin-bottom: 0;">
                     <input type="text" id="custName" class="form-control" placeholder="ग्राहक का नाम">
                 </div>
-                <div class="form-group" style="flex: 1;">
-                    <button class="btn btn-primary" onclick="addCustomer()"><i class="fa-solid fa-plus"></i> जोड़ें</button>
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <button class="btn btn-primary" onclick="addCustomer()" style="padding: 10px;"><i class="fa-solid fa-plus"></i> जोड़ें</button>
                 </div>
+            </div>
+            
+            <div id="customerList" style="max-height: 150px; overflow-y: auto; margin-bottom: 20px;">
+                <!-- Customer List will appear here -->
             </div>
 
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
@@ -528,26 +517,30 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
+                    <label>दिनांक:</label>
+                    <input type="date" id="entryDate" class="form-control">
+                </div>
+                <div class="form-group">
                     <label>समय:</label>
                     <select id="entryShift" class="form-control">
                         <option value="सुबह">सुबह</option>
                         <option value="शाम">शाम</option>
                     </select>
                 </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group">
                     <label>दूध (Kg):</label>
                     <input type="number" id="entryLitre" class="form-control" placeholder="मात्रा" step="0.1">
                 </div>
-            </div>
-            <div class="form-row">
                 <div class="form-group">
                     <label>सैंपल / फैट:</label>
                     <input type="number" id="entryFat" class="form-control" placeholder="सैंपल" step="0.1">
                 </div>
-                <div class="form-group">
-                    <label>रेट (₹):</label>
-                    <input type="number" id="entryRate" class="form-control" placeholder="रेट" step="0.5">
-                </div>
+            </div>
+            <div class="form-group">
+                <label>रेट (₹ प्रति Kg):</label>
+                <input type="number" id="entryRate" class="form-control" placeholder="रेट" step="0.5">
             </div>
             <button class="btn btn-primary" onclick="saveMilkEntry()"><i class="fa-solid fa-floppy-disk"></i> सेव करें</button>
         </div>
@@ -557,10 +550,23 @@
     <div id="bill" class="tab-content">
         <div class="container">
             <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-receipt"></i> ग्राहक का बही-खाता</h2>
-            <div class="form-group">
-                <label>ग्राहक चुनें:</label>
-                <select id="billCustomer" class="form-control" onchange="loadCustomerBill()"></select>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>ग्राहक चुनें:</label>
+                    <select id="billCustomer" class="form-control" onchange="loadCustomerBill()"></select>
+                </div>
             </div>
+            <div class="form-row" style="margin-bottom: 15px; background: var(--bg-color); padding: 10px; border-radius: 8px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>कब से (From):</label>
+                    <input type="date" id="billStartDate" class="form-control" onchange="loadCustomerBill()">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>कब तक (To):</label>
+                    <input type="date" id="billEndDate" class="form-control" onchange="loadCustomerBill()">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="setCurrentMonth()" style="margin-bottom: 15px; background: var(--text-muted);"><i class="fa-solid fa-calendar"></i> इस महीने का हिसाब देखें</button>
 
             <div id="billSummary" style="display: none;">
                 <div class="total-combined" style="margin: 15px 0;">
@@ -568,10 +574,10 @@
                     <div style="font-size: 1.4rem; margin-top: 5px;">कुल बकाया: ₹<span id="billTotalAmount">0.00</span></div>
                 </div>
 
-                <div id="billEntriesList"></div>
+                <div id="billEntriesList" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
 
                 <button class="btn btn-whatsapp" onclick="sendWhatsAppBill()">
-                    <i class="fa-brands fa-whatsapp"></i> व्हाट्सएप पर पर्ची भेजें
+                    <i class="fa-brands fa-whatsapp"></i> व्हाट्सएप पर पूरी पर्ची भेजें
                 </button>
             </div>
         </div>
@@ -587,9 +593,13 @@
     </footer>
 
     <script>
-        // Storage protection
-        if (navigator.storage && navigator.storage.persist) {
-            navigator.storage.persist();
+        // Dark Mode Logic
+        if (localStorage.getItem('ms_theme') === 'dark' || (!('ms_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.body.classList.add('dark-mode');
+        }
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('ms_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
         }
 
         function switchTab(tabId) {
@@ -599,13 +609,25 @@
             document.getElementById(tabId).classList.add('active');
         }
 
+        // State Variables
         let customers = JSON.parse(localStorage.getItem('ms_customers')) || ["रामपाल सिंह", "सुरेश शर्मा"];
         let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
+        
+        // Default date to today
+        document.getElementById('entryDate').valueAsDate = new Date();
+
+        function saveData() {
+            localStorage.setItem('ms_customers', JSON.stringify(customers));
+            localStorage.setItem('ms_entries', JSON.stringify(entries));
+        }
 
         function populateCustomerDropdowns() {
             const entrySelect = document.getElementById('entryCustomer');
             const billSelect = document.getElementById('billCustomer');
             if(!entrySelect || !billSelect) return;
+
+            const currentEntryVal = entrySelect.value;
+            const currentBillVal = billSelect.value;
 
             entrySelect.innerHTML = '<option value="">-- ग्राहक चुनें --</option>';
             billSelect.innerHTML = '<option value="">-- ग्राहक चुनें --</option>';
@@ -614,6 +636,27 @@
                 entrySelect.innerHTML += `<option value="${cust}">${cust}</option>`;
                 billSelect.innerHTML += `<option value="${cust}">${cust}</option>`;
             });
+
+            if(customers.includes(currentEntryVal)) entrySelect.value = currentEntryVal;
+            if(customers.includes(currentBillVal)) billSelect.value = currentBillVal;
+            
+            renderCustomerList();
+        }
+
+        function renderCustomerList() {
+            const listDiv = document.getElementById('customerList');
+            listDiv.innerHTML = '';
+            if (customers.length === 0) {
+                listDiv.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px;">कोई ग्राहक नहीं है</p>';
+                return;
+            }
+            customers.forEach((cust, index) => {
+                listDiv.innerHTML += `
+                    <div class="customer-list-item">
+                        <span><i class="fa-solid fa-user" style="color:var(--primary-color); margin-right:5px;"></i> ${cust}</span>
+                        <button class="btn btn-danger" onclick="deleteCustomer(${index})"><i class="fa-solid fa-trash"></i></button>
+                    </div>`;
+            });
         }
 
         function addCustomer() {
@@ -621,44 +664,99 @@
             if (!name) return alert('कृपया नाम दर्ज करें!');
             if (!customers.includes(name)) {
                 customers.push(name);
-                localStorage.setItem('ms_customers', JSON.stringify(customers));
+                saveData();
                 populateCustomerDropdowns();
                 document.getElementById('custName').value = '';
-                alert('ग्राहक जोड़ा गया!');
+            } else {
+                alert('यह ग्राहक पहले से मौजूद है!');
+            }
+        }
+
+        function deleteCustomer(index) {
+            if(confirm('क्या आप वाकई इस ग्राहक को डिलीट करना चाहते हैं? इसका पुराना हिसाब भी मिट जाएगा।')) {
+                const custName = customers[index];
+                customers.splice(index, 1);
+                entries = entries.filter(e => e.customer !== custName);
+                saveData();
+                populateCustomerDropdowns();
+                loadCustomerBill();
             }
         }
 
         function saveMilkEntry() {
             const cust = document.getElementById('entryCustomer').value;
+            const dateRaw = document.getElementById('entryDate').value;
             const shift = document.getElementById('entryShift').value;
             const litre = parseFloat(document.getElementById('entryLitre').value);
             const fat = parseFloat(document.getElementById('entryFat').value) || 0;
             const rate = parseFloat(document.getElementById('entryRate').value);
 
-            if (!cust || isNaN(litre) || isNaN(rate)) return alert('सही डेटा भरें!');
+            if (!cust || !dateRaw || isNaN(litre) || isNaN(rate)) return alert('कृपया सारी जानकारी सही से भरें!');
+
+            // Format date to DD/MM/YYYY for display
+            const dateParts = dateRaw.split('-');
+            const dateStr = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
             const newEntry = {
-                id: Date.now(), customer: cust, date: new Date().toLocaleDateString('hi-IN'),
-                shift: shift, litre: litre, fat: fat, rate: rate, total: litre * rate
+                id: Date.now(), 
+                customer: cust, 
+                dateRaw: dateRaw, // For filtering
+                dateStr: dateStr, // For display
+                shift: shift, 
+                litre: litre, 
+                fat: fat, 
+                rate: rate, 
+                total: litre * rate
             };
 
             entries.push(newEntry);
-            localStorage.setItem('ms_entries', JSON.stringify(entries));
+            saveData();
             alert('एंट्री सेव हो गई!');
             document.getElementById('entryLitre').value = '';
             document.getElementById('entryFat').value = '';
-            document.getElementById('entryRate').value = '';
+            
+            // If bill tab is open for this customer, refresh it
+            if(document.getElementById('billCustomer').value === cust) {
+                loadCustomerBill();
+            }
+        }
+
+        function setCurrentMonth() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('billStartDate').valueAsDate = firstDay;
+            document.getElementById('billEndDate').valueAsDate = lastDay;
+            loadCustomerBill();
         }
 
         function loadCustomerBill() {
             const cust = document.getElementById('billCustomer').value;
+            const startDateVal = document.getElementById('billStartDate').value;
+            const endDateVal = document.getElementById('billEndDate').value;
+            
             const billSummary = document.getElementById('billSummary');
             const entriesList = document.getElementById('billEntriesList');
+            
             if (!cust) { billSummary.style.display = 'none'; return; }
 
-            const custEntries = entries.filter(e => e.customer === cust);
+            let custEntries = entries.filter(e => e.customer === cust);
+            
+            // Date Filter Logic
+            if(startDateVal && endDateVal) {
+                custEntries = custEntries.filter(e => e.dateRaw >= startDateVal && e.dateRaw <= endDateVal);
+            }
+
             let totalLitre = 0, totalAmount = 0;
             entriesList.innerHTML = '';
+            
+            // Sort by date descending
+            custEntries.sort((a, b) => new Date(b.dateRaw) - new Date(a.dateRaw));
+
+            if(custEntries.length === 0) {
+                entriesList.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin: 20px 0;">इस अवधि में कोई एंट्री नहीं मिली।</p>';
+            }
 
             custEntries.forEach(item => {
                 totalLitre += item.litre;
@@ -666,8 +764,8 @@
                 entriesList.innerHTML += `
                     <div class="entry-item">
                         <div>
-                            <strong>${item.date} (${item.shift})</strong><br>
-                            ${item.litre} Kg | सैंपल: ${item.fat} | ₹${item.rate}/Kg
+                            <strong>${item.dateStr} (${item.shift})</strong><br>
+                            <span style="font-size:12px;">${item.litre} Kg | सैंपल: ${item.fat} | ₹${item.rate}/Kg</span>
                         </div>
                         <div><strong style="color: var(--success-text);">₹${item.total.toFixed(2)}</strong></div>
                     </div>`;
@@ -680,71 +778,134 @@
 
         function sendWhatsAppBill() {
             const cust = document.getElementById('billCustomer').value;
+            const startDateVal = document.getElementById('billStartDate').value;
+            const endDateVal = document.getElementById('billEndDate').value;
+            
+            if(!cust) return;
+
+            let custEntries = entries.filter(e => e.customer === cust);
+            if(startDateVal && endDateVal) {
+                custEntries = custEntries.filter(e => e.dateRaw >= startDateVal && e.dateRaw <= endDateVal);
+            }
+            
+            if(custEntries.length === 0) return alert('भेजने के लिए कोई एंट्री नहीं है!');
+
+            custEntries.sort((a, b) => new Date(a.dateRaw) - new Date(b.dateRaw));
             const totalLitre = document.getElementById('billTotalLitre').innerText;
             const totalAmount = document.getElementById('billTotalAmount').innerText;
-            let msg = `*मिल्क स्केल ऐप - दूध का हिसाब*\nग्राहक: *${cust}*\nकुल दूध: *${totalLitre} Kg*\nकुल बकाया: *₹${totalAmount}*\n\n_मिल्क स्केल ऐप द्वारा निर्मित_`;
+
+            let msg = `*🥛 मिल्क स्केल ऐप - दूध का हिसाब 🥛*\n`;
+            msg += `ग्राहक: *${cust}*\n`;
+            if(startDateVal && endDateVal) {
+                const s = startDateVal.split('-').reverse().join('/');
+                const e = endDateVal.split('-').reverse().join('/');
+                msg += `अवधि: *${s} से ${e}*\n`;
+            }
+            msg += `--------------------------\n`;
+
+            custEntries.forEach(item => {
+                msg += `📅 *${item.dateStr}* (${item.shift})\n`;
+                msg += `दूध: ${item.litre} Kg | सैंपल: ${item.fat}\n`;
+                msg += `दर: ₹${item.rate} | कुल: ₹${item.total.toFixed(2)}\n\n`;
+            });
+
+            msg += `--------------------------\n`;
+            msg += `कुल दूध: *${totalLitre} Kg*\n`;
+            msg += `*कुल बकाया: ₹${totalAmount}*\n\n`;
+            msg += `_मिल्क स्केल ऐप द्वारा निर्मित_`;
+
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // Scale Board Logic with Local Storage
+        const tableBody = document.getElementById('table-body');
+        const ratePerKgInput = document.getElementById('rate-per-kg');
+
+        function updateCalculations() {
+            let totalMilk = 0, totalBadhotriGm = 0;
+            let scaleData = [];
+
+            document.querySelectorAll('#table-body .input-row').forEach((row, index) => {
+                row.querySelector('.cell:first-child').innerText = index + 1;
+                const milkInput = row.querySelector('.milk-kg-input');
+                const sampleInput = row.querySelector('.sample-input');
+                const badhotriBox = row.querySelector('.badhotri-box');
+
+                const milk = parseFloat(milkInput.value) || 0;
+                const sample = parseFloat(sampleInput.value) || 0;
+                
+                scaleData.push({ milk: milkInput.value, sample: sampleInput.value });
+
+                if (milk > 0) totalMilk += milk;
+                
+                let bGm = 0;
+                if (milk > 0 && sample > 0) {
+                    bGm = Math.round(milk * 15 * (sample - 65));
+                    totalBadhotriGm += bGm;
+                    badhotriBox.innerText = `${bGm} Gm`;
+                    badhotriBox.className = 'badhotri-box ' + (bGm < 0 ? 'negative' : 'positive');
+                } else {
+                    badhotriBox.innerText = '0 Gm';
+                    badhotriBox.className = 'badhotri-box';
+                }
+            });
+
+            localStorage.setItem('ms_scale_board', JSON.stringify(scaleData));
+
+            document.getElementById('total-milk-kg').innerText = `${totalMilk.toFixed(2)} Kg`;
+            document.getElementById('total-badhotri-gm').innerText = `${totalBadhotriGm} Gm`;
+
+            const combinedMilkKg = totalMilk + (totalBadhotriGm / 1000.0);
+            document.getElementById('combined-total-value').innerText = `${combinedMilkKg.toFixed(3)} Kg`;
+            document.getElementById('quantity-for-rate').innerText = `(${combinedMilkKg.toFixed(2)})`;
+
+            const rate = parseFloat(ratePerKgInput.value) || 0;
+            document.getElementById('final-price').innerText = (combinedMilkKg * rate).toFixed(2);
+            localStorage.setItem('ms_scale_rate', ratePerKgInput.value);
+        }
+
+        function createRow(milk = '', sample = '') {
+            const row = document.createElement('div');
+            row.className = 'input-row';
+            row.innerHTML = `
+                <div class="cell">1</div>
+                <div class="cell"><input type="text" inputmode="decimal" class="milk-kg-input" placeholder="0" value="${milk}"></div>
+                <div class="cell"><input type="text" inputmode="decimal" class="sample-input" placeholder="0" value="${sample}"></div>
+                <div class="cell"><div class="badhotri-box">0 Gm</div></div>
+            `;
+            tableBody.appendChild(row);
+            row.querySelectorAll('input').forEach(i => i.addEventListener('input', updateCalculations));
+        }
+
+        function initScaleBoard() {
+            const savedData = JSON.parse(localStorage.getItem('ms_scale_board'));
+            const savedRate = localStorage.getItem('ms_scale_rate');
+            
+            if(savedRate) ratePerKgInput.value = savedRate;
+
+            if (savedData && savedData.length > 0) {
+                savedData.forEach(item => createRow(item.milk, item.sample));
+            } else {
+                for (let i = 0; i < 5; i++) createRow();
+            }
+            updateCalculations();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             populateCustomerDropdowns();
-            const tableBody = document.getElementById('table-body');
-            const ratePerKgInput = document.getElementById('rate-per-kg');
-
-            function updateCalculations() {
-                let totalMilk = 0, totalBadhotriGm = 0;
-                document.querySelectorAll('#table-body .input-row').forEach((row, index) => {
-                    row.querySelector('.cell:first-child').innerText = index + 1;
-                    const milk = parseFloat(row.querySelector('.milk-kg-input').value) || 0;
-                    const sample = parseFloat(row.querySelector('.sample-input').value) || 0;
-                    const badhotriBox = row.querySelector('.badhotri-box');
-
-                    if (milk > 0) totalMilk += milk;
-                    
-                    let bGm = 0;
-                    if (milk > 0 && sample > 0) {
-                        bGm = Math.round(milk * 15 * (sample - 65));
-                        totalBadhotriGm += bGm;
-                        badhotriBox.innerText = `${bGm} Gm`;
-                        badhotriBox.className = 'badhotri-box ' + (bGm < 0 ? 'negative' : 'positive');
-                    } else {
-                        badhotriBox.innerText = '0 Gm';
-                        badhotriBox.className = 'badhotri-box';
-                    }
-                });
-
-                document.getElementById('total-milk-kg').innerText = `${totalMilk.toFixed(2)} Kg`;
-                document.getElementById('total-badhotri-gm').innerText = `${totalBadhotriGm} Gm`;
-
-                const combinedMilkKg = totalMilk + (totalBadhotriGm / 1000.0);
-                document.getElementById('combined-total-value').innerText = `${combinedMilkKg.toFixed(3)} Kg`;
-                document.getElementById('quantity-for-rate').innerText = `(${combinedMilkKg.toFixed(2)})`;
-
-                const rate = parseFloat(ratePerKgInput.value) || 0;
-                document.getElementById('final-price').innerText = (combinedMilkKg * rate).toFixed(2);
-            }
-
-            function createRow(milk = '', sample = '') {
-                const row = document.createElement('div');
-                row.className = 'input-row';
-                row.innerHTML = `
-                    <div class="cell">1</div>
-                    <div class="cell"><input type="text" inputmode="decimal" class="milk-kg-input" placeholder="0" value="${milk}"></div>
-                    <div class="cell"><input type="text" inputmode="decimal" class="sample-input" placeholder="0" value="${sample}"></div>
-                    <div class="cell"><div class="badhotri-box">0 Gm</div></div>
-                `;
-                tableBody.appendChild(row);
-                row.querySelectorAll('input').forEach(i => i.addEventListener('input', updateCalculations));
-            }
-
-            for (let i = 0; i < 5; i++) createRow();
+            initScaleBoard();
+            
             document.getElementById('add-line-btn').onclick = () => { createRow(); updateCalculations(); };
             ratePerKgInput.addEventListener('input', updateCalculations);
+            
             document.getElementById('clear-all-btn').onclick = () => {
-                tableBody.innerHTML = '';
-                for (let i = 0; i < 5; i++) createRow();
-                updateCalculations();
+                if(confirm('क्या आप स्केल बोर्ड साफ करना चाहते हैं?')) {
+                    tableBody.innerHTML = '';
+                    for (let i = 0; i < 5; i++) createRow();
+                    updateCalculations();
+                }
             };
+            
             document.getElementById('delete-lines-btn-main').onclick = () => {
                 const start = parseInt(document.getElementById('delete-start-serial').value);
                 const end = parseInt(document.getElementById('delete-end-serial').value);
@@ -755,6 +916,9 @@
                     updateCalculations();
                 }
             };
+            
+            // Set default dates for bill filter to current month
+            setCurrentMonth();
         });
     </script>
 </body>
