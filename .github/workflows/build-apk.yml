@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4 # इसे v4 कर दिया
+      uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4 # इसे v4 कर दिया
+      uses: actions/setup-node@v4
       with:
         node-version: 18
 
@@ -22,13 +22,15 @@ jobs:
       run: npm install
 
     - name: Setup Java JDK
-      uses: actions/setup-java@v4 # इसे v4 कर दिया
+      uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
+      uses: android-actions/setup-android@v3
+      with:
+        cmdline-tools-version: 11076708
 
     - name: Create dummy www folder
       run: mkdir -p www
@@ -46,7 +48,7 @@ jobs:
         ./gradlew assembleDebug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v4 # यहाँ v3 को v4 कर दिया है
+      uses: actions/upload-artifact@v4
       with:
         name: Milk-Scale-APK
         path: android/app/build/outputs/apk/debug/app-debug.apk
