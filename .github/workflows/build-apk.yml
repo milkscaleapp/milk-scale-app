@@ -36,17 +36,22 @@ jobs:
     - name: Sync Web assets
       run: npx cap sync
 
-    - name: Add Internet Permission
+    # 1. इंटरनेट परमिशन और आधुनिक Android सपोर्ट
+    - name: Add Internet Permission and SDK settings
       run: |
         sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+        
+        # Target SDK और Min SDK को आधुनिक एंड्रॉइड के लिए सेट करना
+        sed -i 's/targetSdkVersion 33/targetSdkVersion 34/g' android/variables.gradle
+        sed -i 's/targetSdkVersion 32/targetSdkVersion 34/g' android/variables.gradle
+        sed -i 's/compileSdkVersion 33/compileSdkVersion 34/g' android/variables.gradle
+        sed -i 's/compileSdkVersion 32/compileSdkVersion 34/g' android/variables.gradle
 
-    # 1. कीस्टोर को बिल्कुल सही जगह (android/app/) पर बनाएं
     - name: Generate Temporary Keystore
       run: |
         cd android/app
         keytool -genkeypair -v -keystore release.keystore -alias milkkey -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
 
-    # 2. build.gradle फाइल में कीस्टोर की जानकारी सीधे डालें (सबसे पक्का तरीका)
     - name: Inject Signing Config into build.gradle
       run: |
         cd android/app
@@ -64,7 +69,6 @@ jobs:
                 signingConfig signingConfigs.release \
             }' build.gradle
 
-    # 3. रिलीज़ APK बनाएं
     - name: Build Release APK
       run: |
         cd android
