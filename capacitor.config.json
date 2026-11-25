@@ -2,17 +2,6 @@
   "appId": "com.milkscale.nakul",
   "appName": "Milk Scale",
   "webDir": "www",
-  "server": {
-    "url": "https://milkscaleapp.github.io/milk-scale-app/",
-    "cleartext": false,
-    "allowNavigation": [
-      "accounts.google.com",
-      "www.googleapis.com",
-      "content.googleapis.com",
-      "wa.me",
-      "api.whatsapp.com"
-    ]
-  },
   "android": {
     "allowMixedContent": false
   }
