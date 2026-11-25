@@ -1,95 +1,124 @@
-name: Build Release APK
+name: Build Milk Scale signed releases
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "index.html"
+      - "package.json"
+      - "capacitor.config.json"
+      - ".github/workflows/build-apk.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Install dependencies
-      run: npm install
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
-    - name: Setup Java JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '17'
+      - name: Check signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || (echo "Missing ANDROID_KEYSTORE_BASE64" && exit 1)
+          test -n "$KEYSTORE_PASSWORD" || (echo "Missing ANDROID_KEYSTORE_PASSWORD" && exit 1)
+          test -n "$KEY_ALIAS" || (echo "Missing ANDROID_KEY_ALIAS" && exit 1)
+          test -n "$KEY_PASSWORD" || (echo "Missing ANDROID_KEY_PASSWORD" && exit 1)
 
-    - name: Create dummy www folder
-      run: mkdir -p www
+      - name: Install dependencies
+        run: npm install
 
-    - name: Add Android Platform
-      run: npx cap add android
+      - name: Prepare web assets
+        run: npm run build
 
-    - name: Sync Web assets
-      run: npx cap sync
+      - name: Add and sync Android platform
+        run: |
+          npx cap add android
+          npx cap sync android
 
-    - name: Force Android Settings
-      run: |
-        echo "ext {
-            minSdkVersion = 22
-            compileSdkVersion = 34
-            targetSdkVersion = 34
-            androidxActivityVersion = '1.7.0'
-            androidxAppCompatVersion = '1.6.1'
-            androidxCoordinatorLayoutVersion = '1.2.0'
-            androidxCoreVersion = '1.10.0'
-            androidxFragmentVersion = '1.5.6'
-            coreSplashScreenVersion = '1.0.0'
-            androidxWebkitVersion = '1.6.1'
-            junitVersion = '4.13.2'
-            androidxJunitVersion = '1.1.5'
-            androidxEspressoCoreVersion = '3.5.1'
-            cordovaAndroidVersion = '10.1.1'
-        }" > android/variables.gradle
+      - name: Configure persistent Android signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p android/app
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/milk-scale-release.jks
+          cat > android/keystore.properties <<EOF
+          storeFile=milk-scale-release.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
 
-        # परमिशन्स जोड़ें
-        sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
-        sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
-        sed -i '/<application/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
 
-    - name: Generate Keystore
-      run: |
-        cd android/app
-        keytool -genkeypair -v -keystore release.keystore -alias milkscale -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
+          # Keep any Gradle plugins block at the top of the file.
+          android_marker = "android {"
+          android_index = s.find(android_marker)
+          if android_index < 0:
+              raise SystemExit("Could not find android block in android/app/build.gradle")
 
-    - name: Inject Signing Config
-      run: |
-        cd android/app
-        sed -i '/android {/a \
-            signingConfigs { \
-                release { \
-                    storeFile file("release.keystore") \
-                    storePassword "123456" \
-                    keyAlias "milkscale" \
-                    keyPassword "123456" \
-                } \
-            }' build.gradle
-        sed -i '/buildTypes {/a \
-            release { \
-                signingConfig signingConfigs.release \
-            }' build.gradle
+          props = '''def keystoreProperties = new Properties()
+          def keystorePropertiesFile = rootProject.file("keystore.properties")
+          keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
-    - name: Build Release APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew clean assembleRelease
+          '''
+          if "def keystoreProperties =" not in s:
+              s = s[:android_index] + props + s[android_index:]
 
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: Milk-Scale-APK-Backup
-        path: android/app/build/outputs/apk/release/app-release.apk
+          config = """    signingConfigs {
+                  release {
+                      storeFile file(keystoreProperties['storeFile'])
+                      storePassword keystoreProperties['storePassword']
+                      keyAlias keystoreProperties['keyAlias']
+                      keyPassword keystoreProperties['keyPassword']
+                  }
+              }
+
+          """
+          if "signingConfigs {" not in s:
+              s = s.replace("android {", "android {\n" + config, 1)
+
+          build_types = s.find("buildTypes {")
+          release_type = s.find("release {", build_types)
+          if build_types < 0 or release_type < 0:
+              raise SystemExit("Could not find release build type in android/app/build.gradle")
+          if "signingConfig signingConfigs.release" not in s:
+              insert_at = release_type + len("release {")
+              s = s[:insert_at] + "\n            signingConfig signingConfigs.release" + s[insert_at:]
+          p.write_text(s)
+          PY
+
+      - name: Build signed APK and Play Store AAB
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Milk-Scale-production-release
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

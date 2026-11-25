@@ -121,7 +121,7 @@
         <div class="header-left">
             <h1>Milk Scale</h1>
             <!-- फाइल शो होने वाला रंगीन बटन -->
-            <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', document.getElementById('nav-backup'))" style="display: none;">
+            <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
                 <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
             </button>
         </div>
@@ -276,6 +276,8 @@
         async function init() {
             renderCustomers();
             populateDropdowns();
+            const savedRate = localStorage.getItem('ms_rate');
+            if (savedRate !== null) document.getElementById('scale-rate').value = savedRate;
             initScaleBoard();
             loadBill();
             
@@ -289,13 +291,27 @@
         function switchTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-            if(el) el.classList.add('active');
+            const target = document.getElementById('tab-' + tabId);
+            if (!target) return;
+            target.classList.add('active');
+            if (el) el.classList.add('active');
+            else if (tabId === 'backup') document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
         }
 
         function saveLocal() {
-            localStorage.setItem('ms_cust', JSON.stringify(customers));
-            localStorage.setItem('ms_entries', JSON.stringify(entries));
+            try {
+                localStorage.setItem('ms_cust', JSON.stringify(customers));
+                localStorage.setItem('ms_entries', JSON.stringify(entries));
+            } catch (error) {
+                console.error('Local save error:', error);
+                alert('फोन में स्टोरेज की जगह कम है। कृपया बैकअप बनाकर कुछ जगह खाली करें।');
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[ch]));
         }
 
         // --- Header File Display Logic ---
@@ -317,14 +333,14 @@
             }
             list.innerHTML = customers.map((c, i) => `
                 <div class="list-item">
-                    <div class="info"><h4>${c}</h4></div>
+                    <div class="info"><h4>${escapeHtml(c)}</h4></div>
                     <div class="delete-icon" onclick="deleteCustomer(${i})"><i class="fa-solid fa-trash"></i></div>
                 </div>
             `).join('');
         }
 
         function populateDropdowns() {
-            const options = customers.map(c => `<option value="${c}">${c}</option>`).join('');
+            const options = customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
             document.getElementById('entry-customer').innerHTML = options || '<option value="">कोई ग्राहक नहीं</option>';
             document.getElementById('bill-customer').innerHTML = `<option value="">-- ग्राहक चुनें --</option>` + options;
         }
@@ -361,7 +377,7 @@
             const sample = parseFloat(document.getElementById('entry-sample').value) || 0;
             const rate = parseFloat(document.getElementById('entry-rate').value);
 
-            if(!cust || !date || isNaN(kg) || isNaN(rate)) return alert('जानकारी पूरी करें');
+            if(!cust || !date || !Number.isFinite(kg) || kg <= 0 || !Number.isFinite(rate) || rate < 0 || !Number.isFinite(sample) || sample < 0) return alert('सही जानकारी भरें। दूध और दर जाँचें।');
 
             entries.push({
                 id: Date.now(), customer: cust, date: date, shift: shift,
@@ -381,7 +397,7 @@
                 await autoSaveToFile(currentFileNumber);
             }
             
-            alert('सेव हो गया! फाइल अपडेट हो गई।');
+            alert('एंट्री ऐप में सेव हो गई। बैकअप फाइल डाउनलोड/सेव करने का प्रयास किया गया है।');
             
             document.getElementById('entry-kg').value = '';
             document.getElementById('entry-sample').value = '';
@@ -401,19 +417,43 @@
             };
             const fileName = `MilkScale_Backup_(${fileNum}).json`;
             
+            const json = JSON.stringify(dataToSave, null, 2);
             try {
-                await Capacitor.Plugins.Filesystem.writeFile({
-                    path: fileName,
-                    data: JSON.stringify(dataToSave),
-                    directory: 'DOCUMENTS',
-                    encoding: 'utf8'
-                });
-                
+                const fs = window.Capacitor?.Plugins?.Filesystem;
+                if (fs?.writeFile) {
+                    await fs.writeFile({
+                        path: fileName,
+                        data: json,
+                        directory: 'DOCUMENTS',
+                        encoding: 'utf8'
+                    });
+                    document.getElementById('backup-filedate').innerText = `अपडेटेड: ${new Date().toLocaleString()}`;
+                    document.getElementById('current-backup-file').style.display = 'block';
+                    document.getElementById('backup-filename').innerText = fileName;
+                    return true;
+                }
+            } catch (e) {
+                console.error('Native file save failed; using download fallback:', e);
+            }
+
+            try {
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
                 document.getElementById('current-backup-file').style.display = 'block';
                 document.getElementById('backup-filename').innerText = fileName;
-                document.getElementById('backup-filedate').innerText = `अपडेटेड: ${new Date().toLocaleString()}`;
-            } catch(e) {
-                console.error('फाइल सेव एरर:', e);
+                document.getElementById('backup-filedate').innerText = `डाउनलोड किया गया: ${new Date().toLocaleString()}`;
+                return true;
+            } catch (e) {
+                console.error('Backup download failed:', e);
+                alert('बैकअप फाइल नहीं बन पाई। कृपया दोबारा कोशिश करें।');
+                return false;
             }
         }
 
@@ -477,8 +517,9 @@
         // --- Bill & Scale Logic (पहले जैसा ही) ---
         function setBillDatesToCurrentMonth() {
             const now = new Date();
-            const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            const toLocalDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const first = toLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
+            const last = toLocalDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
             document.getElementById('bill-start').value = first;
             document.getElementById('bill-end').value = last;
         }
@@ -535,7 +576,8 @@
         function initScaleBoard() {
             const board = document.getElementById('scale-body');
             board.innerHTML = '';
-            const saved = JSON.parse(localStorage.getItem('ms_scale'));
+            let saved = [];
+            try { saved = JSON.parse(localStorage.getItem('ms_scale') || '[]'); } catch (e) { saved = []; }
             if(saved && saved.length > 0) {
                 saved.forEach(s => addScaleRow(s.m, s.s));
             } else {
