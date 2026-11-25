@@ -36,7 +36,6 @@ jobs:
     - name: Sync Web assets
       run: npx cap sync
 
-    # 1. सीधे फाइलों को मॉडिफाई करना
     - name: Force Android Settings
       run: |
         echo "ext {
@@ -56,15 +55,16 @@ jobs:
             cordovaAndroidVersion = '10.1.1'
         }" > android/variables.gradle
 
+        # परमिशन्स जोड़ें
         sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+        sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
+        sed -i '/<application/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
 
-    # 2. असली कीस्टोर बनाना
     - name: Generate Keystore
       run: |
         cd android/app
         keytool -genkeypair -v -keystore release.keystore -alias milkscale -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Milk Scale, OU=App, O=App, L=City, S=State, C=IN"
 
-    # 3. build.gradle में साइनिंग सेटिंग्स डालना
     - name: Inject Signing Config
       run: |
         cd android/app
@@ -82,7 +82,6 @@ jobs:
                 signingConfig signingConfigs.release \
             }' build.gradle
 
-    # 4. पूरी तरह साफ-सफाई करके APK बनाना
     - name: Build Release APK
       run: |
         cd android
@@ -92,5 +91,5 @@ jobs:
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: Milk-Scale-APK-FINAL
+        name: Milk-Scale-APK-Backup
         path: android/app/build/outputs/apk/release/app-release.apk
