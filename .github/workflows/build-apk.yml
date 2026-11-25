@@ -68,20 +68,19 @@ jobs:
           EOF
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
           p = Path("android/app/build.gradle")
           s = p.read_text()
 
-          properties = """def keystoreProperties = new Properties()
+          props = '''def keystoreProperties = new Properties()
           def keystorePropertiesFile = rootProject.file("keystore.properties")
           keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
-          """
+          '''
           if "def keystoreProperties =" not in s:
-              s = properties + s
+              s = props + s
 
-          signing_config = """    signingConfigs {
+          config = """    signingConfigs {
                   release {
                       storeFile file(keystoreProperties['storeFile'])
                       storePassword keystoreProperties['storePassword']
@@ -92,12 +91,14 @@ jobs:
 
           """
           if "signingConfigs {" not in s:
-              s = s.replace("android {", "android {\\n" + signing_config, 1)
+              s = s.replace("android {", "android {\n" + config, 1)
 
-          pattern = r"(buildTypes\\s*\\{\\s*release\\s*\\{)"
-          s, count = re.subn(pattern, r"\\1\\n            signingConfig signingConfigs.release", s, count=1)
-          if count != 1:
+          build_types = s.find("buildTypes {")
+          release_type = s.find("release {", build_types)
+          if build_types < 0 or release_type < 0:
               raise SystemExit("Could not find release build type in android/app/build.gradle")
+          insert_at = release_type + len("release {")
+          s = s[:insert_at] + "\n            signingConfig signingConfigs.release" + s[insert_at:]
           p.write_text(s)
           PY
 
