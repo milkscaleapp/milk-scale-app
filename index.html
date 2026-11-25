@@ -272,6 +272,17 @@
         <!-- Backup icon removed from here, now it's in header -->
     </nav>
 
+    <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+        <div class="app-dialog">
+            <h3 id="dialog-title">Milk Scale</h3>
+            <p id="dialog-message"></p>
+            <div class="dialog-actions">
+                <button class="dialog-cancel" id="dialog-cancel" type="button">Cancel</button>
+                <button class="dialog-ok" id="dialog-ok" type="button">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
 
         let dialogResolver = null;
@@ -495,12 +506,12 @@
         }
 
         // --- Restore Logic ---
-        async async function importBackupFile(event) {
+        async function importBackupFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const content = e.target.result;
                     const savedData = JSON.parse(content);
