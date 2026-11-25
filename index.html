@@ -385,7 +385,7 @@
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
-        // --- Native File Backup System (External Storage) ---
+        // --- Native File Backup System (Pukka Fix) ---
         
         async function saveToDevice() {
             const dataToSave = {
@@ -397,11 +397,10 @@
             const fileData = JSON.stringify(dataToSave);
             
             try {
-                // यहाँ 'EXTERNAL' का इस्तेमाल किया गया है ताकि Clear Data से न मिटे
                 await Capacitor.Plugins.Filesystem.writeFile({
                     path: 'MilkScale_Backup.json',
                     data: fileData,
-                    directory: 'EXTERNAL', // <--- यह सबसे बड़ा बदलाव है
+                    directory: 'EXTERNAL', // फोन के मुख्य स्टोरेज में सेव करेगा
                     encoding: 'utf8'
                 });
                 console.log('फाइल सेव हो गई');
@@ -412,10 +411,9 @@
 
         async function loadFromDevice() {
             try {
-                // यहाँ भी 'EXTERNAL' का इस्तेमाल होगा
                 const file = await Capacitor.Plugins.Filesystem.readFile({
                     path: 'MilkScale_Backup.json',
-                    directory: 'EXTERNAL', // <--- यह सबसे बड़ा बदलाव है
+                    directory: 'EXTERNAL', // फोन के मुख्य स्टोरेज से पढ़ेगा
                     encoding: 'utf8'
                 });
                 
@@ -449,15 +447,18 @@
             setTimeout(() => { status.style.display = 'none'; }, 3000);
         }
 
-        // --- Init App ---
+        // --- Init App (सबसे महत्वपूर्ण हिस्सा) ---
         async function init() {
+            // 1. जब ऐप खुले, सबसे पहले फाइल से डेटा लोड करने की कोशिश करो
             const hasBackup = await loadFromDevice();
             
+            // 2. अगर फाइल नहीं मिली, तो localStorage से डेटा लाओ (बैकअप के तौर पर)
             if(!hasBackup) {
                 customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
                 entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
             }
             
+            // 3. अब स्क्रीन पर सारा डेटा रेंडर करो
             renderCustomers();
             populateDropdowns();
             initScaleBoard();
