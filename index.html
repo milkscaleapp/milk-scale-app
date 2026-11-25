@@ -379,13 +379,15 @@
 
     <script>
         // --- Data Variables ---
-        let customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
-        let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
+        let customers = [];
+        let entries = [];
         
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
         // --- Native File Backup System ---
+        
+        // 1. डेटा को फोन की फाइल में सेव करने का फंक्शन
         async function saveToDevice() {
             const dataToSave = {
                 customers: customers,
@@ -408,6 +410,7 @@
             }
         }
 
+        // 2. फोन की फाइल से डेटा वापस लाने का फंक्शन (सबसे जरूरी फिक्स)
         async function loadFromDevice() {
             try {
                 const file = await Capacitor.Plugins.Filesystem.readFile({
@@ -415,22 +418,32 @@
                     directory: 'DOCUMENTS',
                     encoding: 'utf8'
                 });
+                
                 const savedData = JSON.parse(file.data);
                 
-                if(savedData.customers) customers = savedData.customers;
-                if(savedData.entries) entries = savedData.entries;
-                if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
-                if(savedData.rate) document.getElementById('scale-rate').value = savedData.rate;
-                
-                localStorage.setItem('ms_cust', JSON.stringify(customers));
-                localStorage.setItem('ms_entries', JSON.stringify(entries));
-                
-                return true;
+                // अगर फाइल में डेटा मिला है, तो उसे वापस लोड करें
+                if(savedData) {
+                    customers = savedData.customers || [];
+                    entries = savedData.entries || [];
+                    
+                    if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
+                    if(savedData.rate) localStorage.setItem('ms_rate', savedData.rate);
+                    
+                    // localStorage को भी अपडेट रखें
+                    localStorage.setItem('ms_cust', JSON.stringify(customers));
+                    localStorage.setItem('ms_entries', JSON.stringify(entries));
+                    
+                    console.log('डेटा सफलतापूर्वक फोन से वापस आ गया!');
+                    return true;
+                }
+                return false;
             } catch(e) {
+                console.log('कोई बैकअप फाइल नहीं मिली।', e);
                 return false;
             }
         }
 
+        // मैन्युअल बैकअप बटन
         async function backupData() {
             await saveToDevice();
             const status = document.getElementById('sync-status');
@@ -439,19 +452,30 @@
             setTimeout(() => { status.style.display = 'none'; }, 3000);
         }
 
-        // --- Init App ---
+        // --- Init App (ऐप कैसे शुरू होगा) ---
         async function init() {
+            // 1. सबसे पहले फाइल से डेटा लाएं
             const hasBackup = await loadFromDevice();
-            if(hasBackup) {
-                console.log('पुराना डेटा वापस आ गया!');
+            
+            // 2. अगर फाइल नहीं मिली, तो localStorage से लाएं (बैकअप के तौर पर)
+            if(!hasBackup) {
+                customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
+                entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
             }
             
+            // 3. स्क्रीन को अपडेट करें
             renderCustomers();
             populateDropdowns();
             initScaleBoard();
+            
+            // 4. रेट सेट करें
+            const savedRate = localStorage.getItem('ms_rate');
+            if(savedRate) document.getElementById('scale-rate').value = savedRate;
+            
             loadBill();
         }
 
+        // --- Navigation ---
         function switchTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -459,12 +483,14 @@
             el.classList.add('active');
         }
 
+        // --- Save Data (हर बदलाव पर ऑटोमैटिक बैकअप) ---
         function saveLocal() {
             localStorage.setItem('ms_cust', JSON.stringify(customers));
             localStorage.setItem('ms_entries', JSON.stringify(entries));
-            saveToDevice(); 
+            saveToDevice(); // जैसे ही बदलाव हो, फोन में सेव कर दो
         }
 
+        // --- Customer Logic ---
         function renderCustomers() {
             const list = document.getElementById('cust-list');
             if(customers.length === 0) {
@@ -508,7 +534,7 @@
             }
         }
 
-        // --- FIXED: Entry Save karne par turant update ---
+        // --- Entry Logic ---
         function saveEntry() {
             const cust = document.getElementById('entry-customer').value;
             const date = document.getElementById('entry-date').value;
@@ -524,7 +550,7 @@
                 kg: kg, sample: sample, rate: rate, total: kg * rate
             });
             
-            saveLocal(); // यह लोकल स्टोरेज और फाइल दोनों में सेव करेगा
+            saveLocal(); // डेटा सेव करें
             
             alert('सेव हो गया!');
             
@@ -539,6 +565,7 @@
             }
         }
 
+        // --- Bill Logic ---
         function setBillDatesToCurrentMonth() {
             const now = new Date();
             const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -596,6 +623,7 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
+        // --- Scale Board Logic ---
         function initScaleBoard() {
             const board = document.getElementById('scale-body');
             board.innerHTML = '';
@@ -652,9 +680,11 @@
             document.getElementById('res-total-kg').innerText = finalKg.toFixed(3);
             document.getElementById('res-amount').innerText = '₹' + (finalKg * rate).toFixed(0);
             
+            localStorage.setItem('ms_rate', document.getElementById('scale-rate').value);
             saveToDevice(); 
         }
 
+        // Start App
         window.onload = () => {
             init();
         };
