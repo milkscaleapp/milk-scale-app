@@ -396,7 +396,6 @@
             const fileData = JSON.stringify(dataToSave);
             
             try {
-                // Capacitor Filesystem का उपयोग करके Documents फोल्डर में सेव करना
                 await Capacitor.Plugins.Filesystem.writeFile({
                     path: 'MilkScale_Backup.json',
                     data: fileData,
@@ -440,8 +439,13 @@
             setTimeout(() => { status.style.display = 'none'; }, 3000);
         }
 
+        // --- Init App ---
         async function init() {
-            await loadFromDevice();
+            const hasBackup = await loadFromDevice();
+            if(hasBackup) {
+                console.log('पुराना डेटा वापस आ गया!');
+            }
+            
             renderCustomers();
             populateDropdowns();
             initScaleBoard();
@@ -504,6 +508,7 @@
             }
         }
 
+        // --- FIXED: Entry Save karne par turant update ---
         function saveEntry() {
             const cust = document.getElementById('entry-customer').value;
             const date = document.getElementById('entry-date').value;
@@ -518,11 +523,20 @@
                 id: Date.now(), customer: cust, date: date, shift: shift,
                 kg: kg, sample: sample, rate: rate, total: kg * rate
             });
-            saveLocal();
+            
+            saveLocal(); // यह लोकल स्टोरेज और फाइल दोनों में सेव करेगा
+            
             alert('सेव हो गया!');
+            
+            // फॉर्म खाली करें
             document.getElementById('entry-kg').value = '';
             document.getElementById('entry-sample').value = '';
             document.getElementById('entry-rate').value = '';
+            
+            // अगर बिल टैब में यही ग्राहक चुना है, तो बिल को तुरंत रिफ्रेश करें
+            if(document.getElementById('bill-customer').value === cust) {
+                loadBill();
+            }
         }
 
         function setBillDatesToCurrentMonth() {
