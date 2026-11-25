@@ -385,9 +385,8 @@
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
-        // --- Native File Backup System ---
+        // --- Native File Backup System (Fixed) ---
         
-        // 1. डेटा को फोन की फाइल में सेव करने का फंक्शन
         async function saveToDevice() {
             const dataToSave = {
                 customers: customers,
@@ -398,10 +397,11 @@
             const fileData = JSON.stringify(dataToSave);
             
             try {
+                // यहाँ Directory.Data का इस्तेमाल किया गया है (Documents नहीं)
                 await Capacitor.Plugins.Filesystem.writeFile({
                     path: 'MilkScale_Backup.json',
                     data: fileData,
-                    directory: 'DOCUMENTS',
+                    directory: 'DATA', // <--- यह सबसे बड़ा बदलाव है
                     encoding: 'utf8'
                 });
                 console.log('फाइल सेव हो गई');
@@ -410,18 +410,17 @@
             }
         }
 
-        // 2. फोन की फाइल से डेटा वापस लाने का फंक्शन (सबसे जरूरी फिक्स)
         async function loadFromDevice() {
             try {
+                // यहाँ भी Directory.Data का इस्तेमाल होगा
                 const file = await Capacitor.Plugins.Filesystem.readFile({
                     path: 'MilkScale_Backup.json',
-                    directory: 'DOCUMENTS',
+                    directory: 'DATA', // <--- यह सबसे बड़ा बदलाव है
                     encoding: 'utf8'
                 });
                 
                 const savedData = JSON.parse(file.data);
                 
-                // अगर फाइल में डेटा मिला है, तो उसे वापस लोड करें
                 if(savedData) {
                     customers = savedData.customers || [];
                     entries = savedData.entries || [];
@@ -429,7 +428,6 @@
                     if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
                     if(savedData.rate) localStorage.setItem('ms_rate', savedData.rate);
                     
-                    // localStorage को भी अपडेट रखें
                     localStorage.setItem('ms_cust', JSON.stringify(customers));
                     localStorage.setItem('ms_entries', JSON.stringify(entries));
                     
@@ -443,32 +441,27 @@
             }
         }
 
-        // मैन्युअल बैकअप बटन
         async function backupData() {
             await saveToDevice();
             const status = document.getElementById('sync-status');
             status.style.display = 'block';
-            status.innerText = '✅ डेटा फोन में सुरक्षित हो गया!';
+            status.innerText = '✅ डेटा सुरक्षित हो गया!';
             setTimeout(() => { status.style.display = 'none'; }, 3000);
         }
 
-        // --- Init App (ऐप कैसे शुरू होगा) ---
+        // --- Init App ---
         async function init() {
-            // 1. सबसे पहले फाइल से डेटा लाएं
             const hasBackup = await loadFromDevice();
             
-            // 2. अगर फाइल नहीं मिली, तो localStorage से लाएं (बैकअप के तौर पर)
             if(!hasBackup) {
                 customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
                 entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
             }
             
-            // 3. स्क्रीन को अपडेट करें
             renderCustomers();
             populateDropdowns();
             initScaleBoard();
             
-            // 4. रेट सेट करें
             const savedRate = localStorage.getItem('ms_rate');
             if(savedRate) document.getElementById('scale-rate').value = savedRate;
             
@@ -483,11 +476,10 @@
             el.classList.add('active');
         }
 
-        // --- Save Data (हर बदलाव पर ऑटोमैटिक बैकअप) ---
         function saveLocal() {
             localStorage.setItem('ms_cust', JSON.stringify(customers));
             localStorage.setItem('ms_entries', JSON.stringify(entries));
-            saveToDevice(); // जैसे ही बदलाव हो, फोन में सेव कर दो
+            saveToDevice(); 
         }
 
         // --- Customer Logic ---
@@ -550,16 +542,14 @@
                 kg: kg, sample: sample, rate: rate, total: kg * rate
             });
             
-            saveLocal(); // डेटा सेव करें
+            saveLocal(); 
             
             alert('सेव हो गया!');
             
-            // फॉर्म खाली करें
             document.getElementById('entry-kg').value = '';
             document.getElementById('entry-sample').value = '';
             document.getElementById('entry-rate').value = '';
             
-            // अगर बिल टैब में यही ग्राहक चुना है, तो बिल को तुरंत रिफ्रेश करें
             if(document.getElementById('bill-customer').value === cust) {
                 loadBill();
             }
