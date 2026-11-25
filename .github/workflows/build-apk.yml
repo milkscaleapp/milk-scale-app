@@ -97,7 +97,7 @@ jobs:
 
           """
           if "signingConfigs {" not in s:
-              s = s.replace("android {", "android {\\n" + config, 1)
+              s = s.replace("android {", "android {\n" + config, 1)
 
           build_types = s.find("buildTypes {")
           release_type = s.find("release {", build_types)
@@ -105,7 +105,7 @@ jobs:
               raise SystemExit("Could not find release build type in android/app/build.gradle")
           if "signingConfig signingConfigs.release" not in s:
               insert_at = release_type + len("release {")
-              s = s[:insert_at] + "\\n            signingConfig signingConfigs.release" + s[insert_at:]
+              s = s[:insert_at] + "\n            signingConfig signingConfigs.release" + s[insert_at:]
           p.write_text(s)
           PY
 
