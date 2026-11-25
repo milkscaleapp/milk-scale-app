@@ -10,9 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Capacitor Plugin for Native File System -->
+    <!-- Capacitor Plugins -->
     <script src="capacitor.js"></script> 
     <script src="https://unpkg.com/@capacitor/filesystem@5.0.0/dist/plugin.js"></script>
+    <script src="https://unpkg.com/@capacitor/share@5.0.0/dist/plugin.js"></script>
 
     <style>
         :root {
@@ -51,207 +52,100 @@
             align-items: center;
         }
 
-        .app-header h1 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: -0.5px;
-        }
-
-        .sync-btn {
-            background: var(--primary-light);
-            color: var(--primary);
-            border: none;
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 16px 20px;
-            padding-bottom: calc(80px + env(safe-area-inset-bottom));
-            scroll-behavior: smooth;
-        }
-
+        .app-header h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--primary); }
+        .main-content { flex: 1; overflow-y: auto; padding: 0 16px 20px; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .card {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            background: var(--card); border-radius: 16px; padding: 16px;
+            margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
             border: 1px solid var(--border);
         }
 
+        /* Scale Board */
         .scale-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
         .scale-row input {
-            width: 100%;
-            padding: 12px 8px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            text-align: center;
-            background: var(--bg);
-            color: var(--text);
-            outline: none;
+            width: 100%; padding: 12px 8px; border: 1.5px solid var(--border);
+            border-radius: 10px; font-size: 16px; font-weight: 600;
+            text-align: center; background: var(--bg); color: var(--text); outline: none;
         }
-        .scale-row input:focus { border-color: var(--primary); background: white; }
-        
         .badhotri-box {
-            flex: 1.2;
-            height: 46px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            background: var(--bg);
-            color: var(--text-light);
+            flex: 1.2; height: 46px; display: flex; align-items: center;
+            justify-content: center; border-radius: 10px; font-size: 15px;
+            font-weight: 700; background: var(--bg); color: var(--text-light);
             border: 1.5px solid var(--border);
         }
         .badhotri-box.pos { background: #ecfdf5; color: var(--success); border-color: #a7f3d0; }
         .badhotri-box.neg { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
 
         .add-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            margin-top: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
+            background: var(--primary); color: white; border: none; width: 100%;
+            padding: 12px; border-radius: 12px; font-size: 15px; font-weight: 600;
+            margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;
         }
 
         .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        .result-card {
-            background: var(--card);
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
+        .result-card { background: var(--card); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
         .result-card p { margin: 0; font-size: 12px; color: var(--text-light); font-weight: 600; }
         .result-card h3 { margin: 5px 0 0; font-size: 20px; color: var(--primary); }
 
         .rate-box {
-            background: linear-gradient(135deg, var(--primary), #1d4ed8);
-            color: white;
-            padding: 16px;
-            border-radius: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+            background: linear-gradient(135deg, var(--primary), #1d4ed8); color: white;
+            padding: 16px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
         }
-        .rate-box input {
-            width: 80px;
-            padding: 8px;
-            border-radius: 8px;
-            border: none;
-            text-align: center;
-            font-size: 18px;
-            font-weight: 700;
-            outline: none;
-            color: var(--text);
-        }
+        .rate-box input { width: 80px; padding: 8px; border-radius: 8px; border: none; text-align: center; font-size: 18px; font-weight: 700; }
 
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: calc(65px + env(safe-area-inset-bottom));
-            background: var(--nav-bg);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding-bottom: env(safe-area-inset-bottom);
-            border-top: 1px solid var(--border);
-            z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: calc(65px + env(safe-area-inset-bottom));
+            background: var(--nav-bg); backdrop-filter: blur(10px); display: flex;
+            justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom);
+            border-top: 1px solid var(--border); z-index: 1000;
         }
-
         .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-light);
-            font-size: 11px;
-            font-weight: 600;
-            gap: 4px;
-            cursor: pointer;
-            width: 33%;
-            height: 100%;
-            transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-light); font-size: 11px; font-weight: 600; gap: 4px; cursor: pointer; width: 25%; height: 100%;
         }
         .nav-item i { font-size: 20px; }
         .nav-item.active { color: var(--primary); }
-        .nav-item.active i { transform: translateY(-2px); }
 
         .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
         .form-control {
-            width: 100%;
-            padding: 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 500;
-            background: var(--bg);
-            color: var(--text);
-            outline: none;
-            font-family: inherit;
+            width: 100%; padding: 12px; border: 1.5px solid var(--border);
+            border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); outline: none;
         }
-        .form-control:focus { border-color: var(--primary); background: white; }
         .row { display: flex; gap: 10px; }
-        .row .form-group { flex: 1; }
 
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; font-family: inherit; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-whatsapp { background: #25D366; color: white; margin-top: 10px; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
 
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-        .list-item:last-child { border-bottom: none; }
-        .list-item .info { flex: 1; }
         .list-item .info h4 { margin: 0 0 4px; font-size: 15px; }
         .list-item .info p { margin: 0; font-size: 12px; color: var(--text-light); }
-        .list-item .amount { font-weight: 700; color: var(--primary); font-size: 16px; }
         .delete-icon { color: var(--danger); background: #fef2f2; padding: 8px; border-radius: 8px; cursor: pointer; }
 
-        #sync-status { font-size: 12px; text-align: center; color: var(--success); font-weight: 600; padding: 5px; display: none; }
+        /* Backup File UI */
+        .file-card {
+            display: flex; align-items: center; gap: 12px; background: var(--bg);
+            padding: 12px; border-radius: 10px; border: 1px dashed var(--primary); margin-top: 10px;
+        }
+        .file-icon { font-size: 30px; color: var(--primary); }
+        .file-info { flex: 1; }
+        .file-info h4 { margin: 0; font-size: 14px; word-break: break-all; }
+        .file-info p { margin: 4px 0 0; font-size: 12px; color: var(--text-light); }
+        .file-actions { display: flex; gap: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <header class="app-header">
         <h1>Milk Scale</h1>
-        <button class="sync-btn" onclick="backupData()">
-            <i class="fa-solid fa-shield-halved"></i> सेव करें
-        </button>
     </header>
     
-    <div id="sync-status"></div>
-
     <div class="main-content">
         
         <!-- SCALE TAB -->
@@ -263,20 +157,12 @@
                     <div style="flex:1.2; font-size:11px; text-align:center; color:var(--text-light);">बढ़ोतरी</div>
                 </div>
                 <div id="scale-body"></div>
-                <button class="add-btn" onclick="addScaleRow()">
-                    <i class="fa-solid fa-plus"></i> नई लाइन
-                </button>
+                <button class="add-btn" onclick="addScaleRow()"><i class="fa-solid fa-plus"></i> नई लाइन</button>
             </div>
 
             <div class="result-grid">
-                <div class="result-card">
-                    <p>कुल दूध</p>
-                    <h3 id="res-milk">0.00</h3>
-                </div>
-                <div class="result-card">
-                    <p>कुल बढ़ोतरी</p>
-                    <h3 id="res-badhotri" style="color:var(--success);">0</h3>
-                </div>
+                <div class="result-card"><p>कुल दूध</p><h3 id="res-milk">0.00</h3></div>
+                <div class="result-card"><p>कुल बढ़ोतरी</p><h3 id="res-badhotri" style="color:var(--success);">0</h3></div>
             </div>
 
             <div class="rate-box">
@@ -311,9 +197,7 @@
 
             <div class="card">
                 <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> दूध एंट्री</h3>
-                <div class="form-group">
-                    <select id="entry-customer" class="form-control"></select>
-                </div>
+                <div class="form-group"><select id="entry-customer" class="form-control"></select></div>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -336,26 +220,58 @@
         <div id="tab-bill" class="tab-content">
             <div class="card">
                 <select id="bill-customer" class="form-control" onchange="loadBill()" style="margin-bottom: 12px; font-weight: 700; font-size: 15px;"></select>
-                
                 <div class="row" style="margin-bottom: 10px;">
                     <div class="form-group"><input type="date" id="bill-start" class="form-control" onchange="loadBill()"></div>
                     <div class="form-group"><input type="date" id="bill-end" class="form-control" onchange="loadBill()"></div>
                 </div>
-
                 <div id="bill-data" style="display: none;">
                     <div style="display: flex; justify-content: space-between; background: var(--primary-light); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-                        <div>
-                            <div style="font-size:11px; color:var(--text-light);">कुल दूध</div>
-                            <div style="font-weight:700; font-size: 16px;" id="bill-total-kg">0</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:11px; color:var(--text-light);">कुल राशि</div>
-                            <div style="font-weight:700; font-size: 16px; color:var(--primary);" id="bill-total-amt">₹0</div>
-                        </div>
+                        <div><div style="font-size:11px; color:var(--text-light);">कुल दूध</div><div style="font-weight:700; font-size: 16px;" id="bill-total-kg">0</div></div>
+                        <div style="text-align:right;"><div style="font-size:11px; color:var(--text-light);">कुल राशि</div><div style="font-weight:700; font-size: 16px; color:var(--primary);" id="bill-total-amt">₹0</div></div>
                     </div>
                     <div id="bill-list" style="max-height: 300px; overflow-y: auto;"></div>
                     <button class="btn btn-whatsapp" onclick="shareWhatsApp()"><i class="fa-brands fa-whatsapp"></i> पर्ची भेजें</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- BACKUP TAB (नया सेक्शन) -->
+        <div id="tab-backup" class="tab-content">
+            <div class="card">
+                <h2 style="color: var(--primary); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-cloud-arrow-up"></i> डेटा बैकअप</h2>
+                <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">अपनी सारी एंट्रीज की बैकअप फाइल (JSON) बनाएं और उसे WhatsApp या किसी भी ऐप से भेजें।</p>
+                
+                <button class="btn btn-primary" onclick="createAndShareBackup()" style="margin-bottom: 10px;">
+                    <i class="fa-solid fa-file-export"></i> नई बैकअप फाइल बनाएं
+                </button>
+
+                <!-- यहाँ यूजर को उसकी बनी हुई फाइल दिखेगी -->
+                <div id="current-backup-file" style="display: none;">
+                    <div class="file-card">
+                        <i class="fa-solid fa-file-code file-icon"></i>
+                        <div class="file-info">
+                            <h4 id="backup-filename">MilkScale_Backup.json</h4>
+                            <p id="backup-filedate">बनाई गई: अभी</p>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-success" style="flex:1;" onclick="shareBackupFile()">
+                            <i class="fa-solid fa-share-nodes"></i> भेजें
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="color: var(--success); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-cloud-arrow-down"></i> डेटा रिस्टोर (दोस्त की फाइल लगाएं)</h2>
+                <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">अगर आपके दोस्त ने आपको अपनी बैकअप फाइल (`.json`) भेजी है, तो उसे यहाँ से अपने ऐप में लोड करें।</p>
+                
+                <!-- फाइल इनपुट (छिपा हुआ) -->
+                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importBackupFile(event)">
+                
+                <button class="btn btn-warning" onclick="document.getElementById('fileInput').click()">
+                    <i class="fa-solid fa-folder-open"></i> फाइल चुनें और रिस्टोर करें
+                </button>
             </div>
         </div>
 
@@ -364,107 +280,34 @@
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('scale', this)">
-            <i class="fa-solid fa-calculator"></i>
-            <span>स्केल</span>
+            <i class="fa-solid fa-calculator"></i><span>स्केल</span>
         </div>
         <div class="nav-item" onclick="switchTab('entry', this)">
-            <i class="fa-solid fa-plus-circle"></i>
-            <span>एंट्री</span>
+            <i class="fa-solid fa-plus-circle"></i><span>एंट्री</span>
         </div>
         <div class="nav-item" onclick="switchTab('bill', this)">
-            <i class="fa-solid fa-file-invoice"></i>
-            <span>बिल</span>
+            <i class="fa-solid fa-file-invoice"></i><span>बिल</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('backup', this)">
+            <i class="fa-solid fa-shield-halved"></i><span>बैकअप</span>
         </div>
     </nav>
 
     <script>
         // --- Data Variables ---
-        let customers = [];
-        let entries = [];
+        let customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
+        let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
         
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
-        // --- Native File Backup System (Absolute Path Fix) ---
-        
-        async function saveToDevice() {
-            const dataToSave = {
-                customers: customers,
-                entries: entries,
-                scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
-                rate: document.getElementById('scale-rate').value
-            };
-            const fileData = JSON.stringify(dataToSave);
-            
-            try {
-                await Capacitor.Plugins.Filesystem.writeFile({
-                    path: 'MilkScale_Backup.json',
-                    data: fileData,
-                    directory: 'EXTERNAL_STORAGE', // सीधे फोन की मुख्य स्टोरेज में (Documents)
-                    encoding: 'utf8'
-                });
-                console.log('फाइल सुरक्षित हो गई');
-            } catch(e) {
-                console.log('फाइल सेव नहीं हुई', e);
-            }
-        }
-
-        async function loadFromDevice() {
-            try {
-                // सीधे External Storage से पढ़ें जहाँ Documents फोल्डर होता है
-                const file = await Capacitor.Plugins.Filesystem.readFile({
-                    path: 'MilkScale_Backup.json',
-                    directory: 'EXTERNAL_STORAGE', // यहाँ बदलाव किया गया है
-                    encoding: 'utf8'
-                });
-                
-                const savedData = JSON.parse(file.data);
-                
-                if(savedData) {
-                    customers = savedData.customers || [];
-                    entries = savedData.entries || [];
-                    
-                    if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
-                    if(savedData.rate) localStorage.setItem('ms_rate', savedData.rate);
-                    
-                    localStorage.setItem('ms_cust', JSON.stringify(customers));
-                    localStorage.setItem('ms_entries', JSON.stringify(entries));
-                    
-                    console.log('डेटा सफलतापूर्वक वापस आ गया!');
-                    return true;
-                }
-                return false;
-            } catch(e) {
-                console.log('कोई बैकअप फाइल नहीं मिली।', e);
-                return false;
-            }
-        }
-
-        async function backupData() {
-            await saveToDevice();
-            const status = document.getElementById('sync-status');
-            status.style.display = 'block';
-            status.innerText = '✅ डेटा सुरक्षित हो गया!';
-            setTimeout(() => { status.style.display = 'none'; }, 3000);
-        }
-
-        // --- Init App ---
-        async function init() {
-            const hasBackup = await loadFromDevice();
-            
-            if(!hasBackup) {
-                customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
-                entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
-            }
-            
+        // --- Init ---
+        function init() {
             renderCustomers();
             populateDropdowns();
             initScaleBoard();
-            
-            const savedRate = localStorage.getItem('ms_rate');
-            if(savedRate) document.getElementById('scale-rate').value = savedRate;
-            
             loadBill();
+            checkExistingBackupFile();
         }
 
         // --- Navigation ---
@@ -478,7 +321,6 @@
         function saveLocal() {
             localStorage.setItem('ms_cust', JSON.stringify(customers));
             localStorage.setItem('ms_entries', JSON.stringify(entries));
-            saveToDevice(); 
         }
 
         // --- Customer Logic ---
@@ -542,7 +384,6 @@
             });
             
             saveLocal(); 
-            
             alert('सेव हो गया!');
             
             document.getElementById('entry-kg').value = '';
@@ -670,7 +511,141 @@
             document.getElementById('res-amount').innerText = '₹' + (finalKg * rate).toFixed(0);
             
             localStorage.setItem('ms_rate', document.getElementById('scale-rate').value);
-            saveToDevice(); 
+        }
+
+        // ==========================================
+        // --- BACKUP & RESTORE (JSON EXPORT/IMPORT) ---
+        // ==========================================
+
+        // 1. चेक करें कि पहले से कोई फाइल बनी है या नहीं
+        async function checkExistingBackupFile() {
+            try {
+                const file = await Capacitor.Plugins.Filesystem.readFile({
+                    path: 'MilkScale_Backup.json',
+                    directory: 'DOCUMENTS',
+                    encoding: 'utf8'
+                });
+                // अगर फाइल मिल गई तो उसे UI में दिखाएं
+                if(file) {
+                    document.getElementById('current-backup-file').style.display = 'block';
+                    const fileInfo = await Capacitor.Plugins.Filesystem.stat({
+                        path: 'MilkScale_Backup.json',
+                        directory: 'DOCUMENTS'
+                    });
+                    const date = new Date(fileInfo.mtime).toLocaleString();
+                    document.getElementById('backup-filedate').innerText = `बनाई गई: ${date}`;
+                }
+            } catch(e) {
+                // फाइल नहीं मिली तो UI छिपा रहे
+                document.getElementById('current-backup-file').style.display = 'none';
+            }
+        }
+
+        // 2. नई बैकअप फाइल बनाएं
+        async function createAndShareBackup() {
+            const dataToSave = {
+                customers: customers,
+                entries: entries,
+                scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
+                rate: document.getElementById('scale-rate').value
+            };
+            const fileData = JSON.stringify(dataToSave);
+            const fileName = `MilkScale_Backup_${Date.now()}.json`;
+
+            try {
+                // Documents फोल्डर में सेव करें
+                await Capacitor.Plugins.Filesystem.writeFile({
+                    path: fileName,
+                    data: fileData,
+                    directory: 'DOCUMENTS',
+                    encoding: 'utf8'
+                });
+                
+                // पुरानी फाइल को डिलीट करें (ताकि स्टोरेज न भरे)
+                try {
+                    await Capacitor.Plugins.Filesystem.deleteFile({
+                        path: 'MilkScale_Backup.json',
+                        directory: 'DOCUMENTS'
+                    });
+                } catch(e) {}
+
+                // UI अपडेट करें
+                document.getElementById('current-backup-file').style.display = 'block';
+                document.getElementById('backup-filename').innerText = fileName;
+                document.getElementById('backup-filedate').innerText = `बनाई गई: ${new Date().toLocaleString()}`;
+                
+                alert('बैकअप फाइल सफलतापूर्वक बन गई! अब आप इसे भेज सकते हैं।');
+            } catch(e) {
+                console.error(e);
+                alert('फाइल बनाने में एरर आई।');
+            }
+        }
+
+        // 3. बैकअप फाइल को WhatsApp/Share करें
+        async function shareBackupFile() {
+            try {
+                const fileName = document.getElementById('backup-filename').innerText;
+                
+                // फाइल का पूरा रास्ता (URI) निकालें
+                const fileUri = await Capacitor.Plugins.Filesystem.getUri({
+                    path: fileName,
+                    directory: 'DOCUMENTS'
+                });
+
+                // Capacitor Share का इस्तेमाल करके फाइल भेजें
+                await Capacitor.Plugins.Share.share({
+                    title: 'Milk Scale Backup',
+                    text: 'यह मेरी मिल्क स्केल ऐप की बैकअप फाइल है।',
+                    url: fileUri.uri,
+                    dialogTitle: 'बैकअप फाइल भेजें'
+                });
+            } catch(e) {
+                console.error(e);
+                alert('शेयर करने में एरर आई: ' + e.message);
+            }
+        }
+
+        // 4. दूसरे की बैकअप फाइल (JSON) इंपोर्ट करें
+        function importBackupFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const savedData = JSON.parse(content);
+
+                    // डेटा चेक करें कि सही है या नहीं
+                    if(savedData.customers && savedData.entries) {
+                        if(confirm('क्या आप वाकई इस फाइल का डेटा अपने ऐप में लोड करना चाहते हैं? आपका वर्तमान डेटा बदल जाएगा।')) {
+                            customers = savedData.customers;
+                            entries = savedData.entries;
+                            
+                            if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
+                            if(savedData.rate) document.getElementById('scale-rate').value = savedData.rate;
+                            
+                            saveLocal();
+                            
+                            // UI को अपडेट करें
+                            renderCustomers();
+                            populateDropdowns();
+                            initScaleBoard(); // स्केल बोर्ड रीलोड करें
+                            loadBill();
+                            
+                            alert('डेटा सफलतापूर्वक रिस्टोर हो गया!');
+                            switchTab('scale', document.querySelector('.nav-item')); // स्केल टैब पर भेजें
+                        }
+                    } else {
+                        alert('यह सही बैकअप फाइल नहीं है!');
+                    }
+                } catch(err) {
+                    alert('फाइल पढ़ने में एरर आई। कृपया सही .json फाइल चुनें।');
+                }
+            };
+            reader.readAsText(file);
+            // इनपुट को रीसेट करें ताकि वही फाइल दोबारा चुनी जा सके
+            event.target.value = ''; 
         }
 
         // Start App
