@@ -1,14 +1,17 @@
 {
   "name": "milk-scale-app",
-  "version": "1.0.0",
-  "description": "Milk Scale Web App to APK",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Milk Scale Android app",
   "scripts": {
-    "build": "echo 'No build step needed'"
+    "build": "node -e \"require('fs').mkdirSync('www',{recursive:true}); require('fs').copyFileSync('index.html','www/index.html')\""
   },
   "dependencies": {
-    "@capacitor/android": "^5.0.0",
-    "@capacitor/cli": "^5.0.0",
-    "@capacitor/core": "^5.0.0",
-    "@capacitor/filesystem": "^5.0.0"
+    "@capacitor/android": "5.7.8",
+    "@capacitor/core": "5.7.8",
+    "@capacitor/filesystem": "5.7.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "5.7.8"
   }
 }
