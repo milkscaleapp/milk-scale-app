@@ -2,924 +2,745 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title data-key="app_title">Milk Scale App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Milk Scale</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Google API for Login -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <style>
         :root {
-            --primary-color: #007bff;
-            --primary-hover: #0056b3;
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --text-muted: #6c757d;
-            --border-color: #e0e0e0;
-            --success-bg: #e8f5e9;
-            --success-text: #2e7d32;
-            --danger-bg: #ffebee;
-            --danger-text: #c62828;
-            --warning-color: #ff9800;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --nav-bg: rgba(255, 255, 255, 0.95);
         }
 
-        body.dark-mode {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --border-color: #333333;
-            --success-bg: #1b3820;
-            --success-text: #81c784;
-            --danger-bg: #3c1e1e;
-            --danger-text: #e57373;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: 'Noto Sans Devanagari', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
-            padding: 12px 0 30px 0;
-            min-height: 100vh;
-            box-sizing: border-box;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .tab-nav {
+            padding: 0;
+            height: 100vh;
             display: flex;
-            justify-content: center;
-            background: var(--card-bg);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            max-width: 480px;
-            margin: 0 auto 15px auto;
-            border-radius: 10px;
+            flex-direction: column;
+            overflow: hidden;
+            /* Status bar space */
+            padding-top: env(safe-area-inset-top);
         }
 
-        .tab-btn {
-            flex: 1;
-            padding: 12px 5px;
-            border: none;
-            background: none;
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-family: inherit;
-        }
-
-        .tab-btn.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-            background: rgba(0, 123, 255, 0.05);
-        }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .container {
-            width: 100%;
-            max-width: 480px;
-            background-color: var(--card-bg);
-            padding: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border-radius: 16px;
-            box-sizing: border-box;
-            margin: 0 auto;
-        }
-
+        /* Header - No Black Bar */
         .app-header {
+            padding: 15px 20px 10px;
+            background: var(--bg);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border-color);
         }
 
         .app-header h1 {
             margin: 0;
-            font-size: 20px;
-            color: var(--primary-color);
+            font-size: 22px;
             font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
         }
 
-        .header-buttons {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .clear-button {
-            background-color: var(--warning-color);
-            color: white;
-            font-weight: 600;
+        /* Google Sync Button */
+        .sync-btn {
+            background: var(--primary-light);
+            color: var(--primary);
             border: none;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .main-page-settings-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            background-color: rgba(255, 152, 0, 0.08);
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 152, 0, 0.3);
-        }
-
-        .delete-lines-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        .delete-lines-section-label {
-            font-size: 13px;
             font-weight: 600;
-        }
-
-        .delete-controls {
+            font-size: 13px;
             display: flex;
             align-items: center;
             gap: 6px;
-        }
-
-        .delete-serial-input {
-            width: 44px;
-            text-align: center;
-            border: 1px solid var(--border-color);
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            font-size: 14px;
-            font-weight: 600;
-            height: 32px;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-
-        .delete-lines-btn {
-            background-color: #dc3545;
-            color: white;
-            font-weight: 600;
-            border: none;
-            padding: 0 10px;
-            border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
-            height: 32px;
-            font-family: inherit;
+            transition: 0.2s;
         }
 
-        .header-row {
-            display: flex;
-            background-color: var(--primary-color);
+        .sync-btn.logged-in {
+            background: var(--success);
             color: white;
-            padding: 8px 4px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 13px;
-            text-align: center;
         }
 
-        #table-body {
-            max-height: 360px;
-            overflow-y: auto;
-            margin-bottom: 8px;
-        }
-
-        .input-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 6px;
-            gap: 4px;
-        }
-
-        .cell { text-align: center; box-sizing: border-box; }
-        .cell:nth-child(1) { flex: 0 0 10%; font-size: 12px; font-weight: 600; color: var(--text-muted); }
-        .cell:nth-child(2) { flex: 0 0 28%; }
-        .cell:nth-child(3) { flex: 0 0 28%; }
-        .cell:nth-child(4) { flex: 0 0 34%; max-width: 34%; overflow: hidden; }
-
-        .input-row input {
-            width: 100%;
-            padding: 6px 4px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            text-align: center;
-            font-size: 15px;
-            font-weight: 600;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            box-sizing: border-box;
-            font-family: inherit;
-            outline: none;
-        }
-
-        .badhotri-box {
-            width: 100%;
-            height: 33px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 700;
-            border: 1px solid var(--border-color);
-            box-sizing: border-box;
-            background-color: var(--bg-color);
-            color: var(--text-muted);
-            cursor: pointer;
-        }
-
-        .badhotri-box.positive { background-color: var(--success-bg); color: var(--success-text); }
-        .badhotri-box.negative { background-color: var(--danger-bg); color: var(--danger-text); }
-
-        .add-line-row { display: flex; justify-content: center; margin: 8px 0 12px 0; }
-        .add-line-button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .results-section { display: flex; gap: 10px; margin-bottom: 10px; }
-        .result-card {
+        /* Main Scroll Area */
+        .main-content {
             flex: 1;
-            padding: 10px;
-            border-radius: 10px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            text-align: center;
+            overflow-y: auto;
+            padding: 0 16px 20px;
+            /* Space for bottom nav */
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            scroll-behavior: smooth;
         }
 
-        .result-card p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; }
-        .result-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
-        .big-blue-text { color: var(--primary-color); }
-        .big-green-text { color: var(--success-text); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .total-combined {
-            background-color: var(--success-bg);
-            color: var(--success-text);
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 700;
-            text-align: center;
-            border: 1px solid rgba(46, 125, 50, 0.3);
+        /* Cards */
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
             margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
         }
 
-        .rate-section {
-            background-color: var(--bg-color);
-            padding: 12px;
+        /* --- Scale Board --- */
+        .scale-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .scale-row input {
+            width: 100%;
+            padding: 12px 8px;
+            border: 1.5px solid var(--border);
             border-radius: 10px;
-            border: 1px solid var(--border-color);
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: 0.2s;
         }
-
-        .rate-calculation {
+        .scale-row input:focus { border-color: var(--primary); background: white; }
+        
+        .badhotri-box {
+            flex: 1.2;
+            height: 46px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            background: var(--bg);
+            color: var(--text-light);
+            border: 1.5px solid var(--border);
+        }
+        .badhotri-box.pos { background: #ecfdf5; color: var(--success); border-color: #a7f3d0; }
+        .badhotri-box.neg { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
             font-size: 15px;
             font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        #rate-per-kg {
-            width: 70px;
-            padding: 6px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            text-align: center;
-            font-size: 15px;
-            font-weight: 700;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            font-family: inherit;
-        }
-
-        .total-amount-box {
-            background: linear-gradient(135deg, var(--primary-color), #0056b3);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
-        .form-control {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1.5px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 1rem;
-            box-sizing: border-box;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            font-family: inherit;
-        }
-
-        .form-row { display: flex; gap: 10px; }
-        .form-row .form-group { flex: 1; }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.05rem;
-            font-weight: 700;
-            cursor: pointer;
+            margin-top: 10px;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             gap: 8px;
-            margin-top: 5px;
-            font-family: inherit;
         }
 
-        .btn-primary { background: var(--primary-color); color: white; }
-        .btn-whatsapp { background: #25D366; color: white; margin-top: 10px; }
-        .btn-danger { background: #dc3545; color: white; padding: 6px 10px; font-size: 14px; width: auto; margin: 0; }
-
-        .entry-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .customer-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 10px;
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 5px;
-        }
-
-        .owner-card {
-            background: var(--success-bg);
-            margin: 20px auto;
-            padding: 15px;
+        /* Result Section */
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .result-card {
+            background: var(--card);
+            padding: 12px;
             border-radius: 12px;
             text-align: center;
-            border: 1px solid rgba(46, 125, 50, 0.3);
-            max-width: 480px;
+            border: 1px solid var(--border);
+        }
+        .result-card p { margin: 0; font-size: 12px; color: var(--text-light); font-weight: 600; }
+        .result-card h3 { margin: 5px 0 0; font-size: 20px; color: var(--primary); }
+
+        .rate-box {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+        }
+        .rate-box input {
+            width: 80px;
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            outline: none;
+            color: var(--text);
         }
 
-        footer { text-align: center; padding: 10px; font-size: 0.85rem; color: var(--text-muted); }
-        
-        .dark-toggle {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 20px;
-            cursor: pointer;
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: calc(65px + env(safe-area-inset-bottom));
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
+            border-top: 1px solid var(--border);
+            z-index: 1000;
         }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-size: 11px;
+            font-weight: 600;
+            gap: 4px;
+            cursor: pointer;
+            width: 33%;
+            height: 100%;
+            transition: 0.2s;
+        }
+        .nav-item i { font-size: 20px; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-2px); }
+
+        /* Forms & Lists */
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            font-family: inherit;
+        }
+        .form-control:focus { border-color: var(--primary); background: white; }
+        .row { display: flex; gap: 10px; }
+        .row .form-group { flex: 1; }
+
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-whatsapp { background: #25D366; color: white; margin-top: 10px; }
+
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .list-item:last-child { border-bottom: none; }
+        .list-item .info { flex: 1; }
+        .list-item .info h4 { margin: 0 0 4px; font-size: 15px; }
+        .list-item .info p { margin: 0; font-size: 12px; color: var(--text-light); }
+        .list-item .amount { font-weight: 700; color: var(--primary); font-size: 16px; }
+        .delete-icon { color: var(--danger); background: #fef2f2; padding: 8px; border-radius: 8px; cursor: pointer; }
+
+        #drive-status { font-size: 11px; text-align: center; color: var(--text-light); margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="tab-nav">
-        <button class="tab-btn active" onclick="switchTab('scale')">
-            <i class="fa-solid fa-calculator"></i> स्केल बोर्ड
+    <!-- Header -->
+    <header class="app-header">
+        <h1>Milk Scale</h1>
+        <button class="sync-btn" id="btnGoogleLogin" onclick="handleAuthClick()">
+            <i class="fa-brands fa-google"></i> Sync
         </button>
-        <button class="tab-btn" onclick="switchTab('entry')">
-            <i class="fa-solid fa-pen-to-square"></i> दूध एंट्री
-        </button>
-        <button class="tab-btn" onclick="switchTab('bill')">
-            <i class="fa-solid fa-file-invoice"></i> बिल व पर्ची
-        </button>
-    </div>
+    </header>
+    
+    <div id="drive-status"></div>
 
-    <!-- Scale Tab -->
-    <div id="scale" class="tab-content active">
-        <div class="container">
-            <header class="app-header">
-                <h1>Milk Scale App</h1> 
-                <div class="header-buttons">
-                    <button class="dark-toggle" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
-                    <button class="clear-button" id="clear-all-btn">Clear</button>
+    <!-- Main Content Area -->
+    <div class="main-content">
+        
+        <!-- SCALE TAB -->
+        <div id="tab-scale" class="tab-content active">
+            <div class="card" style="padding: 12px;">
+                <div class="scale-row" style="margin-bottom: 4px; padding: 0 4px;">
+                    <div style="flex:1; font-size:11px; text-align:center; color:var(--text-light);">दूध (Kg)</div>
+                    <div style="flex:1; font-size:11px; text-align:center; color:var(--text-light);">सैंपल</div>
+                    <div style="flex:1.2; font-size:11px; text-align:center; color:var(--text-light);">बढ़ोतरी</div>
                 </div>
-            </header>
-            
-            <div class="main-page-settings-row">
-                <div class="delete-lines-container">
-                    <span class="delete-lines-section-label">पंक्ति हटाएँ:</span>
-                    <div class="delete-controls"> 
-                        <input type="text" inputmode="numeric" id="delete-start-serial" placeholder="शुरू" class="delete-serial-input">
-                        <span>से</span>
-                        <input type="text" inputmode="numeric" id="delete-end-serial" placeholder="अंत" class="delete-serial-input">
-                        <button class="delete-lines-btn" id="delete-lines-btn-main">हटाएँ</button>
-                    </div>
-                </div>
+                <div id="scale-body"></div>
+                <button class="add-btn" onclick="addScaleRow()">
+                    <i class="fa-solid fa-plus"></i> नई लाइन
+                </button>
             </div>
 
-            <div class="header-row">
-                <div style="flex: 0 0 10%;">Sr.</div> 
-                <div style="flex: 0 0 28%;">दूध (Kg)</div>
-                <div style="flex: 0 0 28%;">सैंपल</div>
-                <div style="flex: 0 0 34%;">बढ़ोतरी (Gm)</div>
-            </div>
-
-            <div id="table-body"></div>
-                
-            <div class="add-line-row"> 
-                <button class="add-line-button" id="add-line-btn">+</button>
-            </div>
-
-            <div class="results-section">
+            <div class="result-grid">
                 <div class="result-card">
                     <p>कुल दूध</p>
-                    <div class="result-value big-blue-text" id="total-milk-kg">0 Kg</div>
+                    <h3 id="res-milk">0.00</h3>
                 </div>
                 <div class="result-card">
                     <p>कुल बढ़ोतरी</p>
-                    <div class="result-value big-green-text" id="total-badhotri-gm">0 Gm</div>
+                    <h3 id="res-badhotri" style="color:var(--success);">0</h3>
                 </div>
             </div>
 
-            <div class="total-combined">
-                <span>दूध + बढ़ोतरी = </span>
-                <span id="combined-total-value">0 Kg</span>
-            </div>
-
-            <div class="rate-section">
-                <div class="rate-calculation">
-                    <span id="quantity-for-rate">(0)</span> 
-                    <span>×</span>
-                    <input type="text" inputmode="decimal" id="rate-per-kg" placeholder="दर">
-                    <span>=</span>
+            <div class="rate-box">
+                <div>
+                    <div style="font-size:11px; opacity:0.8;">वजन (Kg)</div>
+                    <div style="font-size:18px; font-weight:700;" id="res-total-kg">0.00</div>
                 </div>
-                <div class="total-amount-box">
-                    <span>₹</span><span id="final-price">0</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px; opacity:0.8;">×</span>
+                    <input type="number" id="scale-rate" placeholder="दर" oninput="calculateScale()">
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:11px; opacity:0.8;">कुल राशि</div>
+                    <div style="font-size:20px; font-weight:700;" id="res-amount">₹0</div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Entry Tab -->
-    <div id="entry" class="tab-content">
-        <div class="container">
-            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-user-plus"></i> ग्राहक जोड़ें / प्रबंधित करें</h2>
-            <div class="form-row" style="margin-bottom: 10px;">
-                <div class="form-group" style="flex: 2; margin-bottom: 0;">
-                    <input type="text" id="custName" class="form-control" placeholder="ग्राहक का नाम">
+        <!-- ENTRY TAB -->
+        <div id="tab-entry" class="tab-content">
+            <div class="card">
+                <div class="row">
+                    <div class="form-group" style="flex:2; margin-bottom:0;">
+                        <input type="text" id="new-cust-name" class="form-control" placeholder="नया ग्राहक नाम">
+                    </div>
+                    <div class="form-group" style="flex:1; margin-bottom:0;">
+                        <button class="btn btn-primary" onclick="addCustomer()" style="padding: 12px;"><i class="fa-solid fa-plus"></i></button>
+                    </div>
                 </div>
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <button class="btn btn-primary" onclick="addCustomer()" style="padding: 10px;"><i class="fa-solid fa-plus"></i> जोड़ें</button>
-                </div>
-            </div>
-            
-            <div id="customerList" style="max-height: 150px; overflow-y: auto; margin-bottom: 20px;">
-                <!-- Customer List will appear here -->
+                <div id="cust-list" style="max-height: 150px; overflow-y: auto; margin-top: 10px;"></div>
             </div>
 
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
-
-            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-plus-circle"></i> नई दूध एंट्री</h2>
-            <div class="form-group">
-                <label>ग्राहक चुनें:</label>
-                <select id="entryCustomer" class="form-control"></select>
-            </div>
-            <div class="form-row">
+            <div class="card">
+                <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> दूध एंट्री</h3>
                 <div class="form-group">
-                    <label>दिनांक:</label>
-                    <input type="date" id="entryDate" class="form-control">
+                    <select id="entry-customer" class="form-control"></select>
                 </div>
-                <div class="form-group">
-                    <label>समय:</label>
-                    <select id="entryShift" class="form-control">
-                        <option value="सुबह">सुबह</option>
-                        <option value="शाम">शाम</option>
-                    </select>
+                <div class="row">
+                    <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
+                    <div class="form-group">
+                        <select id="entry-shift" class="form-control">
+                            <option value="सुबह">सुबह</option>
+                            <option value="शाम">शाम</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>दूध (Kg):</label>
-                    <input type="number" id="entryLitre" class="form-control" placeholder="मात्रा" step="0.1">
+                <div class="row">
+                    <div class="form-group"><input type="number" id="entry-kg" class="form-control" placeholder="दूध Kg" step="0.1"></div>
+                    <div class="form-group"><input type="number" id="entry-sample" class="form-control" placeholder="सैंपल" step="0.1"></div>
                 </div>
-                <div class="form-group">
-                    <label>सैंपल / फैट:</label>
-                    <input type="number" id="entryFat" class="form-control" placeholder="सैंपल" step="0.1">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>रेट (₹ प्रति Kg):</label>
-                <input type="number" id="entryRate" class="form-control" placeholder="रेट" step="0.5">
-            </div>
-            <button class="btn btn-primary" onclick="saveMilkEntry()"><i class="fa-solid fa-floppy-disk"></i> सेव करें</button>
-        </div>
-    </div>
-
-    <!-- Bill Tab -->
-    <div id="bill" class="tab-content">
-        <div class="container">
-            <h2 style="color: var(--primary-color); font-size: 1.2rem;"><i class="fa-solid fa-receipt"></i> ग्राहक का बही-खाता</h2>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>ग्राहक चुनें:</label>
-                    <select id="billCustomer" class="form-control" onchange="loadCustomerBill()"></select>
-                </div>
-            </div>
-            <div class="form-row" style="margin-bottom: 15px; background: var(--bg-color); padding: 10px; border-radius: 8px;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>कब से (From):</label>
-                    <input type="date" id="billStartDate" class="form-control" onchange="loadCustomerBill()">
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>कब तक (To):</label>
-                    <input type="date" id="billEndDate" class="form-control" onchange="loadCustomerBill()">
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="setCurrentMonth()" style="margin-bottom: 15px; background: var(--text-muted);"><i class="fa-solid fa-calendar"></i> इस महीने का हिसाब देखें</button>
-
-            <div id="billSummary" style="display: none;">
-                <div class="total-combined" style="margin: 15px 0;">
-                    <div>कुल दूध: <strong id="billTotalLitre">0</strong> Kg</div>
-                    <div style="font-size: 1.4rem; margin-top: 5px;">कुल बकाया: ₹<span id="billTotalAmount">0.00</span></div>
-                </div>
-
-                <div id="billEntriesList" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
-
-                <button class="btn btn-whatsapp" onclick="sendWhatsAppBill()">
-                    <i class="fa-brands fa-whatsapp"></i> व्हाट्सएप पर पूरी पर्ची भेजें
-                </button>
+                <div class="form-group"><input type="number" id="entry-rate" class="form-control" placeholder="दर (₹)" step="0.5"></div>
+                <button class="btn btn-primary" onclick="saveEntry()"><i class="fa-solid fa-check"></i> सेव करें</button>
             </div>
         </div>
+
+        <!-- BILL TAB -->
+        <div id="tab-bill" class="tab-content">
+            <div class="card">
+                <select id="bill-customer" class="form-control" onchange="loadBill()" style="margin-bottom: 12px; font-weight: 700; font-size: 15px;"></select>
+                
+                <div class="row" style="margin-bottom: 10px;">
+                    <div class="form-group"><input type="date" id="bill-start" class="form-control" onchange="loadBill()"></div>
+                    <div class="form-group"><input type="date" id="bill-end" class="form-control" onchange="loadBill()"></div>
+                </div>
+
+                <div id="bill-data" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; background: var(--primary-light); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-size:11px; color:var(--text-light);">कुल दूध</div>
+                            <div style="font-weight:700; font-size: 16px;" id="bill-total-kg">0</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px; color:var(--text-light);">कुल राशि</div>
+                            <div style="font-weight:700; font-size: 16px; color:var(--primary);" id="bill-total-amt">₹0</div>
+                        </div>
+                    </div>
+                    <div id="bill-list" style="max-height: 300px; overflow-y: auto;"></div>
+                    <button class="btn btn-whatsapp" onclick="shareWhatsApp()"><i class="fa-brands fa-whatsapp"></i> पर्ची भेजें</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <div class="owner-card">
-        <h3 style="margin: 0 0 5px 0;">ऐप निर्माता: नकुल कुमार</h3>
-        <p style="font-size: 0.9rem; margin: 0;">पशुपालक और डेयरी भाइयों के लिए 100% नि:शुल्क डिजिटल सेवा।</p>
-    </div>
-
-    <footer>
-        <p>© 2026 Milk Scale App. सर्वाधिकार सुरक्षित।</p>
-    </footer>
+    <!-- Bottom Navigation (Real App Style) -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('scale', this)">
+            <i class="fa-solid fa-calculator"></i>
+            <span>स्केल</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('entry', this)">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>एंट्री</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('bill', this)">
+            <i class="fa-solid fa-file-invoice"></i>
+            <span>बिल</span>
+        </div>
+    </nav>
 
     <script>
-        // Dark Mode Logic
-        if (localStorage.getItem('ms_theme') === 'dark' || (!('ms_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.body.classList.add('dark-mode');
-        }
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('ms_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        // State Variables
-        let customers = JSON.parse(localStorage.getItem('ms_customers')) || ["रामपाल सिंह", "सुरेश शर्मा"];
+        // --- Data Variables ---
+        let customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
         let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
         
-        // Default date to today
-        document.getElementById('entryDate').valueAsDate = new Date();
+        // Set today's date
+        document.getElementById('entry-date').valueAsDate = new Date();
+        setBillDatesToCurrentMonth();
 
-        function saveData() {
-            localStorage.setItem('ms_customers', JSON.stringify(customers));
+        // --- Init ---
+        function init() {
+            renderCustomers();
+            populateDropdowns();
+            initScaleBoard();
+            loadBill();
+        }
+
+        // --- Navigation ---
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            el.classList.add('active');
+        }
+
+        // --- Save Data ---
+        function saveLocal() {
+            localStorage.setItem('ms_cust', JSON.stringify(customers));
             localStorage.setItem('ms_entries', JSON.stringify(entries));
         }
 
-        function populateCustomerDropdowns() {
-            const entrySelect = document.getElementById('entryCustomer');
-            const billSelect = document.getElementById('billCustomer');
-            if(!entrySelect || !billSelect) return;
-
-            const currentEntryVal = entrySelect.value;
-            const currentBillVal = billSelect.value;
-
-            entrySelect.innerHTML = '<option value="">-- ग्राहक चुनें --</option>';
-            billSelect.innerHTML = '<option value="">-- ग्राहक चुनें --</option>';
-
-            customers.forEach(cust => {
-                entrySelect.innerHTML += `<option value="${cust}">${cust}</option>`;
-                billSelect.innerHTML += `<option value="${cust}">${cust}</option>`;
-            });
-
-            if(customers.includes(currentEntryVal)) entrySelect.value = currentEntryVal;
-            if(customers.includes(currentBillVal)) billSelect.value = currentBillVal;
-            
-            renderCustomerList();
-        }
-
-        function renderCustomerList() {
-            const listDiv = document.getElementById('customerList');
-            listDiv.innerHTML = '';
-            if (customers.length === 0) {
-                listDiv.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px;">कोई ग्राहक नहीं है</p>';
+        // --- Customer Logic ---
+        function renderCustomers() {
+            const list = document.getElementById('cust-list');
+            if(customers.length === 0) {
+                list.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-light);">कोई ग्राहक नहीं</p>';
                 return;
             }
-            customers.forEach((cust, index) => {
-                listDiv.innerHTML += `
-                    <div class="customer-list-item">
-                        <span><i class="fa-solid fa-user" style="color:var(--primary-color); margin-right:5px;"></i> ${cust}</span>
-                        <button class="btn btn-danger" onclick="deleteCustomer(${index})"><i class="fa-solid fa-trash"></i></button>
-                    </div>`;
-            });
+            list.innerHTML = customers.map((c, i) => `
+                <div class="list-item">
+                    <div class="info"><h4>${c}</h4></div>
+                    <div class="delete-icon" onclick="deleteCustomer(${i})"><i class="fa-solid fa-trash"></i></div>
+                </div>
+            `).join('');
+        }
+
+        function populateDropdowns() {
+            const options = customers.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('entry-customer').innerHTML = options || '<option value="">कोई ग्राहक नहीं</option>';
+            document.getElementById('bill-customer').innerHTML = `<option value="">-- ग्राहक चुनें --</option>` + options;
         }
 
         function addCustomer() {
-            const name = document.getElementById('custName').value.trim();
-            if (!name) return alert('कृपया नाम दर्ज करें!');
-            if (!customers.includes(name)) {
+            const name = document.getElementById('new-cust-name').value.trim();
+            if(!name) return;
+            if(!customers.includes(name)) {
                 customers.push(name);
-                saveData();
-                populateCustomerDropdowns();
-                document.getElementById('custName').value = '';
-            } else {
-                alert('यह ग्राहक पहले से मौजूद है!');
+                saveLocal();
+                renderCustomers();
+                populateDropdowns();
+                document.getElementById('new-cust-name').value = '';
             }
         }
 
         function deleteCustomer(index) {
-            if(confirm('क्या आप वाकई इस ग्राहक को डिलीट करना चाहते हैं? इसका पुराना हिसाब भी मिट जाएगा।')) {
-                const custName = customers[index];
+            if(confirm('ग्राहक और उसका हिसाब डिलीट करें?')) {
+                const name = customers[index];
                 customers.splice(index, 1);
-                entries = entries.filter(e => e.customer !== custName);
-                saveData();
-                populateCustomerDropdowns();
-                loadCustomerBill();
+                entries = entries.filter(e => e.customer !== name);
+                saveLocal();
+                renderCustomers();
+                populateDropdowns();
             }
         }
 
-        function saveMilkEntry() {
-            const cust = document.getElementById('entryCustomer').value;
-            const dateRaw = document.getElementById('entryDate').value;
-            const shift = document.getElementById('entryShift').value;
-            const litre = parseFloat(document.getElementById('entryLitre').value);
-            const fat = parseFloat(document.getElementById('entryFat').value) || 0;
-            const rate = parseFloat(document.getElementById('entryRate').value);
+        // --- Entry Logic ---
+        function saveEntry() {
+            const cust = document.getElementById('entry-customer').value;
+            const date = document.getElementById('entry-date').value;
+            const shift = document.getElementById('entry-shift').value;
+            const kg = parseFloat(document.getElementById('entry-kg').value);
+            const sample = parseFloat(document.getElementById('entry-sample').value) || 0;
+            const rate = parseFloat(document.getElementById('entry-rate').value);
 
-            if (!cust || !dateRaw || isNaN(litre) || isNaN(rate)) return alert('कृपया सारी जानकारी सही से भरें!');
+            if(!cust || !date || isNaN(kg) || isNaN(rate)) return alert('जानकारी पूरी करें');
 
-            // Format date to DD/MM/YYYY for display
-            const dateParts = dateRaw.split('-');
-            const dateStr = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-
-            const newEntry = {
-                id: Date.now(), 
-                customer: cust, 
-                dateRaw: dateRaw, // For filtering
-                dateStr: dateStr, // For display
-                shift: shift, 
-                litre: litre, 
-                fat: fat, 
-                rate: rate, 
-                total: litre * rate
-            };
-
-            entries.push(newEntry);
-            saveData();
-            alert('एंट्री सेव हो गई!');
-            document.getElementById('entryLitre').value = '';
-            document.getElementById('entryFat').value = '';
-            
-            // If bill tab is open for this customer, refresh it
-            if(document.getElementById('billCustomer').value === cust) {
-                loadCustomerBill();
-            }
+            entries.push({
+                id: Date.now(), customer: cust, date: date, shift: shift,
+                kg: kg, sample: sample, rate: rate, total: kg * rate
+            });
+            saveLocal();
+            alert('सेव हो गया!');
+            document.getElementById('entry-kg').value = '';
+            document.getElementById('entry-sample').value = '';
+            document.getElementById('entry-rate').value = '';
         }
 
-        function setCurrentMonth() {
+        // --- Bill Logic ---
+        function setBillDatesToCurrentMonth() {
             const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            
-            document.getElementById('billStartDate').valueAsDate = firstDay;
-            document.getElementById('billEndDate').valueAsDate = lastDay;
-            loadCustomerBill();
+            const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            document.getElementById('bill-start').value = first;
+            document.getElementById('bill-end').value = last;
         }
 
-        function loadCustomerBill() {
-            const cust = document.getElementById('billCustomer').value;
-            const startDateVal = document.getElementById('billStartDate').value;
-            const endDateVal = document.getElementById('billEndDate').value;
+        function loadBill() {
+            const cust = document.getElementById('bill-customer').value;
+            const start = document.getElementById('bill-start').value;
+            const end = document.getElementById('bill-end').value;
+            const dataDiv = document.getElementById('bill-data');
             
-            const billSummary = document.getElementById('billSummary');
-            const entriesList = document.getElementById('billEntriesList');
-            
-            if (!cust) { billSummary.style.display = 'none'; return; }
+            if(!cust) { dataDiv.style.display = 'none'; return; }
 
-            let custEntries = entries.filter(e => e.customer === cust);
-            
-            // Date Filter Logic
-            if(startDateVal && endDateVal) {
-                custEntries = custEntries.filter(e => e.dateRaw >= startDateVal && e.dateRaw <= endDateVal);
-            }
+            let filtered = entries.filter(e => e.customer === cust && e.date >= start && e.date <= end);
+            filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
 
-            let totalLitre = 0, totalAmount = 0;
-            entriesList.innerHTML = '';
-            
-            // Sort by date descending
-            custEntries.sort((a, b) => new Date(b.dateRaw) - new Date(a.dateRaw));
-
-            if(custEntries.length === 0) {
-                entriesList.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin: 20px 0;">इस अवधि में कोई एंट्री नहीं मिली।</p>';
-            }
-
-            custEntries.forEach(item => {
-                totalLitre += item.litre;
-                totalAmount += item.total;
-                entriesList.innerHTML += `
-                    <div class="entry-item">
-                        <div>
-                            <strong>${item.dateStr} (${item.shift})</strong><br>
-                            <span style="font-size:12px;">${item.litre} Kg | सैंपल: ${item.fat} | ₹${item.rate}/Kg</span>
+            let totalKg = 0, totalAmt = 0;
+            const listHtml = filtered.map(e => {
+                totalKg += e.kg;
+                totalAmt += e.total;
+                const d = e.date.split('-').reverse().join('/');
+                return `
+                    <div class="list-item">
+                        <div class="info">
+                            <h4>${d} <span style="font-size:10px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${e.shift}</span></h4>
+                            <p>${e.kg} Kg | सैंपल: ${e.sample}</p>
                         </div>
-                        <div><strong style="color: var(--success-text);">₹${item.total.toFixed(2)}</strong></div>
+                        <div class="amount">₹${e.total.toFixed(0)}</div>
                     </div>`;
-            });
+            }).join('');
 
-            document.getElementById('billTotalLitre').innerText = totalLitre.toFixed(1);
-            document.getElementById('billTotalAmount').innerText = totalAmount.toFixed(2);
-            billSummary.style.display = 'block';
+            document.getElementById('bill-total-kg').innerText = totalKg.toFixed(1);
+            document.getElementById('bill-total-amt').innerText = '₹' + totalAmt.toFixed(0);
+            document.getElementById('bill-list').innerHTML = listHtml || '<p style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">कोई एंट्री नहीं</p>';
+            dataDiv.style.display = 'block';
         }
 
-        function sendWhatsAppBill() {
-            const cust = document.getElementById('billCustomer').value;
-            const startDateVal = document.getElementById('billStartDate').value;
-            const endDateVal = document.getElementById('billEndDate').value;
+        function shareWhatsApp() {
+            const cust = document.getElementById('bill-customer').value;
+            const start = document.getElementById('bill-start').value;
+            const end = document.getElementById('bill-end').value;
+            let filtered = entries.filter(e => e.customer === cust && e.date >= start && e.date <= end);
             
-            if(!cust) return;
+            if(filtered.length === 0) return alert('कोई एंट्री नहीं है');
 
-            let custEntries = entries.filter(e => e.customer === cust);
-            if(startDateVal && endDateVal) {
-                custEntries = custEntries.filter(e => e.dateRaw >= startDateVal && e.dateRaw <= endDateVal);
-            }
-            
-            if(custEntries.length === 0) return alert('भेजने के लिए कोई एंट्री नहीं है!');
+            let totalKg = 0, totalAmt = 0;
+            filtered.forEach(e => { totalKg += e.kg; totalAmt += e.total; });
 
-            custEntries.sort((a, b) => new Date(a.dateRaw) - new Date(b.dateRaw));
-            const totalLitre = document.getElementById('billTotalLitre').innerText;
-            const totalAmount = document.getElementById('billTotalAmount').innerText;
-
-            let msg = `*🥛 मिल्क स्केल ऐप - दूध का हिसाब 🥛*\n`;
-            msg += `ग्राहक: *${cust}*\n`;
-            if(startDateVal && endDateVal) {
-                const s = startDateVal.split('-').reverse().join('/');
-                const e = endDateVal.split('-').reverse().join('/');
-                msg += `अवधि: *${s} से ${e}*\n`;
-            }
-            msg += `--------------------------\n`;
-
-            custEntries.forEach(item => {
-                msg += `📅 *${item.dateStr}* (${item.shift})\n`;
-                msg += `दूध: ${item.litre} Kg | सैंपल: ${item.fat}\n`;
-                msg += `दर: ₹${item.rate} | कुल: ₹${item.total.toFixed(2)}\n\n`;
-            });
-
-            msg += `--------------------------\n`;
-            msg += `कुल दूध: *${totalLitre} Kg*\n`;
-            msg += `*कुल बकाया: ₹${totalAmount}*\n\n`;
-            msg += `_मिल्क स्केल ऐप द्वारा निर्मित_`;
-
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+            let msg = `*🥛 मिल्क स्केल - हिसाब*\nग्राहक: *${cust}*\n\n`;
+            msg += `कुल दूध: *${totalKg.toFixed(1)} Kg*\n`;
+            msg += `कुल राशि: *₹${totalAmt.toFixed(0)}*`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // Scale Board Logic with Local Storage
-        const tableBody = document.getElementById('table-body');
-        const ratePerKgInput = document.getElementById('rate-per-kg');
-
-        function updateCalculations() {
-            let totalMilk = 0, totalBadhotriGm = 0;
-            let scaleData = [];
-
-            document.querySelectorAll('#table-body .input-row').forEach((row, index) => {
-                row.querySelector('.cell:first-child').innerText = index + 1;
-                const milkInput = row.querySelector('.milk-kg-input');
-                const sampleInput = row.querySelector('.sample-input');
-                const badhotriBox = row.querySelector('.badhotri-box');
-
-                const milk = parseFloat(milkInput.value) || 0;
-                const sample = parseFloat(sampleInput.value) || 0;
-                
-                scaleData.push({ milk: milkInput.value, sample: sampleInput.value });
-
-                if (milk > 0) totalMilk += milk;
-                
-                let bGm = 0;
-                if (milk > 0 && sample > 0) {
-                    bGm = Math.round(milk * 15 * (sample - 65));
-                    totalBadhotriGm += bGm;
-                    badhotriBox.innerText = `${bGm} Gm`;
-                    badhotriBox.className = 'badhotri-box ' + (bGm < 0 ? 'negative' : 'positive');
-                } else {
-                    badhotriBox.innerText = '0 Gm';
-                    badhotriBox.className = 'badhotri-box';
-                }
-            });
-
-            localStorage.setItem('ms_scale_board', JSON.stringify(scaleData));
-
-            document.getElementById('total-milk-kg').innerText = `${totalMilk.toFixed(2)} Kg`;
-            document.getElementById('total-badhotri-gm').innerText = `${totalBadhotriGm} Gm`;
-
-            const combinedMilkKg = totalMilk + (totalBadhotriGm / 1000.0);
-            document.getElementById('combined-total-value').innerText = `${combinedMilkKg.toFixed(3)} Kg`;
-            document.getElementById('quantity-for-rate').innerText = `(${combinedMilkKg.toFixed(2)})`;
-
-            const rate = parseFloat(ratePerKgInput.value) || 0;
-            document.getElementById('final-price').innerText = (combinedMilkKg * rate).toFixed(2);
-            localStorage.setItem('ms_scale_rate', ratePerKgInput.value);
-        }
-
-        function createRow(milk = '', sample = '') {
-            const row = document.createElement('div');
-            row.className = 'input-row';
-            row.innerHTML = `
-                <div class="cell">1</div>
-                <div class="cell"><input type="text" inputmode="decimal" class="milk-kg-input" placeholder="0" value="${milk}"></div>
-                <div class="cell"><input type="text" inputmode="decimal" class="sample-input" placeholder="0" value="${sample}"></div>
-                <div class="cell"><div class="badhotri-box">0 Gm</div></div>
-            `;
-            tableBody.appendChild(row);
-            row.querySelectorAll('input').forEach(i => i.addEventListener('input', updateCalculations));
-        }
-
+        // --- Scale Board Logic ---
         function initScaleBoard() {
-            const savedData = JSON.parse(localStorage.getItem('ms_scale_board'));
-            const savedRate = localStorage.getItem('ms_scale_rate');
-            
-            if(savedRate) ratePerKgInput.value = savedRate;
-
-            if (savedData && savedData.length > 0) {
-                savedData.forEach(item => createRow(item.milk, item.sample));
+            const board = document.getElementById('scale-body');
+            board.innerHTML = '';
+            const saved = JSON.parse(localStorage.getItem('ms_scale'));
+            if(saved && saved.length > 0) {
+                saved.forEach(s => addScaleRow(s.m, s.s));
             } else {
-                for (let i = 0; i < 5; i++) createRow();
+                for(let i=0; i<4; i++) addScaleRow();
             }
-            updateCalculations();
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            populateCustomerDropdowns();
-            initScaleBoard();
-            
-            document.getElementById('add-line-btn').onclick = () => { createRow(); updateCalculations(); };
-            ratePerKgInput.addEventListener('input', updateCalculations);
-            
-            document.getElementById('clear-all-btn').onclick = () => {
-                if(confirm('क्या आप स्केल बोर्ड साफ करना चाहते हैं?')) {
-                    tableBody.innerHTML = '';
-                    for (let i = 0; i < 5; i++) createRow();
-                    updateCalculations();
+        function addScaleRow(m='', s='') {
+            const board = document.getElementById('scale-body');
+            const div = document.createElement('div');
+            div.className = 'scale-row';
+            div.innerHTML = `
+                <input type="number" class="s-m" placeholder="0" value="${m}" oninput="calculateScale()">
+                <input type="number" class="s-s" placeholder="0" value="${s}" oninput="calculateScale()">
+                <div class="badhotri-box">0</div>
+            `;
+            board.appendChild(div);
+            calculateScale();
+        }
+
+        function calculateScale() {
+            let totalKg = 0, totalBad = 0, boardData = [];
+            document.querySelectorAll('.scale-row').forEach(row => {
+                const m = parseFloat(row.querySelector('.s-m').value) || 0;
+                const s = parseFloat(row.querySelector('.s-s').value) || 0;
+                const box = row.querySelector('.badhotri-box');
+                
+                boardData.push({m: row.querySelector('.s-m').value, s: row.querySelector('.s-s').value});
+                totalKg += m;
+                
+                let b = 0;
+                if(m > 0 && s > 0) {
+                    b = Math.round(m * 15 * (s - 65));
+                    totalBad += b;
+                    box.innerText = b;
+                    box.className = 'badhotri-box ' + (b >= 0 ? 'pos' : 'neg');
+                } else {
+                    box.innerText = '0';
+                    box.className = 'badhotri-box';
                 }
-            };
+            });
+
+            localStorage.setItem('ms_scale', JSON.stringify(boardData));
             
-            document.getElementById('delete-lines-btn-main').onclick = () => {
-                const start = parseInt(document.getElementById('delete-start-serial').value);
-                const end = parseInt(document.getElementById('delete-end-serial').value);
-                const rows = document.querySelectorAll('#table-body .input-row');
-                if (start > 0 && end >= start) {
-                    for (let i = Math.min(end, rows.length) - 1; i >= start - 1; i--) rows[i].remove();
-                    if (document.querySelectorAll('#table-body .input-row').length === 0) createRow();
-                    updateCalculations();
+            const finalKg = totalKg + (totalBad/1000);
+            const rate = parseFloat(document.getElementById('scale-rate').value) || 0;
+            
+            document.getElementById('res-milk').innerText = totalKg.toFixed(2);
+            document.getElementById('res-badhotri').innerText = totalBad;
+            document.getElementById('res-total-kg').innerText = finalKg.toFixed(3);
+            document.getElementById('res-amount').innerText = '₹' + (finalKg * rate).toFixed(0);
+        }
+
+        // --- GOOGLE DRIVE SYNC LOGIC ---
+        // यहाँ अपनी असली Client ID डालें
+        const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+
+        let tokenClient;
+        let accessToken = null;
+
+        function initGoogleAuth() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        accessToken = tokenResponse.access_token;
+                        document.getElementById('btnGoogleLogin').classList.add('logged-in');
+                        document.getElementById('btnGoogleLogin').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Synced';
+                        document.getElementById('drive-status').style.display = 'block';
+                        document.getElementById('drive-status').innerText = 'Google Drive से जुड़ा है';
+                        syncFromDrive(); // Auto download on login
+                    }
+                },
+            });
+        }
+
+        function handleAuthClick() {
+            if (accessToken) {
+                // If already logged in, upload current data
+                uploadToDrive();
+            } else {
+                if(tokenClient) tokenClient.requestAccessToken();
+                else alert('Google API load नहीं हुआ। इंटरनेट चेक करें।');
+            }
+        }
+
+        function uploadToDrive() {
+            const dataToSave = {
+                customers: customers,
+                entries: entries,
+                scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
+                rate: document.getElementById('scale-rate').value
+            };
+            const fileContent = JSON.stringify(dataToSave);
+            
+            document.getElementById('drive-status').innerText = 'अपलोड हो रहा है...';
+
+            // Check if file exists
+            fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name="milk_scale_backup.json"', {
+                headers: { 'Authorization': 'Bearer ' + accessToken }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.files && data.files.length > 0) {
+                    // Update existing file
+                    const fileId = data.files[0].id;
+                    fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': 'Bearer ' + accessToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: fileContent
+                    }).then(() => {
+                        document.getElementById('drive-status').innerText = 'डेटा सुरक्षित हो गया!';
+                        alert('डेटा Google Drive में सेव हो गया!');
+                    });
+                } else {
+                    // Create new file
+                    const metadata = { name: 'milk_scale_backup.json', parents: ['appDataFolder'] };
+                    const form = new FormData();
+                    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                    form.append('file', new Blob([fileContent], { type: 'application/json' }));
+
+                    fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + accessToken },
+                        body: form
+                    }).then(() => {
+                        document.getElementById('drive-status').innerText = 'पहली बार डेटा सेव हुआ!';
+                        alert('डेटा Google Drive में सेव हो गया!');
+                    });
                 }
-            };
+            }).catch(err => {
+                alert('अपलोड फेल! इंटरनेट चेक करें।');
+                document.getElementById('drive-status').innerText = 'अपलोड फेल';
+            });
+        }
+
+        function syncFromDrive() {
+            document.getElementById('drive-status').innerText = 'डेटा डाउनलोड हो रहा है...';
             
-            // Set default dates for bill filter to current month
-            setCurrentMonth();
-        });
+            fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name="milk_scale_backup.json"', {
+                headers: { 'Authorization': 'Bearer ' + accessToken }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.files && data.files.length > 0) {
+                    const fileId = data.files[0].id;
+                    fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                        headers: { 'Authorization': 'Bearer ' + accessToken }
+                    })
+                    .then(res => res.json())
+                    .then(savedData => {
+                        if(savedData.customers) customers = savedData.customers;
+                        if(savedData.entries) entries = savedData.entries;
+                        if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
+                        if(savedData.rate) document.getElementById('scale-rate').value = savedData.rate;
+                        
+                        saveLocal();
+                        renderCustomers();
+                        populateDropdowns();
+                        
+                        document.getElementById('scale-body').innerHTML = '';
+                        initScaleBoard();
+                        
+                        document.getElementById('drive-status').innerText = 'डेटा वापस आ गया!';
+                        alert('आपका पुराना सारा हिसाब वापस आ गया है!');
+                    });
+                } else {
+                    document.getElementById('drive-status').innerText = 'ड्राइव में कोई बैकअप नहीं मिला।';
+                }
+            });
+        }
+
+        // Start App
+        window.onload = () => {
+            init();
+            if(CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
+                initGoogleAuth();
+            } else {
+                document.getElementById('btnGoogleLogin').innerText = 'Setup Required';
+            }
+        };
     </script>
 </body>
 </html>
