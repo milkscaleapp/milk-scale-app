@@ -385,7 +385,7 @@
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
-        // --- Native File Backup System (Documents Directory with Fallback) ---
+        // --- Native File Backup System (Absolute Path Fix) ---
         
         async function saveToDevice() {
             const dataToSave = {
@@ -397,79 +397,47 @@
             const fileData = JSON.stringify(dataToSave);
             
             try {
-                // Directory.Documents में सेव करने की कोशिश करें
                 await Capacitor.Plugins.Filesystem.writeFile({
                     path: 'MilkScale_Backup.json',
                     data: fileData,
-                    directory: 'DOCUMENTS', 
+                    directory: 'EXTERNAL_STORAGE', // सीधे फोन की मुख्य स्टोरेज में (Documents)
                     encoding: 'utf8'
                 });
-                console.log('फाइल Documents में सेव हो गई');
+                console.log('फाइल सुरक्षित हो गई');
             } catch(e) {
-                console.log('Documents में सेव नहीं हो पाई, अब Cache में सेव कर रहे हैं...', e);
-                // अगर Documents फेल हो जाए, तो Cache में सेव करें (ताकि "Clear Data" से बचे)
-                try {
-                    await Capacitor.Plugins.Filesystem.writeFile({
-                        path: 'MilkScale_Backup.json',
-                        data: fileData,
-                        directory: 'CACHE', 
-                        encoding: 'utf8'
-                    });
-                    console.log('फाइल Cache में सेव हो गई');
-                } catch(err) {
-                    console.log('फाइल बिल्कुल भी सेव नहीं हो पाई', err);
-                }
+                console.log('फाइल सेव नहीं हुई', e);
             }
         }
 
         async function loadFromDevice() {
-            let fileData = null;
             try {
-                // 1. सबसे पहले Documents फोल्डर से पढ़ें
+                // सीधे External Storage से पढ़ें जहाँ Documents फोल्डर होता है
                 const file = await Capacitor.Plugins.Filesystem.readFile({
                     path: 'MilkScale_Backup.json',
-                    directory: 'DOCUMENTS', 
+                    directory: 'EXTERNAL_STORAGE', // यहाँ बदलाव किया गया है
                     encoding: 'utf8'
                 });
-                fileData = file.data;
-                console.log('Documents से डेटा मिल गया');
+                
+                const savedData = JSON.parse(file.data);
+                
+                if(savedData) {
+                    customers = savedData.customers || [];
+                    entries = savedData.entries || [];
+                    
+                    if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
+                    if(savedData.rate) localStorage.setItem('ms_rate', savedData.rate);
+                    
+                    localStorage.setItem('ms_cust', JSON.stringify(customers));
+                    localStorage.setItem('ms_entries', JSON.stringify(entries));
+                    
+                    console.log('डेटा सफलतापूर्वक वापस आ गया!');
+                    return true;
+                }
+                return false;
             } catch(e) {
-                console.log('Documents में फाइल नहीं मिली, Cache चेक कर रहे हैं...');
-                try {
-                    // 2. अगर Documents में नहीं मिली, तो Cache से पढ़ें
-                    const file = await Capacitor.Plugins.Filesystem.readFile({
-                        path: 'MilkScale_Backup.json',
-                        directory: 'CACHE', 
-                        encoding: 'utf8'
-                    });
-                    fileData = file.data;
-                    console.log('Cache से डेटा मिल गया');
-                } catch(err) {
-                    console.log('कहीं भी फाइल नहीं मिली');
-                    return false;
-                }
+                console.log('कोई बैकअप फाइल नहीं मिली।', e);
+                return false;
             }
-
-            if(fileData) {
-                try {
-                    const savedData = JSON.parse(fileData);
-                    if(savedData) {
-                        customers = savedData.customers || [];
-                        entries = savedData.entries || [];
-                        
-                        if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
-                        if(savedData.rate) localStorage.setItem('ms_rate', savedData.rate);
-                        
-                        localStorage.setItem('ms_cust', JSON.stringify(customers));
-                        localStorage.setItem('ms_entries', JSON.stringify(entries));
-                        
-                        return true;
-                    }
-                } catch(parseError) {
-                    console.log('फाइल का डेटा खराब है', parseError);
-                }
-            }
-            return false;
         }
 
         async function backupData() {
