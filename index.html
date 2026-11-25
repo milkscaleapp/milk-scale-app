@@ -386,7 +386,7 @@
         }
 
         async function deleteCustomer(index) {
-            if(confirm('Delete this customer and all related entries?')) {
+            if(await appDialog('Delete this customer and all related entries?',true,'Delete customer')) {
                 const name = customers[index];
                 customers.splice(index, 1);
                 entries = entries.filter(e => e.customer !== name);
@@ -405,7 +405,7 @@
             const sample = parseFloat(document.getElementById('entry-sample').value) || 0;
             const rate = parseFloat(document.getElementById('entry-rate').value);
 
-            if(!cust || !date || !Number.isFinite(kg) || kg <= 0 || !Number.isFinite(rate) || rate < 0 || !Number.isFinite(sample) || sample < 0) return alert('सही जानकारी भरें। Check milk quantity and rate.');
+            if(!cust || !date || !Number.isFinite(kg) || kg <= 0 || !Number.isFinite(rate) || rate < 0 || !Number.isFinite(sample) || sample < 0) return notify('Please enter valid details. Check milk quantity and rate.');
 
             entries.push({
                 id: Date.now(), customer: cust, date: date, shift: shift,
@@ -425,7 +425,7 @@
                 await autoSaveToFile(currentFileNumber);
             }
             
-            alert('Entries ऐप में सेव हो गई। बैकअप फाइल डाउनलोड/सेव करने का प्रयास किया गया है।');
+            
             
             document.getElementById('entry-kg').value = '';
             document.getElementById('entry-sample').value = '';
@@ -590,7 +590,7 @@
             const end = document.getElementById('bill-end').value;
             let filtered = entries.filter(e => e.customer === cust && e.date >= start && e.date <= end);
             
-            if(filtered.length === 0) return alert('No entries है');
+            if(filtered.length === 0) return notify('No entries to share.');
 
             let totalKg = 0, totalAmt = 0;
             filtered.forEach(e => { totalKg += e.kg; totalAmt += e.total; });
