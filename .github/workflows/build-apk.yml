@@ -68,36 +68,36 @@ jobs:
           EOF
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          signing = """
-              signingConfigs {
+
+          properties = """def keystoreProperties = new Properties()
+          def keystorePropertiesFile = rootProject.file("keystore.properties")
+          keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+          """
+          if "def keystoreProperties =" not in s:
+              s = properties + s
+
+          signing_config = """    signingConfigs {
                   release {
-                      storeFile file(rootProject.file("keystore.properties").getProperty("storeFile"))
-                      storePassword rootProject.file("keystore.properties").withInputStream { stream ->
-                          def props = new Properties()
-                          props.load(stream)
-                          props.getProperty("storePassword")
-                      }
-                      keyAlias rootProject.file("keystore.properties").withInputStream { stream ->
-                          def props = new Properties()
-                          props.load(stream)
-                          props.getProperty("keyAlias")
-                      }
-                      keyPassword rootProject.file("keystore.properties").withInputStream { stream ->
-                          def props = new Properties()
-                          props.load(stream)
-                          props.getProperty("keyPassword")
-                      }
+                      storeFile file(keystoreProperties['storeFile'])
+                      storePassword keystoreProperties['storePassword']
+                      keyAlias keystoreProperties['keyAlias']
+                      keyPassword keystoreProperties['keyPassword']
                   }
               }
+
           """
           if "signingConfigs {" not in s:
-              s = s.replace("android {", "android {\n" + signing, 1)
-          marker = "buildTypes {"
-          if marker not in s:
-              raise SystemExit("Could not find buildTypes in android/app/build.gradle")
-          s = s.replace("release {", "release {\n            signingConfig signingConfigs.release", 1)
+              s = s.replace("android {", "android {\\n" + signing_config, 1)
+
+          pattern = r"(buildTypes\\s*\\{\\s*release\\s*\\{)"
+          s, count = re.subn(pattern, r"\\1\\n            signingConfig signingConfigs.release", s, count=1)
+          if count != 1:
+              raise SystemExit("Could not find release build type in android/app/build.gradle")
           p.write_text(s)
           PY
 
