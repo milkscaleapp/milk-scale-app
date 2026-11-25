@@ -385,7 +385,7 @@
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
-        // --- Native File Backup System (Fixed) ---
+        // --- Native File Backup System (External Storage) ---
         
         async function saveToDevice() {
             const dataToSave = {
@@ -397,11 +397,11 @@
             const fileData = JSON.stringify(dataToSave);
             
             try {
-                // यहाँ Directory.Data का इस्तेमाल किया गया है (Documents नहीं)
+                // यहाँ 'EXTERNAL' का इस्तेमाल किया गया है ताकि Clear Data से न मिटे
                 await Capacitor.Plugins.Filesystem.writeFile({
                     path: 'MilkScale_Backup.json',
                     data: fileData,
-                    directory: 'DATA', // <--- यह सबसे बड़ा बदलाव है
+                    directory: 'EXTERNAL', // <--- यह सबसे बड़ा बदलाव है
                     encoding: 'utf8'
                 });
                 console.log('फाइल सेव हो गई');
@@ -412,10 +412,10 @@
 
         async function loadFromDevice() {
             try {
-                // यहाँ भी Directory.Data का इस्तेमाल होगा
+                // यहाँ भी 'EXTERNAL' का इस्तेमाल होगा
                 const file = await Capacitor.Plugins.Filesystem.readFile({
                     path: 'MilkScale_Backup.json',
-                    directory: 'DATA', // <--- यह सबसे बड़ा बदलाव है
+                    directory: 'EXTERNAL', // <--- यह सबसे बड़ा बदलाव है
                     encoding: 'utf8'
                 });
                 
