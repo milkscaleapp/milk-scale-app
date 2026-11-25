@@ -10,9 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Google API for Login -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
+    <!-- Capacitor Plugin for Native File System -->
+    <script src="capacitor.js"></script> 
+    <script src="https://unpkg.com/@capacitor/filesystem@5.0.0/dist/plugin.js"></script>
+
     <style>
         :root {
             --primary: #2563eb;
@@ -39,11 +40,9 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            /* Status bar space (No black bar) */
             padding-top: env(safe-area-inset-top);
         }
 
-        /* Header */
         .app-header {
             padding: 15px 20px 10px;
             background: var(--bg);
@@ -60,7 +59,6 @@
             letter-spacing: -0.5px;
         }
 
-        /* Google Sync Button */
         .sync-btn {
             background: var(--primary-light);
             color: var(--primary);
@@ -73,15 +71,8 @@
             align-items: center;
             gap: 6px;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        .sync-btn.logged-in {
-            background: var(--success);
-            color: white;
-        }
-
-        /* Main Scroll Area */
         .main-content {
             flex: 1;
             overflow-y: auto;
@@ -94,7 +85,6 @@
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Cards */
         .card {
             background: var(--card);
             border-radius: 16px;
@@ -104,7 +94,6 @@
             border: 1px solid var(--border);
         }
 
-        /* --- Scale Board --- */
         .scale-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
         .scale-row input {
             width: 100%;
@@ -117,7 +106,6 @@
             background: var(--bg);
             color: var(--text);
             outline: none;
-            transition: 0.2s;
         }
         .scale-row input:focus { border-color: var(--primary); background: white; }
         
@@ -153,7 +141,6 @@
             gap: 8px;
         }
 
-        /* Result Section */
         .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .result-card {
             background: var(--card);
@@ -187,7 +174,6 @@
             color: var(--text);
         }
 
-        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -222,7 +208,6 @@
         .nav-item.active { color: var(--primary); }
         .nav-item.active i { transform: translateY(-2px); }
 
-        /* Forms & Lists */
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
         .form-control {
@@ -253,22 +238,20 @@
         .list-item .amount { font-weight: 700; color: var(--primary); font-size: 16px; }
         .delete-icon { color: var(--danger); background: #fef2f2; padding: 8px; border-radius: 8px; cursor: pointer; }
 
-        #drive-status { font-size: 11px; text-align: center; color: var(--text-light); margin-bottom: 10px; display: none; }
+        #sync-status { font-size: 12px; text-align: center; color: var(--success); font-weight: 600; padding: 5px; display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
     <header class="app-header">
         <h1>Milk Scale</h1>
-        <button class="sync-btn" id="btnGoogleLogin" onclick="handleAuthClick()">
-            <i class="fa-brands fa-google"></i> Sync
+        <button class="sync-btn" onclick="backupData()">
+            <i class="fa-solid fa-shield-halved"></i> सेव करें
         </button>
     </header>
     
-    <div id="drive-status"></div>
+    <div id="sync-status"></div>
 
-    <!-- Main Content Area -->
     <div class="main-content">
         
         <!-- SCALE TAB -->
@@ -378,7 +361,7 @@
 
     </div>
 
-    <!-- Bottom Navigation (Real App Style) -->
+    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('scale', this)">
             <i class="fa-solid fa-calculator"></i>
@@ -399,19 +382,72 @@
         let customers = JSON.parse(localStorage.getItem('ms_cust')) || ["राम", "सुरेश"];
         let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
         
-        // Set today's date
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
-        // --- Init ---
-        function init() {
+        // --- Native File Backup System ---
+        async function saveToDevice() {
+            const dataToSave = {
+                customers: customers,
+                entries: entries,
+                scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
+                rate: document.getElementById('scale-rate').value
+            };
+            const fileData = JSON.stringify(dataToSave);
+            
+            try {
+                // Capacitor Filesystem का उपयोग करके Documents फोल्डर में सेव करना
+                await Capacitor.Plugins.Filesystem.writeFile({
+                    path: 'MilkScale_Backup.json',
+                    data: fileData,
+                    directory: 'DOCUMENTS',
+                    encoding: 'utf8'
+                });
+                console.log('फाइल सेव हो गई');
+            } catch(e) {
+                console.log('फाइल सेव नहीं हुई', e);
+            }
+        }
+
+        async function loadFromDevice() {
+            try {
+                const file = await Capacitor.Plugins.Filesystem.readFile({
+                    path: 'MilkScale_Backup.json',
+                    directory: 'DOCUMENTS',
+                    encoding: 'utf8'
+                });
+                const savedData = JSON.parse(file.data);
+                
+                if(savedData.customers) customers = savedData.customers;
+                if(savedData.entries) entries = savedData.entries;
+                if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
+                if(savedData.rate) document.getElementById('scale-rate').value = savedData.rate;
+                
+                localStorage.setItem('ms_cust', JSON.stringify(customers));
+                localStorage.setItem('ms_entries', JSON.stringify(entries));
+                
+                return true;
+            } catch(e) {
+                return false;
+            }
+        }
+
+        async function backupData() {
+            await saveToDevice();
+            const status = document.getElementById('sync-status');
+            status.style.display = 'block';
+            status.innerText = '✅ डेटा फोन में सुरक्षित हो गया!';
+            setTimeout(() => { status.style.display = 'none'; }, 3000);
+        }
+
+        async function init() {
+            await loadFromDevice();
             renderCustomers();
             populateDropdowns();
             initScaleBoard();
             loadBill();
         }
 
-        // --- Navigation ---
         function switchTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -419,13 +455,12 @@
             el.classList.add('active');
         }
 
-        // --- Save Data ---
         function saveLocal() {
             localStorage.setItem('ms_cust', JSON.stringify(customers));
             localStorage.setItem('ms_entries', JSON.stringify(entries));
+            saveToDevice(); 
         }
 
-        // --- Customer Logic ---
         function renderCustomers() {
             const list = document.getElementById('cust-list');
             if(customers.length === 0) {
@@ -469,7 +504,6 @@
             }
         }
 
-        // --- Entry Logic ---
         function saveEntry() {
             const cust = document.getElementById('entry-customer').value;
             const date = document.getElementById('entry-date').value;
@@ -491,7 +525,6 @@
             document.getElementById('entry-rate').value = '';
         }
 
-        // --- Bill Logic ---
         function setBillDatesToCurrentMonth() {
             const now = new Date();
             const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -549,7 +582,6 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // --- Scale Board Logic ---
         function initScaleBoard() {
             const board = document.getElementById('scale-body');
             board.innerHTML = '';
@@ -605,151 +637,12 @@
             document.getElementById('res-badhotri').innerText = totalBad;
             document.getElementById('res-total-kg').innerText = finalKg.toFixed(3);
             document.getElementById('res-amount').innerText = '₹' + (finalKg * rate).toFixed(0);
-        }
-
-        // --- GOOGLE DRIVE SYNC LOGIC ---
-        // यहाँ अपनी असली Client ID डालें
-        const CLIENT_ID = '240243820331-tfrgbbks1pl6t6a7cch2clh9mnq7ds2g.apps.googleusercontent.com';
-        const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
-
-        let tokenClient;
-        let accessToken = null;
-
-        function initGoogleAuth() {
-    if (typeof google === 'undefined') {
-        setTimeout(initGoogleAuth, 1000);
-        return;
-    }
-
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-                accessToken = tokenResponse.access_token;
-                document.getElementById('btnGoogleLogin').classList.add('logged-in');
-                document.getElementById('btnGoogleLogin').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Synced';
-                document.getElementById('drive-status').style.display = 'block';
-                document.getElementById('drive-status').innerText = 'Google Drive से जुड़ा है';
-                syncFromDrive(); 
-            }
-        },
-        // यह लाइन जोड़ें ताकि पॉपअप नई विंडो में खुले
-        ux_mode: 'redirect', 
-        redirect_uri: window.location.href.split('#')[0] 
-    });
-}
-
-        function handleAuthClick() {
-            if (accessToken) {
-                uploadToDrive(); 
-            } else {
-                if(tokenClient) {
-                    tokenClient.requestAccessToken({ prompt: 'consent' });
-                } else {
-                    initGoogleAuth();
-                    setTimeout(() => {
-                        if(tokenClient) tokenClient.requestAccessToken();
-                        else alert('Google API लोड नहीं हो पा रहा है। कृपया इंटरनेट चालू करके ऐप को रीस्टार्ट करें।');
-                    }, 2000);
-                }
-            }
-        }
-
-        function uploadToDrive() {
-            const dataToSave = {
-                customers: customers,
-                entries: entries,
-                scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
-                rate: document.getElementById('scale-rate').value
-            };
-            const fileContent = JSON.stringify(dataToSave);
             
-            document.getElementById('drive-status').innerText = 'अपलोड हो रहा है...';
-
-            fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name="milk_scale_backup.json"', {
-                headers: { 'Authorization': 'Bearer ' + accessToken }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.files && data.files.length > 0) {
-                    const fileId = data.files[0].id;
-                    fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Authorization': 'Bearer ' + accessToken,
-                            'Content-Type': 'application/json'
-                        },
-                        body: fileContent
-                    }).then(() => {
-                        document.getElementById('drive-status').innerText = 'डेटा सुरक्षित हो गया!';
-                        alert('डेटा Google Drive में सेव हो गया!');
-                    });
-                } else {
-                    const metadata = { name: 'milk_scale_backup.json', parents: ['appDataFolder'] };
-                    const form = new FormData();
-                    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                    form.append('file', new Blob([fileContent], { type: 'application/json' }));
-
-                    fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + accessToken },
-                        body: form
-                    }).then(() => {
-                        document.getElementById('drive-status').innerText = 'पहली बार डेटा सेव हुआ!';
-                        alert('डेटा Google Drive में सेव हो गया!');
-                    });
-                }
-            }).catch(err => {
-                alert('अपलोड फेल! इंटरनेट चेक करें।');
-                document.getElementById('drive-status').innerText = 'अपलोड फेल';
-            });
+            saveToDevice(); 
         }
 
-        function syncFromDrive() {
-            document.getElementById('drive-status').innerText = 'डेटा डाउनलोड हो रहा है...';
-            
-            fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name="milk_scale_backup.json"', {
-                headers: { 'Authorization': 'Bearer ' + accessToken }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.files && data.files.length > 0) {
-                    const fileId = data.files[0].id;
-                    fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                        headers: { 'Authorization': 'Bearer ' + accessToken }
-                    })
-                    .then(res => res.json())
-                    .then(savedData => {
-                        if(savedData.customers) customers = savedData.customers;
-                        if(savedData.entries) entries = savedData.entries;
-                        if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
-                        if(savedData.rate) document.getElementById('scale-rate').value = savedData.rate;
-                        
-                        saveLocal();
-                        renderCustomers();
-                        populateDropdowns();
-                        
-                        document.getElementById('scale-body').innerHTML = '';
-                        initScaleBoard();
-                        
-                        document.getElementById('drive-status').innerText = 'डेटा वापस आ गया!';
-                        alert('आपका पुराना सारा हिसाब वापस आ गया है!');
-                    });
-                } else {
-                    document.getElementById('drive-status').innerText = 'ड्राइव में कोई बैकअप नहीं मिला।';
-                }
-            });
-        }
-
-        // Start App
         window.onload = () => {
             init();
-            if(CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                initGoogleAuth();
-            } else {
-                document.getElementById('btnGoogleLogin').innerText = 'Setup Required';
-            }
         };
     </script>
 </body>
