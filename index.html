@@ -616,26 +616,29 @@
         let accessToken = null;
 
         function initGoogleAuth() {
-            if (typeof google === 'undefined') {
-                setTimeout(initGoogleAuth, 1000);
-                return;
-            }
+    if (typeof google === 'undefined') {
+        setTimeout(initGoogleAuth, 1000);
+        return;
+    }
 
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: (tokenResponse) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        accessToken = tokenResponse.access_token;
-                        document.getElementById('btnGoogleLogin').classList.add('logged-in');
-                        document.getElementById('btnGoogleLogin').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Synced';
-                        document.getElementById('drive-status').style.display = 'block';
-                        document.getElementById('drive-status').innerText = 'Google Drive से जुड़ा है';
-                        syncFromDrive(); 
-                    }
-                },
-            });
-        }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+                accessToken = tokenResponse.access_token;
+                document.getElementById('btnGoogleLogin').classList.add('logged-in');
+                document.getElementById('btnGoogleLogin').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Synced';
+                document.getElementById('drive-status').style.display = 'block';
+                document.getElementById('drive-status').innerText = 'Google Drive से जुड़ा है';
+                syncFromDrive(); 
+            }
+        },
+        // यह लाइन जोड़ें ताकि पॉपअप नई विंडो में खुले
+        ux_mode: 'redirect', 
+        redirect_uri: window.location.href.split('#')[0] 
+    });
+}
 
         function handleAuthClick() {
             if (accessToken) {
