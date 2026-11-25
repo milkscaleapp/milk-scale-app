@@ -36,10 +36,9 @@ jobs:
     - name: Sync Web assets
       run: npx cap sync
 
-    # 1. सीधे फाइलों को मॉडिफाई करना (कोई sed कमांड नहीं, सीधे पूरी फाइल बदलना)
+    # 1. सीधे फाइलों को मॉडिफाई करना
     - name: Force Android Settings
       run: |
-        # variables.gradle को पूरा बदल दें
         echo "ext {
             minSdkVersion = 22
             compileSdkVersion = 34
@@ -57,10 +56,9 @@ jobs:
             cordovaAndroidVersion = '10.1.1'
         }" > android/variables.gradle
 
-        # AndroidManifest.xml में इंटरनेट परमिशन जोड़ें
         sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
-    # 2. असली कीस्टोर बनाना (जिसे Google पहचान सके)
+    # 2. असली कीस्टोर बनाना
     - name: Generate Keystore
       run: |
         cd android/app
@@ -94,5 +92,5 @@ jobs:
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
-        name: Milk-Scale-APK-FINAL-V2
+        name: Milk-Scale-APK-FINAL
         path: android/app/build/outputs/apk/release/app-release.apk
