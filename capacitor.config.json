@@ -4,7 +4,12 @@
   "webDir": "www",
   "server": {
     "url": "https://milkscaleapp.github.io/milk-scale-app/",
-    "cleartext": true
+    "cleartext": true,
+    "allowNavigation": [
+      "accounts.google.com",
+      "www.googleapis.com",
+      "content.googleapis.com"
+    ]
   },
   "android": {
     "allowMixedContent": true
