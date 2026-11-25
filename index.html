@@ -129,7 +129,7 @@
     <header class="app-header">
         <div class="header-left">
             <h1>Milk Scale</h1>
-            <!-- फाइल शो होने वाला रंगीन बटन -->
+            <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
                 <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
             </button>
@@ -152,7 +152,7 @@
 
             <div class="result-grid">
                 <div class="result-card"><p>Total milk</p><h3 id="res-milk">0.00</h3></div>
-                <div class="result-card"><p>कुल Increment</p><h3 id="res-badhotri" style="color:var(--success);">0</h3></div>
+                <div class="result-card"><p>Total increment</p><h3 id="res-badhotri" style="color:var(--success);">0</h3></div>
             </div>
 
             <div class="rate-box">
@@ -225,14 +225,14 @@
             </div>
         </div>
 
-        <!-- BACKUP TAB (यह हेडर के रंगीन बटन से खुलेगा) -->
+        <!-- BACKUP TAB -->
         <div id="tab-backup" class="tab-content">
             <div class="card">
                 <h2 style="color: var(--primary); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-file-export"></i> Files</h2>
                 
                 
                 <button class="btn btn-primary" onclick="createNewBackupFile()" style="margin-bottom: 10px;">
-                    <i class="fa-solid fa-plus"></i> नई Files
+                    <i class="fa-solid fa-plus"></i> Create new file
                 </button>
 
                 <div id="current-backup-file" style="display: none;">
@@ -309,7 +309,7 @@
             initScaleBoard();
             loadBill();
             
-            // हेडर पर फाइल दिखाएं अगर पहले से बनी है
+            // Show the file in the header if one exists
             if(entries.length > 0 && currentFileNumber > 0) {
                 showFileInHeader(currentFileNumber);
             }
@@ -385,8 +385,8 @@
             }
         }
 
-        function deleteCustomer(index) {
-            if(confirm('ग्राहक और उसका हिसाब डिलीट करें?')) {
+        async function deleteCustomer(index) {
+            if(confirm('Delete this customer and all related entries?')) {
                 const name = customers[index];
                 customers.splice(index, 1);
                 entries = entries.filter(e => e.customer !== name);
@@ -396,7 +396,7 @@
             }
         }
 
-        // --- Entry Logic (यहाँ फाइल ऑटोमैटिक बनेगी) ---
+        // --- Entry Logic (Entry logic) ---
         async function saveEntry() {
             const cust = document.getElementById('entry-customer').value;
             const date = document.getElementById('entry-date').value;
@@ -405,7 +405,7 @@
             const sample = parseFloat(document.getElementById('entry-sample').value) || 0;
             const rate = parseFloat(document.getElementById('entry-rate').value);
 
-            if(!cust || !date || !Number.isFinite(kg) || kg <= 0 || !Number.isFinite(rate) || rate < 0 || !Number.isFinite(sample) || sample < 0) return alert('सही जानकारी भरें। Milk और Rate जाँचें।');
+            if(!cust || !date || !Number.isFinite(kg) || kg <= 0 || !Number.isFinite(rate) || rate < 0 || !Number.isFinite(sample) || sample < 0) return alert('सही जानकारी भरें। Check milk quantity and rate.');
 
             entries.push({
                 id: Date.now(), customer: cust, date: date, shift: shift,
@@ -414,14 +414,14 @@
             
             saveLocal(); 
             
-            // अगर यह पहली Entries है, तो पहली फाइल (1) बनाओ
+            // Create the first file for the first entry
             if(currentFileNumber === 0) {
                 currentFileNumber = 1;
                 localStorage.setItem('ms_file_num', currentFileNumber);
                 await autoSaveToFile(currentFileNumber);
                 showFileInHeader(currentFileNumber);
             } else {
-                // अगर पहले से फाइल है, तो उसी में डेटा अपडेट करो
+                // Update the active file
                 await autoSaveToFile(currentFileNumber);
             }
             
@@ -480,7 +480,7 @@
                 return true;
             } catch (e) {
                 console.error('Backup download failed:', e);
-                alert('Could not create backup file. Please try again.');
+                notify('Could not create backup file. Please try again.');
                 return false;
             }
         }
@@ -495,7 +495,7 @@
         }
 
         // --- Restore Logic ---
-        async function importBackupFile(event) {
+        async async function importBackupFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -515,7 +515,7 @@
                             
                             saveLocal();
                             
-                            // नंबर निकालें फाइल के नाम से
+                            // Get the number from the file name
                             let match = file.name.match(/\((\d+)\)/);
                             if(match) {
                                 currentFileNumber = parseInt(match[1]);
@@ -528,21 +528,21 @@
                             initScaleBoard();
                             loadBill();
                             
-                            alert('Data restored successfully!');
+                            
                             switchTab('scale', document.querySelector('.nav-item'));
                         }
                     } else {
-                        alert('This is not a valid backup file.');
+                        notify('This is not a valid backup file.');
                     }
                 } catch(err) {
-                    alert('Could not read the file.');
+                    notify('Could not read the file.');
                 }
             };
             reader.readAsText(file);
             event.target.value = ''; 
         }
 
-        // --- Bill & Scale Logic (पहले जैसा ही) ---
+        // --- Bill & Scale Logic (Existing calculation and bill logic) ---
         function setBillDatesToCurrentMonth() {
             const now = new Date();
             const toLocalDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -580,7 +580,7 @@
 
             document.getElementById('bill-total-kg').innerText = totalKg.toFixed(1);
             document.getElementById('bill-total-amt').innerText = '₹' + totalAmt.toFixed(0);
-            document.getElementById('bill-list').innerHTML = listHtml || '<p style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">कोई Entries नहीं</p>';
+            document.getElementById('bill-list').innerHTML = listHtml || '<p style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No entries</p>';
             dataDiv.style.display = 'block';
         }
 
@@ -590,12 +590,12 @@
             const end = document.getElementById('bill-end').value;
             let filtered = entries.filter(e => e.customer === cust && e.date >= start && e.date <= end);
             
-            if(filtered.length === 0) return alert('कोई Entries नहीं है');
+            if(filtered.length === 0) return alert('No entries है');
 
             let totalKg = 0, totalAmt = 0;
             filtered.forEach(e => { totalKg += e.kg; totalAmt += e.total; });
 
-            let msg = `*🥛 मिल्क Calculator - हिसाब*\nग्राहक: *${cust}*\n\n`;
+            let msg = `*🥛 Milk Scale Bill*\nCustomer: *${cust}*\n\n`;
             msg += `Total milk: *${totalKg.toFixed(1)} Kg*\n`;
             msg += `Total amount: *₹${totalAmt.toFixed(0)}*`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
@@ -619,7 +619,7 @@
             const div = document.createElement('div');
             div.className = 'scale-row';
             div.innerHTML = `
-                <input type="number" inputmode="decimal" enterkeyhint="next" class="s-m" placeholder="Milk" value="${m}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="Milk किलोग्राम">
+                <input type="number" inputmode="decimal" enterkeyhint="next" class="s-m" placeholder="Milk" value="${m}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="Milk in kilograms">
                 <input type="number" inputmode="decimal" enterkeyhint="next" class="s-s" placeholder="Sample" value="${s}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="Sample">
                 <div class="badhotri-box">0.00 gm</div>
             `;
