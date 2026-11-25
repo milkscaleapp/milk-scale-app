@@ -397,7 +397,7 @@
                 await autoSaveToFile(currentFileNumber);
             }
             
-            alert('सेव हो गया! फाइल अपडेट हो गई।');
+            alert('एंट्री ऐप में सेव हो गई। बैकअप फाइल डाउनलोड/सेव करने का प्रयास किया गया है।');
             
             document.getElementById('entry-kg').value = '';
             document.getElementById('entry-sample').value = '';
@@ -417,19 +417,43 @@
             };
             const fileName = `MilkScale_Backup_(${fileNum}).json`;
             
+            const json = JSON.stringify(dataToSave, null, 2);
             try {
-                await Capacitor.Plugins.Filesystem.writeFile({
-                    path: fileName,
-                    data: JSON.stringify(dataToSave),
-                    directory: 'DOCUMENTS',
-                    encoding: 'utf8'
-                });
-                
+                const fs = window.Capacitor?.Plugins?.Filesystem;
+                if (fs?.writeFile) {
+                    await fs.writeFile({
+                        path: fileName,
+                        data: json,
+                        directory: 'DOCUMENTS',
+                        encoding: 'utf8'
+                    });
+                    document.getElementById('backup-filedate').innerText = `अपडेटेड: ${new Date().toLocaleString()}`;
+                    document.getElementById('current-backup-file').style.display = 'block';
+                    document.getElementById('backup-filename').innerText = fileName;
+                    return true;
+                }
+            } catch (e) {
+                console.error('Native file save failed; using download fallback:', e);
+            }
+
+            try {
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
                 document.getElementById('current-backup-file').style.display = 'block';
                 document.getElementById('backup-filename').innerText = fileName;
-                document.getElementById('backup-filedate').innerText = `अपडेटेड: ${new Date().toLocaleString()}`;
-            } catch(e) {
-                console.error('फाइल सेव एरर:', e);
+                document.getElementById('backup-filedate').innerText = `डाउनलोड किया गया: ${new Date().toLocaleString()}`;
+                return true;
+            } catch (e) {
+                console.error('Backup download failed:', e);
+                alert('बैकअप फाइल नहीं बन पाई। कृपया दोबारा कोशिश करें।');
+                return false;
             }
         }
 
