@@ -61,7 +61,7 @@ jobs:
           mkdir -p android/app
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/milk-scale-release.jks
           cat > android/keystore.properties <<EOF
-          storeFile=app/milk-scale-release.jks
+          storeFile=milk-scale-release.jks
           storePassword=$KEYSTORE_PASSWORD
           keyAlias=$KEY_ALIAS
           keyPassword=$KEY_PASSWORD
@@ -72,13 +72,19 @@ jobs:
           p = Path("android/app/build.gradle")
           s = p.read_text()
 
+          # Keep any Gradle plugins block at the top of the file.
+          android_marker = "android {"
+          android_index = s.find(android_marker)
+          if android_index < 0:
+              raise SystemExit("Could not find android block in android/app/build.gradle")
+
           props = '''def keystoreProperties = new Properties()
           def keystorePropertiesFile = rootProject.file("keystore.properties")
           keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
           '''
           if "def keystoreProperties =" not in s:
-              s = props + s
+              s = s[:android_index] + props + s[android_index:]
 
           config = """    signingConfigs {
                   release {
@@ -91,14 +97,15 @@ jobs:
 
           """
           if "signingConfigs {" not in s:
-              s = s.replace("android {", "android {\n" + config, 1)
+              s = s.replace("android {", "android {\\n" + config, 1)
 
           build_types = s.find("buildTypes {")
           release_type = s.find("release {", build_types)
           if build_types < 0 or release_type < 0:
               raise SystemExit("Could not find release build type in android/app/build.gradle")
-          insert_at = release_type + len("release {")
-          s = s[:insert_at] + "\n            signingConfig signingConfigs.release" + s[insert_at:]
+          if "signingConfig signingConfigs.release" not in s:
+              insert_at = release_type + len("release {")
+              s = s[:insert_at] + "\\n            signingConfig signingConfigs.release" + s[insert_at:]
           p.write_text(s)
           PY
 
