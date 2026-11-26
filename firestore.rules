@@ -63,6 +63,7 @@ service cloud.firestore {
    allow create: if signedIn()
     && request.resource.data.ownerUid == request.auth.uid
     && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
+    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.dairyId == dairyId
     && request.resource.data.dairyId == dairyId
     && request.resource.data.username is string
     && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
