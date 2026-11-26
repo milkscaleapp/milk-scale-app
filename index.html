@@ -172,6 +172,18 @@
         .auth-card input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;margin:8px 0 12px}
         .auth-card button{border:0;border-radius:10px;padding:12px 15px;font-weight:700}.auth-primary{background:#2563eb;color:white;width:100%}.auth-secondary{background:#f1f5f9;color:#334155}
         .auth-status{min-height:20px;color:#475569;font-size:12px;margin:8px 0}
+
+.file-status-btn{display:flex!important;position:relative;animation:none!important;box-shadow:none!important}.file-status-btn.file-missing{border:0!important;background:linear-gradient(135deg,#10b981,#059669)!important;box-shadow:none!important}
+.file-alert-dot{display:inline-block;position:absolute;right:-3px;top:-3px;width:9px;height:9px;border:2px solid var(--bg);background:#ef4444;border-radius:50%}
+.managed-file{background:linear-gradient(145deg,#f1f5f9,#e2e8f0);border:1px solid #d1d5db;box-shadow:0 5px 0 #cbd5e1,0 8px 15px rgba(15,23,42,.07)}.managed-file.missing{border:1px solid #d1d5db;background:linear-gradient(145deg,#f1f5f9,#e2e8f0);box-shadow:0 5px 0 #cbd5e1,0 8px 15px rgba(15,23,42,.07)}
+.managed-file.active{order:-1;border:1px solid #bfdbfe;background:#fff;box-shadow:0 2px 8px rgba(37,99,235,.12);transform:none;padding:16px}.managed-file.active:active,.managed-file:active{transform:none;box-shadow:0 2px 8px rgba(15,23,42,.07)}.managed-file .file-pick{display:none}.managed-file .file-info{cursor:pointer}
+.request-center-btn{border:0;border-radius:12px;padding:10px 11px;background:#eff6ff;color:#1d4ed8;font-weight:700;white-space:nowrap}.app-header{flex-wrap:wrap}
+.full-page-backdrop{position:fixed;inset:0;z-index:4200;background:var(--bg);display:none;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}.full-page-backdrop.show{display:flex}
+.full-page-header{height:58px;flex:0 0 58px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border)}.full-page-header h2{font-size:18px;margin:0;flex:1}.back-icon,.refresh-icon{width:40px;height:40px;border:0;border-radius:12px;background:#eff6ff;color:#1d4ed8;display:grid;place-items:center;font-size:17px}
+.full-page-body{overflow:auto;padding:18px 16px 28px}.full-page-body section{background:#fff;border:1px solid var(--border);border-radius:16px;padding:15px;margin-bottom:14px}.full-page-body h3{font-size:15px;margin:0 0 12px}
+.profile-loader{height:54px;display:grid;place-items:center;color:#2563eb;font-size:27px}.profile-loader i{animation:profileSpin .75s linear infinite;font-weight:900}@keyframes profileSpin{to{transform:rotate(360deg)}}
+.customer-picker-wrap{position:relative}.customer-picker-list{display:none;position:absolute;top:100%;left:0;right:0;z-index:1500;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 25px rgba(15,23,42,.15)}.customer-picker-list.open{display:block}.customer-picker-option{padding:12px 14px;border-bottom:1px solid #f1f5f9;font-size:14px}.customer-picker-option:last-child{border:0}
+.entry-reorder-handle{touch-action:none;user-select:none;-webkit-user-select:none}.customer-row{transition:background .12s;will-change:transform}
     </style>
 </head>
 <body>
@@ -180,9 +192,9 @@
         <div class="header-left">
             <h1>Milk Scale</h1>
             <!-- File status button -->
-            <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
-                <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
-            </button>
+            <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" aria-label="JSON files">
+                <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">JSON</span><span class="file-alert-dot" id="header-file-dot"></span>
+            </button><button class="request-center-btn" onclick="openRequestCenter()"><i class="fa-solid fa-user-plus"></i> Requests</button>
         </div>
         <button class="account-btn" onclick="openAccount()"><i class="fa-solid fa-user"></i> Account</button>
     </header>
@@ -243,7 +255,7 @@
 
             <div class="card">
                 <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
-                <div class="form-group"><input type="text" id="entry-customer" class="form-control" list="customer-options" placeholder="Search or select customer" autocomplete="off"><datalist id="customer-options"></datalist></div>
+                <div class="form-group customer-picker-wrap"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" onfocus="showCustomerPicker()" oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div></div>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -260,50 +272,6 @@
                 <div class="form-group"><input type="number" id="entry-rate" class="form-control" placeholder="Rate (₹)" step="0.5"></div>
                 <button class="btn btn-primary" onclick="saveEntry()"><i class="fa-solid fa-check"></i> Save</button>
             </div>
-            <div class="card">
-              <button class="request-top-btn" type="button" onclick="toggleEntryRequests()"><span><i class="fa-solid fa-link"></i> दूधिया से कनेक्शन रिक्वेस्ट</span><i class="fa-solid fa-chevron-down"></i></button>
-              <div id="entry-request-panel" class="request-panel">
-                <div id="customer-request-form" style="display:none;margin-top:12px"><input id="dairy-search-id" class="form-control" placeholder="दूधिया का Username या Dairy ID लिखें"><button class="btn btn-primary" style="margin-top:8px" onclick="sendEntryDairyRequest()">रिक्वेस्ट भेजें</button></div>
-                <div id="entry-request-list" style="margin-top:10px"><p class="request-time">रिक्वेस्ट देखने के लिए खोलें।</p></div>
-              </div>
-            </div>
-            <div class="card">
-              <button class="request-top-btn" type="button" onclick="toggleEntryTools()"><span><i class="fa-solid fa-sliders"></i> खाता और अन्य सुविधाएँ</span><i class="fa-solid fa-chevron-down"></i></button>
-              <div id="entry-tools-panel" class="request-panel"><div id="cloud-ledger-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
-            <b>Cloud दूध खाता और भुगतान</b>
-            <p style="font-size:12px;color:#64748b">Owner: ग्राहक के अकाउंट UID को स्थानीय ग्राहक नाम से जोड़ें। Customer: अपना ऑनलाइन खाता देखें।</p>
-            <div id="owner-cloud-tools" style="display:none">
-              <input id="link-local-customer" placeholder="ऐप में ग्राहक का नाम">
-              <input id="link-customer-uid" placeholder="Customer UID (कनेक्शन सूची से)">
-              <button class="auth-secondary" onclick="saveCustomerCloudLink()">ग्राहक लिंक सेव करें</button>
-              <input id="payment-customer-uid" placeholder="Customer UID">
-              <input id="payment-amount" type="number" min="1" step="0.01" placeholder="जमा भुगतान ₹">
-              <input id="payment-note" placeholder="भुगतान का विवरण">
-              <button class="auth-primary" onclick="saveCloudPayment()">भुगतान दर्ज करें</button>
-              <button class="auth-secondary" onclick="syncAllLocalEntries()">सभी लोकल एंट्री Sync करें</button>
-              <hr style="border:0;border-top:1px solid #e2e8f0;margin:12px 0">
-              <b>Audit सुधार (पुरानी एंट्री मिटेगी नहीं)</b>
-              <select id="adjust-kind"><option value="amount">रकम सुधार ₹ (+/-)</option><option value="kg">दूध मात्रा सुधार Kg (+/-)</option></select>
-              <input id="adjust-delta" type="number" step="0.01" placeholder="सुधार (+ या -)">
-              <input id="adjust-note" placeholder="कारण / विवरण (अनिवार्य)">
-              <button class="auth-secondary" onclick="saveLedgerAdjustment()">सुधार दर्ज करें</button>
-            </div>
-            <div style="display:flex;gap:8px;margin:8px 0">
-              <input id="report-start" type="date" aria-label="रिपोर्ट शुरू">
-              <input id="report-end" type="date" aria-label="रिपोर्ट समाप्त">
-            </div>
-            <div style="display:flex;gap:6px;margin-bottom:8px">
-              <button class="auth-secondary" onclick="setCloudReportPeriod('week')">इस सप्ताह</button>
-              <button class="auth-secondary" onclick="setCloudReportPeriod('month')">इस महीने</button>
-              <button class="auth-secondary" onclick="setCloudReportPeriod('last')">पिछला महीना</button>
-            </div>
-            <input id="report-customer-uid" placeholder="Owner: Customer UID (वैकल्पिक)">
-            <button class="auth-secondary" onclick="loadCloudLedger()">रिपोर्ट / खाता Refresh करें</button>
-            <div id="cloud-ledger-result" class="auth-status"></div>
-          </div></div>
-            </div>
-        </div>
-
         <!-- BILL TAB -->
         <div id="tab-bill" class="tab-content">
             <div class="card">
@@ -364,7 +332,7 @@
         <!-- Backup icon removed from here, now it's in header -->
     </nav>
 
-    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
+<div class="full-page-backdrop" id="request-center" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeRequestCenter()"><i class="fa-solid fa-arrow-left"></i></button><h2>Requests</h2><button class="refresh-icon" onclick="loadRequestCenter()"><i class="fa-solid fa-rotate"></i></button></div><div class="full-page-body"><section><h3>आई हुई Requests</h3><div id="incoming-request-list"></div></section><section id="invite-customer-section"><h3>नया Customer जोड़ें</h3><input id="invite-customer-name" class="form-control" placeholder="Customer का नाम"><input id="invite-customer-phone" class="form-control" inputmode="tel" placeholder="मोबाइल नंबर"><button class="btn btn-primary" onclick="sendCustomerInvitation()">Request भेजें</button><div id="invite-result" class="auth-status"></div></section><section id="accept-invite-section"><h3>दूधिया की Request स्वीकार करें</h3><input id="invite-code-input" class="form-control" maxlength="8" placeholder="8 अक्षर का Request Code"><div class="row"><button class="btn btn-success" onclick="respondToCustomerInvite(true)">Accept</button><button class="btn auth-secondary" onclick="respondToCustomerInvite(false)">Reject</button></div></section></div></div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
         <div class="auth-page-heading" style="display:flex;justify-content:space-between;align-items:center"><h2 id="account-page-title">Account</h2><button class="auth-secondary" onclick="closeAccount()" aria-label="Close">✕</button></div>
         <div id="profile-view" style="display:none">
@@ -514,17 +482,7 @@
         }
 
         // --- Header File Display Logic ---
-        function showFileInHeader(fileNum) {
-            const btn = document.getElementById('header-file-btn');
-            const nameSpan = document.getElementById('header-file-name');
-            btn.style.display = 'flex';
-            nameSpan.innerText = `(${fileNum})`;
-            btn.classList.toggle('file-missing', filePresence[String(fileNum)] === false);
-            document.getElementById('current-backup-file').style.display = 'block';
-            document.getElementById('backup-filename').innerText = `MilkScale_Backup_(${fileNum}).json`;
-        }
-
-        // --- Customer Logic ---
+        function showFileInHeader(fileNum){const btn=document.getElementById('header-file-btn'),name=document.getElementById('header-file-name'),dot=document.getElementById('header-file-dot');if(btn)btn.style.display='flex';const fitted=Number(fileNum)>0&&filePresence[String(fileNum)]===true;if(name)name.innerText=fitted?'('+fileNum+')':'JSON';if(dot)dot.style.display=fitted?'none':'inline-block';const info=document.getElementById('current-backup-file');if(info)info.style.display=fitted?'block':'none';const title=document.getElementById('backup-filename');if(title&&fitted)title.innerText='MilkScale_Backup_('+fileNum+').json';}
         function renderCustomers() {
             const list = document.getElementById('cust-list');
             document.getElementById('customer-count').innerText = 'Total: ' + customers.length;
@@ -706,55 +664,7 @@
         }
 
         // --- Auto File Save Logic ---
-        async function autoSaveToFile(fileNum) {
-            const dataToSave = {
-                customers: customers, entries: entries,
-                scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
-                rate: document.getElementById('scale-rate').value
-            };
-            const fileName = `MilkScale_Backup_(${fileNum}).json`;
-            
-            const json = JSON.stringify(dataToSave, null, 2);
-            try {
-                const fs = window.Capacitor?.Plugins?.Filesystem;
-                if (fs?.writeFile) {
-                    await fs.writeFile({
-                        path: fileName,
-                        data: json,
-                        directory: 'DOCUMENTS',
-                        encoding: 'utf8'
-                    });
-                    document.getElementById('backup-filedate').innerText = `Updated: ${new Date().toLocaleString()}`;
-                    document.getElementById('current-backup-file').style.display = 'block';
-                    document.getElementById('backup-filename').innerText = fileName;
-                    return true;
-                }
-            } catch (e) {
-                console.error('Native file save failed; using download fallback:', e);
-            }
-
-            try {
-                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-                document.getElementById('current-backup-file').style.display = 'block';
-                document.getElementById('backup-filename').innerText = fileName;
-                document.getElementById('backup-filedate').innerText = `Downloaded: ${new Date().toLocaleString()}`;
-                return true;
-            } catch (e) {
-                console.error('Backup download failed:', e);
-                notify('Could not create backup file. Please try again.');
-                return false;
-            }
-        }
-
-        // --- Create New Backup File Manually ---
+        async async function autoSaveToFile(fileNum){const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}const data={customers,entries,scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value},fileName='MilkScale_Backup_('+fileNum+').json';try{await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});filePresence[String(fileNum)]=true;const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();return true;}catch(e){console.error('Native file save failed:',e);notify(e.message||'JSON file सेव नहीं हुई।');return false;}}
         async function createNewBackupFile() {
             saveActiveFileData();
             currentFileNumber = Math.max(0, ...Object.keys(fileStore).map(Number).filter(Number.isFinite)) + 1;
@@ -775,49 +685,9 @@
         function getKnownFileNumbers() {
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
-        function renderFileList() {
-            const list = document.getElementById('file-list');
-            if (!list) return;
-            const nums = getKnownFileNumbers();
-            list.innerHTML = nums.length ? nums.map(n => {
-                const missing = filePresence[String(n)] === false;
-                const active = n === currentFileNumber;
-                return `<div class="managed-file ${active?'active':''} ${missing?'missing':''}" data-file-number="${n}">
-                    <i class="fa-solid fa-file-code file-icon"></i>
-                    <div class="file-info" onclick="selectManagedFile(${n})">
-                        <h4>MilkScale_Backup_(${n}).json</h4>
-                        <p>${active?'Currently selected': 'Tap to select'} · ${(fileStore[String(n)]?.entries||[]).length} entries</p>
-                    </div>
-                    ${missing ? `<button class="file-pick" onclick="recreateManagedFile(${n})">Restore</button>` : `<button class="file-pick" onclick="selectManagedFile(${n})">Select</button>`}
-                </div>`;
-            }).join('') : '<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';
-        }
-        async function refreshActiveFilePresence() {
-            const fs = window.Capacitor?.Plugins?.Filesystem;
-            for (const n of getKnownFileNumbers()) {
-                try {
-                    if (!fs?.stat) { filePresence[String(n)] = true; continue; }
-                    await fs.stat({ path: `MilkScale_Backup_(${n}).json`, directory: 'DOCUMENTS' });
-                    filePresence[String(n)] = true;
-                } catch(e) { filePresence[String(n)] = false; }
-            }
-            if (currentFileNumber > 0) showFileInHeader(currentFileNumber);
-            renderFileList();
-        }
-        async function selectManagedFile(n) {
-            if (!fileStore[String(n)]) return;
-            saveActiveFileData();
-            currentFileNumber = n;
-            loadActiveFileData(n);
-            localStorage.setItem('ms_file_num', n);
-            saveLocal();
-            renderCustomers(); populateDropdowns();
-            document.getElementById('entry-customer').value = '';
-            initScaleBoard(); loadBill();
-            showFileInHeader(n);
-            await refreshActiveFilePresence();
-            switchTab('scale', document.querySelector('.bottom-nav .nav-item'));
-        }
+        function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file':'Tap to fit')+' · '+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';}
+        async async function refreshActiveFilePresence(){const fs=window.Capacitor?.Plugins?.Filesystem;for(const n of getKnownFileNumbers()){try{if(!fs?.stat)throw new Error('Native file storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;}catch(e){filePresence[String(n)]=false;}}if(currentFileNumber>0&&filePresence[String(currentFileNumber)]!==true){currentFileNumber=0;localStorage.removeItem('ms_file_num');}showFileInHeader(currentFileNumber);renderFileList();}
+        async async function selectManagedFile(n){if(!fileStore[String(n)])return;const fs=window.Capacitor?.Plugins?.Filesystem;try{if(!fs?.stat)throw new Error('File Manager storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});}catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}if(currentFileNumber>0)saveActiveFileData();currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal();renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));}
         async function recreateManagedFile(n) {
             if (!fileStore[String(n)]) return;
             const old = currentFileNumber;
@@ -835,14 +705,7 @@
                 notify('The JSON file has been recreated in File Manager / Documents.');
             }
         }
-        async function ensureFileSelected() {
-            if (currentFileNumber > 0) return true;
-            await appDialog('Add a JSON file first. Choose an existing backup or create a new file before adding entries.', false, 'JSON file required');
-            switchTab('backup', null);
-            return false;
-        }
-
-        // --- Restore Logic ---
+        async async function ensureFileSelected(){const n=Number(currentFileNumber),fs=window.Capacitor?.Plugins?.Filesystem;if(n>0&&fs?.stat){try{await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;return true;}catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}}await appDialog('नई Entry जोड़ने से पहले File Manager से मौजूद JSON फाइल फिट करें या नई JSON फाइल बनाएँ।',false,'JSON file required');switchTab('backup',null);return false;}
         async function importBackupFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1298,6 +1161,21 @@
             } catch (error) { document.getElementById('auth-status').innerText = 'लॉगआउट नहीं हो सका।'; }
         }
 
+
+function showCustomerPicker(){filterCustomerPicker();document.getElementById('customer-picker-list')?.classList.add('open');}
+function filterCustomerPicker(){const box=document.getElementById('customer-picker-list'),input=document.getElementById('entry-customer');if(!box||!input)return;const q=input.value.trim().toLowerCase(),rows=customers.filter(x=>x.toLowerCase().includes(q));box.innerHTML=rows.length?rows.map(x=>'<div class="customer-picker-option" onclick="chooseEntryCustomer(\''+escapeHtml(x).replace(/'/g,"\\'")+'\')">'+escapeHtml(x)+'</div>').join(''):'<div class="customer-picker-option">कोई Customer नहीं मिला</div>';box.classList.add('open');}
+function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;document.getElementById('customer-picker-list')?.classList.remove('open');}
+document.addEventListener('click',e=>{const w=document.querySelector('.customer-picker-wrap');if(w&&!w.contains(e.target))document.getElementById('customer-picker-list')?.classList.remove('open');});
+function openRequestCenter(){document.getElementById('request-center').classList.add('show');document.body.classList.add('auth-open');loadRequestCenter();history.pushState({page:'requests'},'','#requests');}
+function closeRequestCenter(){document.getElementById('request-center').classList.remove('show');document.body.classList.remove('auth-open');}
+async function loadRequestCenter(){const list=document.getElementById('incoming-request-list'),invite=document.getElementById('invite-customer-section'),accept=document.getElementById('accept-invite-section');list.innerHTML='<div class="profile-loader"><i class="fa-solid fa-circle-notch"></i></div>';try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user){list.innerHTML='<p>Requests देखने के लिए Login करें।</p>';invite.style.display='none';accept.style.display='none';return;}const p=await window.MilkScaleAuth.getProfile();invite.style.display=p?.role==='owner'?'block':'none';accept.style.display=p?.role==='customer'?'block':'none';const rows=await window.MilkScaleAuth.getMyConnectionRequests(),incoming=rows.filter(x=>x.targetUid===user.uid&&x.status==='pending');list.innerHTML=incoming.length?incoming.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.requesterName||x.requesterEmail||'Customer')+'</strong><div class="request-state">Pending</div><div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideRequestCenter(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideRequestCenter(\''+x.id+'\',false)">Reject</button></div></div>').join(''):'<p class="request-time">अभी कोई नई Request नहीं है।</p>';if(p?.role==='owner'){const sent=await window.MilkScaleAuth.getMyInvitations(),pending=sent.filter(x=>x.status==='pending');if(pending.length)list.innerHTML+='<h3>भेजी गई Requests</h3>'+pending.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.customerName)+'</strong><div class="request-state">Code: '+escapeHtml(x.code)+'</div><div class="request-time">यह Code Customer को भेजें</div></div>').join('');}}catch(e){list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Requests लोड नहीं हुईं')+'</p>';}}
+async function decideRequestCenter(id,accept){try{await window.MilkScaleAuth.decideDairyRequest(id,accept);await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
+async function sendCustomerInvitation(){const name=document.getElementById('invite-customer-name').value.trim(),phone=document.getElementById('invite-customer-phone').value.trim(),out=document.getElementById('invite-result');try{const code=await window.MilkScaleAuth.createInvitation(name,phone);out.innerText='Request Code: '+code+' — इसे Customer को भेजें।';document.getElementById('invite-customer-name').value='';document.getElementById('invite-customer-phone').value='';await loadRequestCenter();}catch(e){out.innerText=e.message||'Request नहीं भेजी जा सकी।';}}
+async function respondToCustomerInvite(accept){const code=document.getElementById('invite-code-input').value.trim().toUpperCase();try{await window.MilkScaleAuth.respondToInvitation(code,accept);document.getElementById('invite-code-input').value='';notify(accept?'Request स्वीकार हो गई।':'Request अस्वीकार कर दी गई।');await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
+function openSettingsPage(){document.getElementById('settings-page').classList.add('show');history.pushState({page:'settings'},'','#settings');}
+function closeSettingsPage(){document.getElementById('settings-page').classList.remove('show');}
+function handleAppBack(){const r=document.getElementById('request-center'),st=document.getElementById('settings-page'),ac=document.getElementById('auth-backdrop');if(st?.classList.contains('show')){closeSettingsPage();return;}if(r?.classList.contains('show')){closeRequestCenter();return;}if(ac?.classList.contains('show')){closeAccount();return;}const active=document.querySelector('.tab-content.active');if(active&&active.id!=='tab-scale'){switchTab('scale',document.querySelector('.bottom-nav .nav-item'));history.pushState({page:'home'},'','#home');return;}window.Capacitor?.Plugins?.App?.exitApp?.();}
+window.addEventListener('popstate',handleAppBack);document.addEventListener('backbutton',e=>{e.preventDefault?.();handleAppBack();},false);
         // Start App
         function setupAuthKeyboardNavigation(){
             const name=document.getElementById('auth-name'),email=document.getElementById('auth-email'),password=document.getElementById('auth-password');
