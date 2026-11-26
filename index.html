@@ -126,6 +126,10 @@
         .managed-file .file-info { min-width:0; cursor:pointer; }
         .managed-file .file-info h4 { overflow-wrap:anywhere; }
         .managed-file .file-pick { border:0; border-radius:9px; padding:9px 10px; background:var(--primary-light); color:var(--primary); font-weight:700; }
+        .managed-file{position:relative;overflow:visible}.managed-file .file-alert-dot{position:absolute;right:-5px;top:-5px;width:11px;height:11px;border:2px solid #fff;z-index:2}
+        .managed-file.active{position:relative;order:-1;margin:5px 2px 10px;padding:16px 14px 17px 18px;border:1px solid #1d4ed8;border-radius:12px;background:linear-gradient(145deg,#eff6ff,#dbeafe);box-shadow:inset 0 2px 5px rgba(30,64,175,.12),0 3px 0 #1e40af,0 8px 14px rgba(30,64,175,.16)}
+        .managed-file.active:before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:4px;border-radius:4px;background:linear-gradient(#93c5fd,#2563eb,#93c5fd);box-shadow:0 0 0 1px rgba(30,64,175,.15)}
+        .managed-file.active .file-icon{color:#1d4ed8;filter:drop-shadow(0 1px 1px rgba(30,64,175,.2))}.managed-file.active .file-info p{color:#1d4ed8;font-weight:700}.managed-file.active:after{content:'FITTED';position:absolute;right:12px;top:-8px;padding:3px 8px;border-radius:7px;background:#1d4ed8;color:#fff;font-size:9px;font-weight:800;letter-spacing:.7px;box-shadow:0 2px 4px rgba(30,64,175,.2)}
         .new-file-bottom { margin-top:14px; }
         .file-alert-dot { display:none; width:8px; height:8px; border-radius:50%; background:#ef4444; }
         .file-status-btn.file-missing { border:2px solid #ef4444; background:linear-gradient(135deg,#991b1b,#ef4444); box-shadow:0 0 0 3px #fee2e2; animation:none; }
@@ -175,10 +179,14 @@
         .auth-status{min-height:20px;color:#475569;font-size:12px;margin:8px 0}
 
 .file-status-btn{display:flex!important;position:relative;animation:none!important;box-shadow:none!important}.file-status-btn.file-missing{border:0!important;background:linear-gradient(135deg,#10b981,#059669)!important;box-shadow:none!important}
-.file-alert-dot{display:inline-block;position:absolute;right:-3px;top:-3px;width:9px;height:9px;border:2px solid var(--bg);background:#ef4444;border-radius:50%}
+.file-alert-dot{display:inline-block;position:absolute;right:-4px;top:-4px;width:10px;height:10px;border:2px solid var(--bg);background:#ef4444;border-radius:50%;z-index:3}
 .managed-file{background:linear-gradient(145deg,#f1f5f9,#e2e8f0);border:1px solid #d1d5db;box-shadow:0 5px 0 #cbd5e1,0 8px 15px rgba(15,23,42,.07)}.managed-file.missing{border:1px solid #d1d5db;background:linear-gradient(145deg,#f1f5f9,#e2e8f0);box-shadow:0 5px 0 #cbd5e1,0 8px 15px rgba(15,23,42,.07)}
 .managed-file.active{order:-1;border:1px solid #bfdbfe;background:#fff;box-shadow:0 2px 8px rgba(37,99,235,.12);transform:none;padding:16px}.managed-file.active:active,.managed-file:active{transform:none;box-shadow:0 2px 8px rgba(15,23,42,.07)}.managed-file .file-pick{display:none}.managed-file .file-info{cursor:pointer}
 .request-center-btn{border:0;border-radius:12px;padding:10px 11px;background:#eff6ff;color:#1d4ed8;font-weight:700;white-space:nowrap}.app-header{flex-wrap:wrap}
+.customer-center-tabs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:8px;align-items:center;margin-bottom:14px}
+.customer-center-tab{min-width:0;border:1px solid #dbeafe;border-radius:11px;background:#f8fafc;color:#64748b;padding:12px 7px;font-size:13px;font-weight:800;white-space:nowrap}
+.customer-center-tab.active{background:#2563eb;color:#fff;border-color:#2563eb;box-shadow:0 3px 8px rgba(37,99,235,.2)}
+.customer-center-refresh{width:42px;height:42px;border:0;border-radius:11px;background:#eff6ff;color:#1d4ed8;font-size:16px}
 .full-page-backdrop{position:fixed;inset:0;z-index:4200;background:var(--bg);display:none;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}.full-page-backdrop.show{display:flex}
 .full-page-header{height:58px;flex:0 0 58px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border)}.full-page-header h2{font-size:18px;margin:0;flex:1}.back-icon,.refresh-icon{width:40px;height:40px;border:0;border-radius:12px;background:#eff6ff;color:#1d4ed8;display:grid;place-items:center;font-size:17px}
 .full-page-body{flex:1;min-height:0;overflow:auto;padding:18px 16px 28px}.full-page-body section{background:#fff;border:1px solid var(--border);border-radius:16px;padding:15px;margin-bottom:14px}.full-page-body h3{font-size:15px;margin:0 0 12px}
@@ -274,7 +282,7 @@
         <!-- ENTRY TAB -->
         <div id="tab-entry" class="tab-content">
             <div class="card">
-                <button class="btn btn-primary" type="button" onclick="openRequestCenter()"><i class="fa-solid fa-users"></i> Customer Connections / Requests</button>
+                <button class="btn btn-primary" type="button" onclick="openRequestCenter()"><i class="fa-solid fa-users"></i> Customers</button>
                 <div class="customer-summary"><span>Connected Customers</span><span id="customer-count">Total: 0</span></div>
                 <div id="cust-list" style="max-height: 220px; overflow-y: auto; margin-top: 4px;"></div>
             </div>
@@ -364,17 +372,22 @@
  <div class="customer-picker-content"><input id="customer-picker-search" class="form-control" type="search" placeholder="Customer खोजें..." oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div></div>
 </div>
 <div class="full-page-backdrop" id="request-center" role="dialog" aria-modal="true">
- <div class="full-page-header"><button class="back-icon" onclick="closeRequestCenter()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2>Customer Connections</h2></div>
+ <div class="full-page-header"><button class="back-icon" onclick="closeRequestCenter()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2>Customers</h2></div>
  <div class="full-page-body request-board">
   <section>
-   <div class="request-section-heading"><h3 id="request-list-heading">Requests</h3><button class="refresh-icon" type="button" onclick="loadRequestCenter()" aria-label="Refresh"><i class="fa-solid fa-rotate"></i></button></div>
-   <div id="incoming-request-list"><p class="empty-state">अभी कोई Request नहीं है।</p></div>
-  </section>
-  <section id="customer-dairy-request" style="display:none">
-   <h3>दूधिया से जुड़ें</h3><p class="request-help">दूधिया की 6 अक्षरों वाली ID डालें।</p>
-   <input id="dairy-search-id" class="form-control" autocomplete="off" maxlength="10" autocapitalize="none" placeholder="दूधिया की ID" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9]/g,'')">
-   <button class="btn btn-primary" onclick="sendEntryDairyRequest()"><i class="fa-solid fa-paper-plane"></i> Request भेजें</button>
-   <div id="customer-request-status" class="auth-status"></div>
+   <div class="customer-center-tabs">
+    <button id="customer-tab-all" class="customer-center-tab active" type="button" onclick="setCustomerCenterView('all')">All Customers</button>
+    <button id="customer-tab-new" class="customer-center-tab" type="button" onclick="setCustomerCenterView('new')">New Request</button>
+    <button class="customer-center-refresh" type="button" onclick="loadRequestCenter()" aria-label="Refresh"><i class="fa-solid fa-rotate"></i></button>
+   </div>
+   <h3 id="request-list-heading">All Customers</h3>
+   <div id="incoming-request-list"><p class="empty-state">लोड हो रहा है...</p></div>
+   <section id="customer-dairy-request" style="display:none;margin:14px 0 0;padding:14px;border:1px solid var(--border);border-radius:14px;background:#fff">
+    <h3>दूधिया से जुड़ें</h3><p class="request-help">दूधिया की 6 अक्षरों वाली ID डालें।</p>
+    <input id="dairy-search-id" class="form-control" autocomplete="off" maxlength="10" autocapitalize="none" placeholder="दूधिया की ID" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9]/g,'')">
+    <button class="btn btn-primary" onclick="sendEntryDairyRequest()"><i class="fa-solid fa-paper-plane"></i> Request भेजें</button>
+    <div id="customer-request-status" class="auth-status"></div>
+   </section>
   </section>
  </div>
 </div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"><section class="empty-state">अभी कोई Settings उपलब्ध नहीं हैं।</section></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
@@ -445,10 +458,17 @@
         let filePresence = {};
         let fileWriteQueues = {};
 
+        const BACKUP_FOLDER='MilkScale Backup json';
+        async function ensureBackupFolder(){
+            const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.mkdir)throw new Error('Documents फोल्डर बनाने की अनुमति उपलब्ध नहीं है।');
+            try{await fs.mkdir({path:BACKUP_FOLDER,directory:'DOCUMENTS',recursive:true});}
+            catch(error){try{await fs.stat({path:BACKUP_FOLDER,directory:'DOCUMENTS'});}catch(_){throw error;}}
+        }
         async function readManagedFileData(fileNum){
             const fs=window.Capacitor?.Plugins?.Filesystem;
             if(!fs?.readFile)throw new Error('File Manager से JSON पढ़ने की सुविधा उपलब्ध नहीं है।');
-            const result=await fs.readFile({path:'MilkScale_Backup_('+fileNum+').json',directory:'DOCUMENTS',encoding:'utf8'});
+            await ensureBackupFolder();
+            const result=await fs.readFile({path:BACKUP_FOLDER+'/MilkScale_Backup_('+fileNum+').json',directory:'DOCUMENTS',encoding:'utf8'});
             const parsed=JSON.parse(result.data);
             if(!parsed||!Array.isArray(parsed.customers)||!Array.isArray(parsed.entries))throw new Error('यह वैध Milk Scale JSON फाइल नहीं है।');
             fileStore[String(fileNum)]={customers:parsed.customers,entries:parsed.entries,scale:Array.isArray(parsed.scale)?parsed.scale:[],rate:parsed.rate==null?'':String(parsed.rate)};
@@ -679,10 +699,11 @@
         // --- Auto File Save Logic ---
         async function autoSaveToFile(fileNum,createIfMissing=false){
  const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}
- const key=String(fileNum),fileName='MilkScale_Backup_('+fileNum+').json';
+ const key=String(fileNum),fileName=BACKUP_FOLDER+'/MilkScale_Backup_('+fileNum+').json';
  const data={customers:[...customers],entries:[...entries],scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value};
  const previous=fileWriteQueues[key]||Promise.resolve();
  const task=previous.catch(()=>{}).then(async()=>{
+  await ensureBackupFolder();
   if(!createIfMissing){if(!fs.stat)throw new Error('stat unavailable');await fs.stat({path:fileName,directory:'DOCUMENTS'});}
   await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});
  });
@@ -717,7 +738,8 @@
  const fs=window.Capacitor?.Plugins?.Filesystem,unreadable=new Set();
  if(fs?.readdir){
   try{
-   const directory=await fs.readdir({path:'',directory:'DOCUMENTS'});
+   await ensureBackupFolder();
+   const directory=await fs.readdir({path:BACKUP_FOLDER,directory:'DOCUMENTS'});
    for(const item of (directory.files||[])){
     const match=String(item.name||'').match(/^MilkScale_Backup_\((\d+)\)\.json$/i);
     if(!match)continue;
@@ -736,7 +758,8 @@
   try{
    const pending=fileWriteQueues[key];if(pending)await pending.catch(()=>{});
    if(!fs?.stat)throw new Error('Native file storage unavailable');
-   await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+   await ensureBackupFolder();
+   await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
    filePresence[key]=unreadable.has(key)?false:true;
   }catch(e){filePresence[key]=false;}
  }
@@ -757,7 +780,8 @@
  try{
   const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
   if(!fs?.stat)throw new Error('File Manager storage unavailable');
-  await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+  await ensureBackupFolder();
+   await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
  }catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}
  if(currentFileNumber>0&&currentFileNumber!==n)saveActiveFileData();
  try{await readManagedFileData(n);}catch(e){filePresence[String(n)]=false;renderFileList();notify(e.message||'JSON फाइल पढ़ी नहीं जा सकी।');return;}
@@ -787,7 +811,8 @@
  if(n>0&&fs?.stat){
   try{
    const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
-   await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+   await ensureBackupFolder();
+   await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
    filePresence[String(n)]=true;showFileInHeader(n);renderFileList();return true;
   }catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}
  }
@@ -1181,7 +1206,9 @@ function filterCustomerPicker(){
  box.innerHTML=rows.length?rows.map(x=>'<button type="button" class="customer-picker-option" onclick="chooseEntryCustomer(\''+escapeHtml(x).replace(/'/g,"\\'")+'\')">'+escapeHtml(x)+'</button>').join(''):'<div class="customer-picker-empty">कोई Customer नहीं मिला</div>';
 }
 function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;closeCustomerPicker();}
-function openRequestCenter(){const page=document.getElementById('request-center');page.classList.add('show');document.body.classList.add('auth-open');history.pushState({page:'requests'},'','#requests');loadRequestCenter();}
+let customerCenterView='all';
+function setCustomerCenterView(view){customerCenterView=view==='new'?'new':'all';document.getElementById('customer-tab-all')?.classList.toggle('active',customerCenterView==='all');document.getElementById('customer-tab-new')?.classList.toggle('active',customerCenterView==='new');loadRequestCenter();}
+function openRequestCenter(){const page=document.getElementById('request-center');customerCenterView='all';document.getElementById('customer-tab-all')?.classList.add('active');document.getElementById('customer-tab-new')?.classList.remove('active');page.classList.add('show');document.body.classList.add('auth-open');history.pushState({page:'requests'},'','#requests');loadRequestCenter();}
 function closeRequestCenter(){document.getElementById('request-center').classList.remove('show');document.body.classList.remove('auth-open');}
 async function syncConnectedCustomers(){
  try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user)return;const p=await window.MilkScaleAuth.getProfile();if(p?.role!=='owner')return;
@@ -1191,16 +1218,31 @@ async function syncConnectedCustomers(){
  }catch(e){console.warn('Connected customers refresh:',e?.message||e);}
 }
 async function loadRequestCenter(){
- const list=document.getElementById('incoming-request-list'),form=document.getElementById('customer-dairy-request'),heading=document.getElementById('request-list-heading');list.innerHTML='<div class="profile-loader"><i class="fa-solid fa-circle-notch"></i></div>';
- try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user){list.innerHTML='<div class="empty-state">Requests देखने के लिए पहले Account में Login करें।</div>';form.style.display='none';return;}
-  const p=await window.MilkScaleAuth.getProfile();if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';form.style.display='none';return;}
-  const rows=await window.MilkScaleAuth.getMyConnectionRequests();
-  if(p.role==='owner'){form.style.display='none';heading.innerText='आई हुई Customer Requests';const incoming=rows.filter(x=>x.targetUid===user.uid&&x.status==='pending');
-   list.innerHTML=incoming.length?incoming.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.requesterName||x.requesterEmail||'Customer')+'</strong><div class="request-state">नई Request</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div><div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideRequestCenter(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideRequestCenter(\''+x.id+'\',false)">Reject</button></div></div>').join(''):'<div class="empty-state">अभी कोई नई Customer Request नहीं है।</div>';await syncConnectedCustomers();
-  }else{form.style.display='block';heading.innerText='मेरी Dairy Requests';const sent=rows.filter(x=>x.requesterUid===user.uid).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-   list.innerHTML=sent.length?sent.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.targetName||'Dairy')+'</strong><div class="request-state">'+(x.status==='pending'?'Pending':x.status==='accepted'?'Accepted':'Rejected')+'</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div></div>').join(''):'<div class="empty-state">अभी कोई Dairy Request नहीं भेजी गई है।</div>';
+ const list=document.getElementById('incoming-request-list'),form=document.getElementById('customer-dairy-request'),heading=document.getElementById('request-list-heading');
+ if(!list||!form)return;
+ list.innerHTML='<div class="profile-loader"><i class="fa-solid fa-circle-notch"></i></div>';form.style.display='none';
+ try{
+  const user=await window.MilkScaleAuth?.getCurrentUser();
+  if(!user){heading.innerText=customerCenterView==='all'?'All Customers':'New Request';list.innerHTML='<div class="empty-state">Customers देखने के लिए पहले Account में Login करें।</div>';return;}
+  const p=await window.MilkScaleAuth.getProfile();if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';return;}
+  const [connections,requests]=await Promise.all([window.MilkScaleAuth.getMyConnections(),window.MilkScaleAuth.getMyConnectionRequests()]);
+  if(customerCenterView==='all'){
+   heading.innerText='All Customers';const active=connections.filter(x=>x.status==='active');
+   if(p.role==='owner')list.innerHTML=active.length?active.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.customerProfile?.displayName||x.customerName||'Customer')+'</strong><div class="request-state">Connected Customer</div><div class="request-time">Connected</div></div>').join(''):'<div class="empty-state">अभी कोई Customer कनेक्ट नहीं है।</div>';
+   else list.innerHTML=active.length?active.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.dairyProfile?.displayName||'Dairy')+'</strong><div class="request-state">Connected Dairy</div><div class="request-time">'+escapeHtml(x.dairyProfile?.dairyId||'')+'</div></div>').join(''):'<div class="empty-state">अभी कोई Dairy कनेक्ट नहीं है।</div>';
+  }else{
+   heading.innerText='New Request';
+   if(p.role==='owner'){
+    const incoming=requests.filter(x=>x.targetUid===user.uid&&x.status==='pending');
+    list.innerHTML=incoming.length?incoming.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.requesterName||x.requesterEmail||'Customer')+'</strong><div class="request-state">नई Request</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div><div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideRequestCenter(\\''+x.id+'\\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideRequestCenter(\\''+x.id+'\\',false)">Reject</button></div></div>').join(''):'<div class="empty-state">अभी कोई नई Customer Request नहीं है।</div>';
+    await syncConnectedCustomers();
+   }else{
+    form.style.display='block';
+    const sent=requests.filter(x=>x.requesterUid===user.uid).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    list.innerHTML=sent.length?sent.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.targetName||'Dairy')+'</strong><div class="request-state">'+(x.status==='pending'?'Pending':x.status==='accepted'?'Accepted':'Rejected')+'</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div></div>').join(''):'<div class="empty-state">अभी कोई Request नहीं भेजी गई है।</div>';
+   }
   }
- }catch(e){list.innerHTML='<div class="empty-state">'+escapeHtml(e.message||'Requests लोड नहीं हुईं')+'</div>';}
+ }catch(e){list.innerHTML='<div class="empty-state">'+escapeHtml(e.message||'Customers लोड नहीं हुए')+'</div>';}
 }
 async function sendEntryDairyRequest(){const field=document.getElementById('dairy-search-id'),out=document.getElementById('customer-request-status');try{const result=await window.MilkScaleAuth.sendDairyConnectionRequest(field.value);field.value='';out.innerText='Request '+(result.dairy.displayName||'Dairy')+' को भेज दी गई है।';await loadRequestCenter();}catch(e){out.innerText=e.message||'Request नहीं भेजी जा सकी।';}}
 async function decideRequestCenter(id,accept){try{await window.MilkScaleAuth.decideDairyRequest(id,accept);notify(accept?'Request स्वीकार हो गई।':'Request अस्वीकार कर दी गई।');await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
