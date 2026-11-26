@@ -1108,19 +1108,37 @@
         }
         async function refreshAccountStatus(){
           const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status');
-          try{const user=await window.MilkScaleAuth?.getCurrentUser(),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
-            if(user){let p=await window.MilkScaleAuth.getProfile();if(p)p=await window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName);pv.style.display='block';fv.style.display='none';
-              const name=p?.displayName||user.displayName||user.email?.split('@')[0]||'User';document.getElementById('profile-name').innerText=name;document.getElementById('profile-email').innerText=user.email||'';
-              document.getElementById('profile-avatar').innerText=name.charAt(0).toUpperCase();document.getElementById('profile-dairy-id').innerText=p?.dairyId||'ID अभी उपलब्ध नहीं';document.getElementById('profile-username').innerText=p?.username?'Username: '+p.username:'';
-              document.getElementById('profile-role-label').innerText=p?.role==='owner'?'Dairy Owner / दूधिया':'Customer / ग्राहक';
-              document.getElementById('profile-edit-name').value=name;document.getElementById('profile-edit-role').value=p?.role||'customer';
-              const img=document.getElementById('profile-photo');if(p?.avatarData){img.src=p.avatarData;img.style.display='block';document.getElementById('profile-avatar').style.display='none';}else{img.removeAttribute('src');img.style.display='none';document.getElementById('profile-avatar').style.display='block';}
-              document.getElementById('dairy-role-area').style.display=p?'none':'block';if(p){document.getElementById('dairy-role').value=p.role;document.getElementById('dairy-role').disabled=true;showDairyRoleTools(p.role);}else{document.getElementById('dairy-role').disabled=false;showDairyRoleTools('');}
-              await renderConnectedDairyProfile(p);status.innerText=p?'':'पहले अपनी भूमिका चुनें।';
-            }else{pv.style.display='none';fv.style.display='block';formStatus.innerText='';status.innerText='';}
-          }catch(e){if(status)status.innerText=e.message||'अकाउंट जानकारी लोड नहीं हुई।';}
+          const pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
+          try{
+            const user=await window.MilkScaleAuth?.getCurrentUser();
+            if(!user){pv.style.display='none';fv.style.display='block';formStatus.innerText='';status.innerText='';return;}
+            pv.style.display='block';fv.style.display='none';formStatus.innerText='';
+            document.getElementById('profile-email').innerText=user.email||'';
+            status.innerText='प्रोफाइल लोड हो रही है…';
+            let p=await window.MilkScaleAuth.getProfile();
+            if(p && p.role) p=await window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName);
+            const name=p?.displayName||user.displayName||user.email?.split('@')[0]||'User';
+            document.getElementById('profile-name').innerText=name;
+            document.getElementById('profile-avatar').innerText=name.charAt(0).toUpperCase();
+            document.getElementById('profile-dairy-id').innerText=p?.dairyId||'ID अभी उपलब्ध नहीं';
+            document.getElementById('profile-username').innerText=p?.username?'Username: '+p.username:'';
+            document.getElementById('profile-role-label').innerText=p?.role==='owner'?'Dairy Owner / दूधिया':p?.role==='customer'?'Customer / ग्राहक':'भूमिका चुनें';
+            document.getElementById('profile-edit-name').value=name;
+            document.getElementById('profile-edit-role').value=p?.role||'customer';
+            const img=document.getElementById('profile-photo');
+            if(p?.avatarData){img.src=p.avatarData;img.style.display='block';document.getElementById('profile-avatar').style.display='none';}
+            else{img.removeAttribute('src');img.style.display='none';document.getElementById('profile-avatar').style.display='block';}
+            document.getElementById('dairy-role-area').style.display=p?'none':'block';
+            if(p){document.getElementById('dairy-role').value=p.role;document.getElementById('dairy-role').disabled=true;showDairyRoleTools(p.role);}
+            else{document.getElementById('dairy-role').disabled=false;showDairyRoleTools('');}
+            await renderConnectedDairyProfile(p);
+            status.innerText=p?'':'पहले अपनी भूमिका चुनें।';
+          }catch(e){
+            pv.style.display='block';fv.style.display='none';
+            if(status)status.innerText=(e.message||'अकाउंट जानकारी लोड नहीं हुई।')+' आप लॉगिन हो चुके हैं।';
+          }
         }
-        function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input)return;const show=input.type==='password';input.type=show?'text':'password';button.innerHTML=show?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',show?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');}
+        function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input||!button)return;const isHidden=input.type==='password';input.type=isHidden?'text':'password';const isVisible=input.type==='text';button.innerHTML=isVisible?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',isVisible?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');button.setAttribute('aria-pressed',String(isVisible));}
         function toggleProfileSettings(){const p=document.getElementById('profile-settings-panel');p.style.display=p.style.display==='none'?'block':'none';}
         async function saveProfileSettings(){
           const name=document.getElementById('profile-edit-name').value.trim(),role=document.getElementById('profile-edit-role').value,status=document.getElementById('auth-status');
@@ -1281,7 +1299,22 @@
         }
 
         // Start App
+        function setupAuthKeyboardNavigation(){
+            const name=document.getElementById('auth-name'),email=document.getElementById('auth-email'),password=document.getElementById('auth-password');
+            if(!email||!password)return;
+            [name,email,password].filter(Boolean).forEach((input,index,items)=>{
+                input.setAttribute('enterkeyhint',index===items.length-1?'go':'next');
+                input.addEventListener('keydown',event=>{
+                    if(event.key!=='Enter')return;
+                    event.preventDefault();
+                    if(input===password){submitAccountAuth();return;}
+                    const next=input===name?email:password;
+                    if(next){next.focus();if(next.select)next.select();}
+                });
+            });
+        }
         window.onload = () => {
+            setupAuthKeyboardNavigation();
             init();
         };
     </script>
