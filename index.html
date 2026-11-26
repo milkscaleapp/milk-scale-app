@@ -1099,7 +1099,7 @@
             document.getElementById('auth-name-wrap').style.display = accountAuthMode === 'register' ? 'block' : 'none';
             document.getElementById('auth-mode-btn').innerText = accountAuthMode === 'login' ? 'नया अकाउंट बनाएँ' : 'पहले से अकाउंट है? लॉगिन';
             document.getElementById('auth-password').autocomplete = accountAuthMode === 'login' ? 'current-password' : 'new-password';
-            document.getElementById('auth-status').innerText = '';
+            document.getElementById('auth-form-status').innerText = '';
         }
         async function refreshAccountStatus(){
           const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status');
