@@ -183,7 +183,7 @@
 .full-page-body{overflow:auto;padding:18px 16px 28px}.full-page-body section{background:#fff;border:1px solid var(--border);border-radius:16px;padding:15px;margin-bottom:14px}.full-page-body h3{font-size:15px;margin:0 0 12px}
 .profile-loader{height:54px;display:grid;place-items:center;color:#2563eb;font-size:27px}.profile-loader i{animation:profileSpin .75s linear infinite;font-weight:900}@keyframes profileSpin{to{transform:rotate(360deg)}}
 .customer-picker-wrap{position:relative}.customer-picker-list{display:none;position:absolute;top:100%;left:0;right:0;z-index:1500;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 25px rgba(15,23,42,.15)}.customer-picker-list.open{display:block}.customer-picker-option{padding:12px 14px;border-bottom:1px solid #f1f5f9;font-size:14px}.customer-picker-option:last-child{border:0}
-.entry-reorder-handle{touch-action:none;user-select:none;-webkit-user-select:none}.customer-row{transition:background .12s;will-change:transform}
+.entry-reorder-handle{touch-action:none;user-select:none;-webkit-user-select:none}.customer-row{transition:transform 150ms cubic-bezier(.2,.75,.25,1),background .12s;will-change:transform}
 
 .edit-profile-backdrop{position:fixed;inset:0;z-index:4500;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:20px}.edit-profile-backdrop.show{display:flex}
 .edit-profile-card{width:100%;max-width:440px;background:#fff;border-radius:22px;padding:20px;box-shadow:0 20px 60px rgba(15,23,42,.25)}.edit-profile-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.edit-profile-heading h3{margin:0}.edit-profile-card input{margin:7px 0 12px}
@@ -264,7 +264,7 @@
 
             <div class="card">
                 <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
-                <div class="form-group customer-picker-wrap"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" onfocus="showCustomerPicker()" oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div></div>
+                <div class="form-group customer-picker-wrap"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" onfocus="showCustomerPicker()" oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div><datalist id="customer-options"></datalist></div>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -459,18 +459,13 @@
         }
 
         // --- Navigation ---
-        function switchTab(tabId, el) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            const target = document.getElementById('tab-' + tabId);
-            if (!target) return;
-            target.classList.add('active');
-            if (tabId === 'entry') { loadEntryRequests(); }
-            // Keep the Entries screen accessible for dairy connection requests even before a backup file is selected.
-            if (el) el.classList.add('active');
-            else if (tabId === 'backup') document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
-        }
-
+        function switchTab(tabId,el,fromBack=false){
+ const previous=document.querySelector('.tab-content.active')?.id?.replace('tab-','');
+ if(previous&&previous!==tabId&&!fromBack)history.pushState({tab:tabId},'','#'+tabId);
+ document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+ const target=document.getElementById('tab-'+tabId);if(!target)return;target.classList.add('active');
+ if(el)el.classList.add('active');else if(tabId==='backup')document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
+}
         function saveLocal() {
             try {
                 localStorage.setItem('ms_cust', JSON.stringify(customers));
@@ -538,6 +533,7 @@
                 }
                 e.preventDefault();
                 const rows = [...list.querySelectorAll('.customer-row:not(.dragging)')];
+                const before = new Map(rows.map(node => [node, node.getBoundingClientRect().top]));
                 let placed = false;
                 for (const candidate of rows) {
                     const rect = candidate.getBoundingClientRect();
@@ -546,6 +542,10 @@
                     }
                 }
                 if (!placed) list.appendChild(placeholder);
+                requestAnimationFrame(() => rows.forEach(node => {
+                    const delta = before.get(node) - node.getBoundingClientRect().top;
+                    if (delta) { node.style.transition='none'; node.style.transform='translateY('+delta+'px)'; requestAnimationFrame(() => { node.style.transition='transform 150ms cubic-bezier(.2,.75,.25,1)'; node.style.transform=''; }); }
+                }));
             };
             const end = e => {
                 clearTimeout(timer);
@@ -672,23 +672,16 @@
 
         // --- Auto File Save Logic ---
         async async function autoSaveToFile(fileNum){const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}const data={customers,entries,scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value},fileName='MilkScale_Backup_('+fileNum+').json';try{await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});filePresence[String(fileNum)]=true;const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();return true;}catch(e){console.error('Native file save failed:',e);notify(e.message||'JSON file सेव नहीं हुई।');return false;}}
-        async function createNewBackupFile() {
-            saveActiveFileData();
-            currentFileNumber = Math.max(0, ...Object.keys(fileStore).map(Number).filter(Number.isFinite)) + 1;
-            fileStore[String(currentFileNumber)] = { customers: [], entries: [], scale: [], rate: '' };
-            loadActiveFileData(currentFileNumber);
-            localStorage.setItem('ms_file_num', currentFileNumber);
-            saveLocal();
-            renderCustomers(); populateDropdowns();
-            document.getElementById('entry-customer').value = '';
-            initScaleBoard(); loadBill();
-            await autoSaveToFile(currentFileNumber);
-            showFileInHeader(currentFileNumber);
-            renderFileList();
-            refreshActiveFilePresence();
-            notify('A new empty file has been created.');
-        }
-
+        async async function createNewBackupFile(){
+ if(currentFileNumber>0)saveActiveFileData();
+ const previous=currentFileNumber,oldCustomers=customers,oldEntries=entries;
+ const n=Math.max(0,...Object.keys(fileStore).map(Number).filter(Number.isFinite))+1;
+ fileStore[String(n)]={customers:[],entries:[],scale:[],rate:''};currentFileNumber=n;customers=[];entries=[];
+ const ok=await autoSaveToFile(n);
+ if(!ok){delete fileStore[String(n)];currentFileNumber=previous;customers=oldCustomers;entries=oldEntries;if(previous>0)loadActiveFileData(previous);localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',previous);return;}
+ localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',n);saveLocal();
+ renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));
+}
         function getKnownFileNumbers() {
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
@@ -1172,13 +1165,15 @@ async function sendCustomerInvitation(){const name=document.getElementById('invi
 async function respondToCustomerInvite(accept){const code=document.getElementById('invite-code-input').value.trim().toUpperCase();try{await window.MilkScaleAuth.respondToInvitation(code,accept);document.getElementById('invite-code-input').value='';notify(accept?'Request स्वीकार हो गई।':'Request अस्वीकार कर दी गई।');await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
 function openSettingsPage(){document.getElementById('settings-page').classList.add('show');history.pushState({page:'settings'},'','#settings');}
 function closeSettingsPage(){document.getElementById('settings-page').classList.remove('show');}
-function handleAppBack(){const r=document.getElementById('request-center'),st=document.getElementById('settings-page'),ac=document.getElementById('auth-backdrop');if(st?.classList.contains('show')){closeSettingsPage();return;}if(r?.classList.contains('show')){closeRequestCenter();return;}if(ac?.classList.contains('show')){closeAccount();return;}const active=document.querySelector('.tab-content.active');if(active&&active.id!=='tab-scale'){switchTab('scale',document.querySelector('.bottom-nav .nav-item'));history.pushState({page:'home'},'','#home');return;}window.Capacitor?.Plugins?.App?.exitApp?.();}
-window.addEventListener('popstate',handleAppBack);document.addEventListener('backbutton',e=>{e.preventDefault?.();handleAppBack();},false);
-
-function openProfileEditor(){document.getElementById('profile-edit-status').innerText='';document.getElementById('profile-edit-name').value=document.getElementById('profile-name').innerText;document.getElementById('profile-edit-username').value=(document.getElementById('profile-username').innerText||'').replace(/^@/,'');document.getElementById('edit-profile-modal').classList.add('show');}
-function closeProfileEditor(){document.getElementById('edit-profile-modal').classList.remove('show');}
-async function switchProfileRole(){const current=document.getElementById('profile-role-label').dataset.role||'customer',next=current==='owner'?'customer':'owner';try{const username=(document.getElementById('profile-username').innerText||'').replace(/^@/,'');await window.MilkScaleAuth.updateProfileDetails(document.getElementById('profile-name').innerText,next,username);await refreshAccountStatus();notify('Account type बदल गया।');}catch(e){notify(e.message||'Account type नहीं बदल सका।');}}
-        // Start App
+function handleAppBack(){
+ const editor=document.getElementById('edit-profile-modal');if(editor?.classList.contains('show')){closeProfileEditor();return;}
+ const st=document.getElementById('settings-page');if(st?.classList.contains('show')){closeSettingsPage();return;}
+ const r=document.getElementById('request-center');if(r?.classList.contains('show')){closeRequestCenter();return;}
+ const ac=document.getElementById('auth-backdrop');if(ac?.classList.contains('show')){closeAccount();return;}
+ if(history.state?.tab){switchTab(history.state.tab,null,true);return;}
+ const active=document.querySelector('.tab-content.active');if(active&&active.id!=='tab-scale'){switchTab('scale',document.querySelector('.bottom-nav .nav-item'),true);return;}
+ window.Capacitor?.Plugins?.App?.exitApp?.();
+}
         function setupAuthKeyboardNavigation(){
             const name=document.getElementById('auth-name'),email=document.getElementById('auth-email'),password=document.getElementById('auth-password');
             if(!email||!password)return;
