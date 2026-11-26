@@ -22,8 +22,19 @@ async function ensureProfile(role,displayName=''){
  const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:snap.exists()?snap.data().createdAt:serverTimestamp()};
  if(snap.exists()){if(!snap.data().dairyId)await updateDoc(ref,{displayName:name,username,dairyId});}
  else await setDoc(ref,profile);
- if(role==='owner')await setDoc(doc(db,'dairyDirectory',dairyId),{ownerUid:u.uid,displayName:name,username,dairyId,avatarData:snap.exists()?(snap.data().avatarData||''):'',createdAt:snap.exists()?(snap.data().createdAt||serverTimestamp()):serverTimestamp()},{merge:true});
+ if(role==='owner')await setDoc(doc(db,'dairyDirectory',dairyId),{ownerUid:u.uid,displayName:name,username,dairyId,avatarData:snap.exists()?(snap.data().avatarData||''):'',active:true,createdAt:snap.exists()?(snap.data().createdAt||serverTimestamp()):serverTimestamp()},{merge:true});
  return profile;
+}
+async function updateProfileDetails(displayName,role){
+ const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
+ displayName=String(displayName||'').trim().slice(0,60);if(displayName.length<2)throw new Error('नाम कम से कम 2 अक्षर का लिखें।');
+ if(!['owner','customer'].includes(role))throw new Error('अकाउंट का प्रकार चुनें।');
+ const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(!snap.exists())throw new Error('प्रोफाइल उपलब्ध नहीं है।');
+ const old=snap.data();if(old.role!==role){const connections=await getMyConnections();if(connections.length)throw new Error('अकाउंट का प्रकार बदलने से पहले सभी सक्रिय Dairy कनेक्शन हटाने होंगे।');}
+ await updateDoc(ref,{displayName,role});
+ if(old.role==='owner'&&role!=='owner'&&old.dairyId)await updateDoc(doc(db,'dairyDirectory',old.dairyId),{active:false,displayName});
+ if(role==='owner')await setDoc(doc(db,'dairyDirectory',old.dairyId),{ownerUid:u.uid,displayName,username:old.username,dairyId:old.dairyId,avatarData:old.avatarData||'',active:true,createdAt:old.createdAt||serverTimestamp()},{merge:true});
+ return true;
 }
 async function updateProfilePhoto(avatarData){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
@@ -46,7 +57,7 @@ async function getMyConnections(){
   return connection;
  }));
 }
-window.MilkScaleAuth={getCurrentUser,createAccount,signIn,sendPasswordReset,signOut,getProfile,ensureProfile,createInvitation,getMyInvitations,respondToInvitation,getMyConnections};
+window.MilkScaleAuth={getCurrentUser,createAccount,signIn,sendPasswordReset,signOut,getProfile,ensureProfile,createInvitation,getMyInvitations,respondToInvitation,getMyConnections,updateProfilePhoto,updateProfileDetails};
 
 async function createConnectionRequest(displayName=''){
  const u=await getCurrentUser(); if(!u) throw new Error('पहले लॉगिन करें।');
@@ -110,8 +121,10 @@ async function findDairy(identifier){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
  const key=String(identifier||'').trim();if(!key)throw new Error('दूधिया की ID या Username लिखें।');
  let snap=await getDoc(doc(db,'dairyDirectory',key.toUpperCase()));
- if(!snap.exists()) {const q=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',key.toLowerCase())));if(q.empty)throw new Error('इस ID या Username का दूधिया नहीं मिला।');snap=q.docs[0];}
- return {id:snap.id,...snap.data()};
+ if(!snap.exists()) {const q=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',key.toLowerCase()),where('active','==',true)));if(q.empty)throw new Error('इस ID या Username का दूधिया नहीं मिला।');snap=q.docs[0];}
+ const dairy={id:snap.id,...snap.data()};if(dairy.active===false)throw new Error('यह Dairy ID अभी सक्रिय नहीं है।');
+ const owner=await getDoc(doc(db,'profiles',dairy.ownerUid));if(!owner.exists()||owner.data().role!=='owner')throw new Error('यह Dairy अकाउंट अब सक्रिय नहीं है।');
+ return dairy;
 }
 async function sendDairyConnectionRequest(identifier){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
