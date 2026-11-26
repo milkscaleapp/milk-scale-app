@@ -29,6 +29,8 @@ async function ensureProfile(role,displayName=''){
    await setDoc(directoryRef,{ownerUid:u.uid,displayName:name,username,dairyId,avatarData:snap.exists()?(snap.data().avatarData||''):'',active:true,createdAt:serverTimestamp()});
   }else if(directorySnap.data().ownerUid!==u.uid){
    throw new Error('इस Dairy ID का रिकॉर्ड किसी दूसरे Owner से जुड़ा है। सहायता के बिना इसे न बदलें।');
+  }else{
+   await updateDoc(directoryRef,{displayName:name,username,active:true,avatarData:snap.exists()?(snap.data().avatarData||''):''});
   }
  }
  return profile;
