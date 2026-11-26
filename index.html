@@ -163,7 +163,7 @@
         .profile-hero{display:flex;align-items:center;gap:14px;padding:16px;background:#eff6ff;border-radius:16px;margin:14px 0}
         .profile-photo-button{position:relative;width:76px;height:76px;flex:0 0 76px;border:0!important;padding:0!important;border-radius:50%!important;background:#2563eb;color:white;overflow:visible;display:grid;place-items:center;font-size:28px}
         .profile-photo-button img{width:100%;height:100%;object-fit:cover;border-radius:50%}.profile-photo-button>i{position:absolute;right:-2px;bottom:-2px;background:#fff;color:#2563eb;border:1px solid #dbeafe;border-radius:50%;padding:7px;font-size:12px}
-        .profile-id-card{display:flex;flex-direction:column;gap:5px;border:1px solid #dbeafe;background:#fff;border-radius:14px;padding:14px}.profile-id-card small{font-size:12px;color:#64748b}.profile-id-card strong{font-size:20px;letter-spacing:.6px;color:#1d4ed8}
+        .profile-id-card{display:flex;flex-direction:column;gap:5px;border:1px solid #dbeafe;background:#fff;border-radius:14px;padding:14px}.profile-id-card small{font-size:12px;color:#64748b}.profile-id-card strong{font-size:20px;letter-spacing:.6px;color:#1d4ed8}.profile-role-label{display:inline-flex;align-self:flex-start;background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:5px 10px;font-size:12px;font-weight:700;margin-top:5px}
         .profile-settings{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:18px;background:#f1f5f9;color:#334155}.logout-danger{width:100%;margin-top:24px;background:#dc2626!important;color:#fff!important;padding:15px!important;border-radius:12px!important}
         .password-wrap{position:relative}.auth-card .password-wrap input{padding-right:52px}.password-eye{position:absolute;right:8px;top:13px;background:transparent!important;color:#64748b;padding:8px!important}
         .connected-dairy-card{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e2e8f0}.connected-dairy-card img,.connected-dairy-card .fallback{width:46px;height:46px;object-fit:cover;border-radius:50%;background:#dbeafe;display:grid;place-items:center;color:#1d4ed8;font-weight:800}
@@ -369,10 +369,15 @@
         <div class="auth-page-heading" style="display:flex;justify-content:space-between;align-items:center"><h2 id="account-page-title">Account</h2><button class="auth-secondary" onclick="closeAccount()" aria-label="Close">✕</button></div>
         <div id="profile-view" style="display:none">
           <div class="profile-hero"><button class="profile-photo-button" type="button" onclick="document.getElementById('profile-photo-input').click()"><img id="profile-photo" alt="Profile photo" style="display:none"><span id="profile-avatar">M</span><i class="fa-solid fa-camera"></i></button><div class="profile-meta"><strong id="profile-name">User</strong><small id="profile-email"></small></div><input id="profile-photo-input" type="file" accept="image/*" style="display:none" onchange="saveProfilePhoto(this)"></div>
-          <div class="profile-id-card"><small>आपकी स्थायी Dairy ID</small><strong id="profile-dairy-id">—</strong><small id="profile-username"></small></div>
+          <div class="profile-id-card"><small>आपकी स्थायी Dairy ID</small><strong id="profile-dairy-id">—</strong><small id="profile-username"></small><span id="profile-role-label" class="profile-role-label"></span></div>
           <div id="dairy-role-area" style="display:none;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-top:14px"><label for="dairy-role">आपका अकाउंट</label><select id="dairy-role" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0 10px"><option value="owner">Dairy Owner / दूधिया</option><option value="customer">Customer / ग्राहक</option></select><button class="auth-secondary" style="width:100%" onclick="saveDairyRole()">भूमिका सेव करें</button></div>
           <div id="connected-dairy-list" style="display:none;margin-top:16px"></div>
-          <button class="profile-settings" type="button" onclick="toggleProfileSettings()"><span><i class="fa-solid fa-gear"></i> Settings</span><i class="fa-solid fa-chevron-down"></i></button><div id="profile-settings-panel" style="display:none;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:8px;color:#94a3b8">जल्द आ रहा है</div>
+          <button class="profile-settings" type="button" onclick="toggleProfileSettings()"><span><i class="fa-solid fa-gear"></i> Settings</span><i class="fa-solid fa-chevron-down"></i></button>
+          <div id="profile-settings-panel" style="display:none;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:8px">
+            <label for="profile-edit-name">नाम</label><input id="profile-edit-name" type="text" maxlength="60" placeholder="अपना नाम">
+            <label for="profile-edit-role" style="display:block;margin-top:12px">अकाउंट का प्रकार</label><select id="profile-edit-role" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0 12px"><option value="owner">Dairy Owner / दूधिया</option><option value="customer">Customer / ग्राहक</option></select>
+            <button class="auth-primary" type="button" onclick="saveProfileSettings()">बदलाव सेव करें</button><p class="request-time">ध्यान दें: प्रकार बदलने से अकाउंट के फीचर बदलेंगे। सक्रिय Dairy कनेक्शन होने पर प्रकार नहीं बदलेगा। आपकी Dairy ID वही रहेगी।</p>
+          </div>
           <div class="auth-status" id="auth-status" aria-live="polite"></div><button class="logout-danger" id="auth-signout-btn" onclick="signOutAccount()"><i class="fa-solid fa-right-from-bracket"></i> लॉगआउट</button>
         </div>
         <div id="auth-form-view"><p id="auth-intro">अपने अकाउंट में लॉगिन करें या नया अकाउंट बनाएँ।</p>
@@ -1107,6 +1112,8 @@
             if(user){let p=await window.MilkScaleAuth.getProfile();if(p)p=await window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName);pv.style.display='block';fv.style.display='none';
               const name=p?.displayName||user.displayName||user.email?.split('@')[0]||'User';document.getElementById('profile-name').innerText=name;document.getElementById('profile-email').innerText=user.email||'';
               document.getElementById('profile-avatar').innerText=name.charAt(0).toUpperCase();document.getElementById('profile-dairy-id').innerText=p?.dairyId||'ID अभी उपलब्ध नहीं';document.getElementById('profile-username').innerText=p?.username?'Username: '+p.username:'';
+              document.getElementById('profile-role-label').innerText=p?.role==='owner'?'Dairy Owner / दूधिया':'Customer / ग्राहक';
+              document.getElementById('profile-edit-name').value=name;document.getElementById('profile-edit-role').value=p?.role||'customer';
               const img=document.getElementById('profile-photo');if(p?.avatarData){img.src=p.avatarData;img.style.display='block';document.getElementById('profile-avatar').style.display='none';}else{img.removeAttribute('src');img.style.display='none';document.getElementById('profile-avatar').style.display='block';}
               document.getElementById('dairy-role-area').style.display=p?'none':'block';if(p){document.getElementById('dairy-role').value=p.role;document.getElementById('dairy-role').disabled=true;showDairyRoleTools(p.role);}else{document.getElementById('dairy-role').disabled=false;showDairyRoleTools('');}
               await renderConnectedDairyProfile(p);status.innerText=p?'':'पहले अपनी भूमिका चुनें।';
@@ -1115,6 +1122,11 @@
         }
         function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input)return;const show=input.type==='password';input.type=show?'text':'password';button.innerHTML=show?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',show?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');}
         function toggleProfileSettings(){const p=document.getElementById('profile-settings-panel');p.style.display=p.style.display==='none'?'block':'none';}
+        async function saveProfileSettings(){
+          const name=document.getElementById('profile-edit-name').value.trim(),role=document.getElementById('profile-edit-role').value,status=document.getElementById('auth-status');
+          try{await window.MilkScaleAuth.updateProfileDetails(name,role);await refreshAccountStatus();document.getElementById('profile-settings-panel').style.display='none';status.innerText='प्रोफाइल अपडेट हो गई।';notify('प्रोफाइल अपडेट हो गई।');await renderDairyConnections();}
+          catch(e){status.innerText=e.message||'बदलाव सेव नहीं हुए।';}
+        }
         async function saveProfilePhoto(input){
           const file=input.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){notify('कृपया फोटो फ़ाइल चुनें।');input.value='';return;}
           try{const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(file);});
