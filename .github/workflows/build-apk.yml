@@ -68,14 +68,14 @@ jobs:
               marker = "dependencies {"
               if marker not in root_text:
                   raise SystemExit("Could not find root Gradle dependencies block")
-              root_text = root_text.replace(marker, marker + "\\n        " + dependency, 1)
+              root_text = root_text.replace(marker, marker + "\n        " + dependency, 1)
               root.write_text(root_text)
 
           app = Path("android/app/build.gradle")
           app_text = app.read_text()
           plugin = "apply plugin: 'com.google.gms.google-services'"
           if plugin not in app_text:
-              app.write_text(app_text.rstrip() + "\\n\\n" + plugin + "\\n")
+              app.write_text(app_text.rstrip() + "\n\n" + plugin + "\n")
           PY
 
       - name: Set Android version code for upgrade installs
