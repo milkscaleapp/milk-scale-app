@@ -52,6 +52,7 @@ async function updateProfileDetails(displayName,role){
  if(!['owner','customer'].includes(role))throw new Error('अकाउंट का प्रकार चुनें।');
  const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(!snap.exists())throw new Error('प्रोफाइल उपलब्ध नहीं है।');
  const old=snap.data();if(!old.username||!old.dairyId)throw new Error('Username या ID उपलब्ध नहीं है। सहायता से संपर्क करें।');
+ if(role==='owner'){const matches=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',old.username),limit(2)));if(matches.docs.some(d=>d.data().ownerUid!==u.uid))throw new Error('यह Username पहले से किसी दूसरे दूधिया ने लिया हुआ है।');}
  if(old.role!==role){const connections=await getMyConnections();if(connections.length)throw new Error('Role बदलने से पहले सक्रिय Dairy कनेक्शन हटाने होंगे।');}
  await updateDoc(ref,{displayName,role});
  if(old.dairyId){
