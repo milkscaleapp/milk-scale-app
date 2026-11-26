@@ -8,55 +8,52 @@ service cloud.firestore {
    return signedIn() && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner';
   }
 
+  match /userIds/{dairyId} {
+   // IDs are reserved once, by the account that receives them. Read access is needed for collision checks.
+   allow get: if request.auth != null;
+   allow list: if false;
+   allow create: if request.auth != null
+    && request.resource.data.keys().hasOnly(['uid','createdAt'])
+    && request.resource.data.uid == request.auth.uid
+    && dairyId.matches('^[a-z]{6}$')
+    && request.resource.data.createdAt == request.time;
+   allow update, delete: if false;
+  }
+
   match /profiles/{uid} {
    allow read: if signedIn() && request.auth.uid == uid;
-   // Basic profile is created at signup, before the user follows the email verification link.
+   // Signup profile and unique ID reservation are committed in the same transaction.
    allow create: if request.auth != null && request.auth.uid == uid
-    && request.resource.data.keys().hasOnly(['uid','email','displayName','username','dairyId','role','createdAt','avatarData'])
+    && request.resource.data.keys().hasOnly(['uid','email','displayName','dairyId','role','createdAt','avatarData'])
     && request.resource.data.uid == uid
     && request.resource.data.email == request.auth.token.email
     && request.resource.data.role == 'customer'
     && request.resource.data.displayName is string
     && request.resource.data.displayName.size() >= 2
-    && request.resource.data.username is string
-    && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
     && request.resource.data.dairyId is string
-    && request.resource.data.dairyId.matches('^MS[A-Z0-9]{8}$')
+    && request.resource.data.dairyId.matches('^[a-z]{6}$')
+    && existsAfter(/databases/$(database)/documents/userIds/$(request.resource.data.dairyId))
+    && getAfter(/databases/$(database)/documents/userIds/$(request.resource.data.dairyId)).data.uid == uid
     && request.resource.data.createdAt == request.time;
    allow update: if signedIn() && request.auth.uid == uid
     && request.resource.data.uid == resource.data.uid
     && request.resource.data.email == resource.data.email
     && request.resource.data.role in ['owner','customer']
+    && !('username' in request.resource.data)
+    && request.resource.data.dairyId is string
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','role','avatarData','dairyId','username'])
     && (
-     // One-time migration for older profiles without an ID.
-     (!('dairyId' in resource.data)
-      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username','dairyId'])
-      && request.resource.data.dairyId is string
-      && request.resource.data.dairyId.matches('^MS[A-Z0-9]{8}$')
-      && request.resource.data.username is string
-      && request.resource.data.username.matches('^[a-z0-9._]{3,24}$'))
-     ||
-     // One-time username migration when the existing ID is already present.
-     (!('username' in resource.data) && ('dairyId' in resource.data)
-      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username'])
-      && request.resource.data.dairyId == resource.data.dairyId
-      && request.resource.data.username is string
-      && request.resource.data.username.matches('^[a-z0-9._]{3,24}$'))
-     ||
-     // Username and display name may change; the generated dairyId is never editable.
-     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','role','username'])
-      && request.resource.data.displayName is string
-      && request.resource.data.displayName.size() >= 2
-      && request.resource.data.username is string
-      && request.resource.data.username.matches('^[a-z0-9._]{3,24}$'))
-     ||
-     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData'])
-      && request.resource.data.avatarData is string
-      && request.resource.data.avatarData.size() < 450000)
-    );
+      (('dairyId' in resource.data) && request.resource.data.dairyId == resource.data.dairyId)
+      ||
+      (!('dairyId' in resource.data)
+       && request.resource.data.dairyId.matches('^[a-z]{6}$')
+       && existsAfter(/databases/$(database)/documents/userIds/$(request.resource.data.dairyId))
+       && getAfter(/databases/$(database)/documents/userIds/$(request.resource.data.dairyId)).data.uid == uid)
+    )
+    && (!('displayName' in request.resource.data) || (request.resource.data.displayName is string && request.resource.data.displayName.size() >= 2))
+    && (!('avatarData' in request.resource.data) || (request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000));
    allow delete: if false;
   }
-
   match /dairyDirectory/{dairyId} {
    allow get: if signedIn();
    allow list: if signedIn();
@@ -65,16 +62,14 @@ service cloud.firestore {
     && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
     && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.dairyId == dairyId
     && request.resource.data.dairyId == dairyId
-    && request.resource.data.username is string
-    && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
-    && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt','avatarData','active']);
+    && request.resource.data.keys().hasOnly(['ownerUid','displayName','dairyId','createdAt','avatarData','active']);
    allow update: if signedIn()
     && resource.data.ownerUid == request.auth.uid
     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData','active','displayName','username'])
+    && !('username' in request.resource.data)
     && (!('avatarData' in request.resource.data) || (request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000))
     && (!('active' in request.resource.data) || request.resource.data.active is bool)
-    && (!('displayName' in request.resource.data) || request.resource.data.displayName is string)
-    && (!('username' in request.resource.data) || (request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')));
+    && (!('displayName' in request.resource.data) || request.resource.data.displayName is string);
    allow delete: if false;
   }
 
