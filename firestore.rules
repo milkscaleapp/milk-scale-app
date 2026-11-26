@@ -66,15 +66,15 @@ service cloud.firestore {
   }
   match /connections/{id} {
    allow create: if signedIn()
-    && request.resource.data.keys().hasOnly(['ownerUid','customerUid','customerName','requestCode','status','createdAt'])
+    && request.resource.data.keys().hasOnly(['ownerUid','customerUid','customerName','requestId','status','createdAt'])
     && request.resource.data.ownerUid == request.auth.uid
     && request.resource.data.customerUid is string
     && request.resource.data.customerName is string
     && request.resource.data.status == 'active' && request.resource.data.createdAt == request.time
-    && existsAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode))
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.status == 'accepted'
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.targetUid == request.auth.uid
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterUid == request.resource.data.customerUid;
+    && existsAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId))
+    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.status == 'accepted'
+    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.targetUid == request.auth.uid
+    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.requesterUid == request.resource.data.customerUid;
    allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
