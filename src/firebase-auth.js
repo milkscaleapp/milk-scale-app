@@ -40,15 +40,15 @@ async function syncMilkEntry(entry,customerUid){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
  const p=await getProfile();if(!p||p.role!=='owner')throw new Error('केवल Owner दूध की एंट्री भेज सकता है।');
  if(!customerUid)throw new Error('पहले ग्राहक अकाउंट जोड़ें।');
- const id=String(entry.id||Date.now()); const ref=doc(db,'dairyEntries',u.uid+'_'+customerUid+'_'+id);
+ const id=String(entry.id||Date.now()); const ref=doc(db,'dairyEntries',u.uid+'_'+customerUid+'_'+id); const old=await getDoc(ref); if(old.exists()) return id;
  await setDoc(ref,{ownerUid:u.uid,customerUid,entryId:id,customer:String(entry.customer||''),date:String(entry.date||''),shift:String(entry.shift||''),kg:Number(entry.kg),sample:Number(entry.sample||0),rate:Number(entry.rate),total:Number(entry.total),createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:false});
  return id;
 }
 async function getMyMilkEntries(){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है。');
  const p=await getProfile();const field=p?.role==='owner'?'ownerUid':'customerUid';
- const snap=await getDocs(query(collection(db,'dairyEntries'),where(field,'==',u.uid),orderBy('date','desc'),limit(500)));
- return snap.docs.map(d=>({cloudId:d.id,...d.data()}));
+ const snap=await getDocs(query(collection(db,'dairyEntries'),where(field,'==',u.uid)));
+ return snap.docs.map(d=>({cloudId:d.id,...d.data()})).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,500);
 }
 async function addPayment(customerUid,amount,note='',date=new Date().toISOString().slice(0,10)){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const p=await getProfile();
@@ -58,8 +58,8 @@ async function addPayment(customerUid,amount,note='',date=new Date().toISOString
 }
 async function getMyPayments(){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const p=await getProfile();const field=p?.role==='owner'?'ownerUid':'customerUid';
- const snap=await getDocs(query(collection(db,'dairyPayments'),where(field,'==',u.uid),orderBy('date','desc'),limit(500)));
- return snap.docs.map(d=>({id:d.id,...d.data()}));
+ const snap=await getDocs(query(collection(db,'dairyPayments'),where(field,'==',u.uid)));
+ return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,500);
 }
 async function removeConnection(connectionId){throw new Error('कनेक्शन हटाने की सुविधा अगले सुरक्षा अपडेट में जोड़ी जाएगी।');}
 window.MilkScaleAuth={...window.MilkScaleAuth,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection};
