@@ -1249,7 +1249,8 @@
                 if (accountAuthMode === 'register') {
                     const result = await window.MilkScaleAuth.createAccount(email, password);
                     status.innerText = 'अकाउंट बन गया है। ' + email + ' पर Verification Link भेजा गया है। Inbox/Spam में लिंक खोलकर ईमेल सत्यापित करें, फिर लॉगिन करें। सत्यापन से पहले Dairy Cloud सुविधाएँ बंद रहेंगी।';
-                    await refreshAccountStatus();
+                    document.getElementById('auth-signout-btn').style.display = 'none';
+                    document.getElementById('dairy-role-area').style.display = 'none';
                 } else {
                     const user = await window.MilkScaleAuth.signIn(email, password);
                     status.innerText = 'सफलतापूर्वक लॉगिन: ' + (user.email || email);
