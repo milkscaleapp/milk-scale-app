@@ -83,6 +83,19 @@ service cloud.firestore {
    allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
+
+  match /dairyAdjustments/{adjustmentId} {
+   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
+    && request.resource.data.customerUid is string
+    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
+    && request.resource.data.kind in ['amount','kg']
+    && request.resource.data.delta is number && request.resource.data.delta != 0
+    && request.resource.data.note is string && request.resource.data.date is string
+    && request.resource.data.createdBy == request.auth.uid
+    && request.resource.data.createdAt == request.time;
+   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
+   allow update, delete: if false;
+  }
   match /dairyPayments/{paymentId} {
    allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
     && request.resource.data.customerUid is string
