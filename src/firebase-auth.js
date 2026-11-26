@@ -152,8 +152,10 @@ async function sendDairyConnectionRequest(identifier){
 }
 async function getMyConnectionRequests(){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
- const [a,b]=await Promise.all([getDocs(query(collection(db,'connectionRequests'),where('requesterUid','==',u.uid))),getDocs(query(collection(db,'connectionRequests'),where('targetUid','==',u.uid)))]);
- return [...a.docs,...b.docs].map(d=>({id:d.id,...d.data()}));
+ const p=await getProfile();if(!p)throw new Error('प्रोफाइल उपलब्ध नहीं है।');
+ const field=p.role==='owner'?'targetUid':'requesterUid';
+ const snap=await getDocs(query(collection(db,'connectionRequests'),where(field,'==',u.uid)));
+ return snap.docs.map(d=>({id:d.id,...d.data()}));
 }
 async function decideDairyRequest(requestId,accept){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
