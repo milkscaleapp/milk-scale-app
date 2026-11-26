@@ -6,6 +6,8 @@ on:
     paths:
       - "index.html"
       - "package.json"
+      - "build.js"
+      - ".github/workflows/validate-web.yml"
       - "capacitor.config.json"
       - ".github/workflows/build-apk.yml"
   workflow_dispatch:
