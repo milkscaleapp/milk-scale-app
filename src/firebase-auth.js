@@ -1,13 +1,13 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signOut as firebaseSignOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, runTransaction, orderBy, limit } from 'firebase/firestore';
 const firebaseConfig = { apiKey:'AIzaSyC0ppOgik5r-4dO66DH1VOn-748iErjxS8', authDomain:'milk-scale-b4ec4.firebaseapp.com', projectId:'milk-scale-b4ec4', storageBucket:'milk-scale-b4ec4.firebasestorage.app', messagingSenderId:'919647485111', appId:'1:919647485111:web:74dceafb3d44d5bb536132' };
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 setPersistence(auth,browserLocalPersistence).catch(e=>console.warn('Auth persistence:',e?.code||e));
 function getCurrentUser(){if(auth.currentUser)return Promise.resolve(auth.currentUser);return new Promise(resolve=>{const unsub=onAuthStateChanged(auth,u=>{unsub();resolve(u||null)},()=>{unsub();resolve(null)})})}
 function validateCredentials(email,password){if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('सही ईमेल पता दर्ज करें।');if(typeof password!=='string'||password.length<6)throw new Error('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।')}
-async function createAccount(email,password){email=String(email||'').trim();validateCredentials(email,password);return(await createUserWithEmailAndPassword(auth,email,password)).user}
-async function signIn(email,password){email=String(email||'').trim();validateCredentials(email,password);return(await signInWithEmailAndPassword(auth,email,password)).user}
+async function createAccount(email,password){email=String(email||'').trim();validateCredentials(email,password);const credential=await createUserWithEmailAndPassword(auth,email,password);await sendEmailVerification(credential.user);await firebaseSignOut(auth);return {email:credential.user.email,verificationSent:true}}
+async function signIn(email,password){email=String(email||'').trim();validateCredentials(email,password);const credential=await signInWithEmailAndPassword(auth,email,password);await credential.user.reload();if(!credential.user.emailVerified){await sendEmailVerification(credential.user);await firebaseSignOut(auth);const e=new Error('ईमेल अभी सत्यापित नहीं है। आपके ईमेल पर नया Verification Link भेजा गया है। Inbox/Spam में लिंक खोलकर फिर लॉगिन करें।');e.code='auth/email-not-verified';throw e;}return credential.user}
 async function sendPasswordReset(email){email=String(email||'').trim();if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('सही ईमेल पता दर्ज करें।');return sendPasswordResetEmail(auth,email)}
 async function signOut(){await firebaseSignOut(auth)}
 async function getProfile(){const u=await getCurrentUser();if(!u)return null;const s=await getDoc(doc(db,'profiles',u.uid));return s.exists()?s.data():null}
