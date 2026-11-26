@@ -461,7 +461,7 @@
         // --- Navigation ---
         function switchTab(tabId,el,fromBack=false){
  const previous=document.querySelector('.tab-content.active')?.id?.replace('tab-','');
- if(previous&&previous!==tabId&&!fromBack)history.pushState({tab:tabId},'','#'+tabId);
+ if(previous&&previous!==tabId&&!fromBack){window.__msTabStack=window.__msTabStack||[];window.__msTabStack.push(previous);history.pushState({tab:tabId},'','#'+tabId);}
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
  const target=document.getElementById('tab-'+tabId);if(!target)return;target.classList.add('active');
  if(el)el.classList.add('active');else if(tabId==='backup')document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
@@ -1171,11 +1171,11 @@ function handleAppBack(){
  const st=document.getElementById('settings-page');if(st?.classList.contains('show')){closeSettingsPage();return;}
  const r=document.getElementById('request-center');if(r?.classList.contains('show')){closeRequestCenter();return;}
  const ac=document.getElementById('auth-backdrop');if(ac?.classList.contains('show')){closeAccount();return;}
- if(history.state?.tab){switchTab(history.state.tab,null,true);return;}
- const active=document.querySelector('.tab-content.active');if(active&&active.id!=='tab-scale'){switchTab('scale',document.querySelector('.bottom-nav .nav-item'),true);return;}
- window.Capacitor?.Plugins?.App?.exitApp?.();
+ const active=document.querySelector('.tab-content.active');
+ if(!active||active.id==='tab-scale'){window.Capacitor?.Plugins?.App?.exitApp?.();return;}
+ const stack=window.__msTabStack||[],previous=stack.pop()||'scale';
+ switchTab(previous,null,true);
 }
-        document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshActiveFilePresence();});
         window.addEventListener('popstate',handleAppBack);
         document.addEventListener('backbutton',e=>{e.preventDefault?.();handleAppBack();},false);
         function openProfileEditor(){document.getElementById('profile-edit-status').innerText='';document.getElementById('profile-edit-name').value=document.getElementById('profile-name').innerText;document.getElementById('profile-edit-username').value=(document.getElementById('profile-username').innerText||'').replace(/^@/,'');document.getElementById('edit-profile-modal').classList.add('show');}
