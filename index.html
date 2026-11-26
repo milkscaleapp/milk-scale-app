@@ -666,11 +666,10 @@
             });
             
             saveLocal(false);
-            // Queue cloud sync without blocking the offline-first local save.
+            if(!(await autoSaveToFile(currentFileNumber,false))){entries.pop();saveLocal(false);return;}
+            // Sync to cloud only after the fitted JSON file was saved successfully.
             const linkedUid = (JSON.parse(localStorage.getItem('ms_customer_links') || '{}'))[cust];
             if (linkedUid) queueCloudMilkEntry(entries[entries.length - 1], linkedUid);
-
-            if(!(await autoSaveToFile(currentFileNumber,false))){entries.pop();saveLocal(false);return;}
             
             
             
