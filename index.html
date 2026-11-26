@@ -191,7 +191,7 @@
 .customer-picker-option{width:100%;border:0;border-bottom:1px solid #f1f5f9;background:#fff;text-align:left;padding:14px 15px;font:inherit;color:var(--text);font-size:14px}
 .customer-picker-option:last-child{border-bottom:0}.customer-picker-option:active{background:#eff6ff}.customer-picker-empty{padding:20px;text-align:center;color:var(--text-light);font-size:13px}
 
-.entry-reorder-handle{touch-action:none;user-select:none;-webkit-user-select:none}.customer-row{transition:transform 150ms cubic-bezier(.2,.75,.25,1),background .12s;will-change:transform}
+.entry-reorder-handle{touch-action:none;user-select:none;-webkit-user-select:none}.customer-row{transition:transform 150ms cubic-bezier(.2,.75,.25,1),background .12s;will-change:transform}.customer-row.dragging{transition:none!important;opacity:.96;position:relative;z-index:6;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.16);border-radius:10px}
 
 .edit-profile-backdrop{position:fixed;inset:0;z-index:4500;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:20px}.edit-profile-backdrop.show{display:flex}
 .edit-profile-card{width:100%;max-width:440px;background:#fff;border-radius:22px;padding:20px;box-shadow:0 20px 60px rgba(15,23,42,.25)}.edit-profile-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.edit-profile-heading h3{margin:0}.edit-profile-card input{margin:7px 0 12px}
@@ -531,70 +531,48 @@
                 handle.addEventListener('pointerdown', event => startCustomerPointerDrag(event, Number(handle.dataset.dragIndex)));
             });
         }
-        function startCustomerPointerDrag(event, index) {
-            if (event.pointerType === 'mouse' && event.button !== 0) return;
-            event.preventDefault();
-            const handle = event.currentTarget;
-            const row = handle.closest('.customer-row');
-            const list = document.getElementById('cust-list');
-            const placeholder = document.createElement('div');
-            placeholder.className = 'drag-placeholder';
-            let activated = false;
-            const startY = event.clientY;
-            let timer = setTimeout(() => {
-                activated = true;
-                pointerDrag = { index, row, placeholder, list };
-                row.classList.add('dragging');
-                row.after(placeholder);
-                try { handle.setPointerCapture(event.pointerId); } catch(e) {}
-            }, 320);
-            const move = e => {
-                if (!activated) {
-                    if (Math.abs(e.clientY - startY) > 12) { clearTimeout(timer); cleanup(); }
-                    return;
-                }
-                e.preventDefault();
-                const rows = [...list.querySelectorAll('.customer-row:not(.dragging)')];
-                const before = new Map(rows.map(node => [node, node.getBoundingClientRect().top]));
-                let placed = false;
-                for (const candidate of rows) {
-                    const rect = candidate.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2) {
-                        candidate.before(placeholder); placed = true; break;
-                    }
-                }
-                if (!placed) list.appendChild(placeholder);
-                requestAnimationFrame(() => rows.forEach(node => {
-                    const delta = before.get(node) - node.getBoundingClientRect().top;
-                    if (delta) { node.style.transition='none'; node.style.transform='translateY('+delta+'px)'; requestAnimationFrame(() => { node.style.transition='transform 150ms cubic-bezier(.2,.75,.25,1)'; node.style.transform=''; }); }
-                }));
-            };
-            const end = e => {
-                clearTimeout(timer);
-                if (activated && pointerDrag) {
-                    const children = [...list.children];
-                    const newIndex = children.indexOf(placeholder);
-                    const moved = customers.splice(index, 1)[0];
-                    const adjusted = Math.max(0, Math.min(customers.length, newIndex > index ? newIndex - 1 : newIndex));
-                    customers.splice(adjusted, 0, moved);
-                    saveLocal(); renderCustomers(); populateDropdowns();
-                }
-                cleanup();
-            };
-            function cleanup() {
-                clearTimeout(timer);
-                row.classList.remove('dragging');
-                placeholder.remove();
-                handle.removeEventListener('pointermove', move);
-                handle.removeEventListener('pointerup', end);
-                handle.removeEventListener('pointercancel', end);
-                pointerDrag = null;
-            }
-            handle.addEventListener('pointermove', move);
-            handle.addEventListener('pointerup', end);
-            handle.addEventListener('pointercancel', end);
-        }
-
+        function startCustomerPointerDrag(event,index){
+ if(event.pointerType==='mouse'&&event.button!==0)return;
+ event.preventDefault();
+ const handle=event.currentTarget,row=handle.closest('.customer-row'),list=document.getElementById('cust-list');
+ const placeholder=document.createElement('div');placeholder.className='drag-placeholder';
+ const startY=event.clientY;
+ pointerDrag={index,row,placeholder,list};
+ row.classList.add('dragging');row.after(placeholder);
+ try{handle.setPointerCapture(event.pointerId);}catch(e){}
+ const move=e=>{
+  e.preventDefault();
+  row.style.transform='translateY('+(e.clientY-startY)+'px)';
+  const rows=[...list.querySelectorAll('.customer-row:not(.dragging)')];
+  const before=new Map(rows.map(node=>[node,node.getBoundingClientRect().top]));
+  let placed=false;
+  for(const candidate of rows){
+   const rect=candidate.getBoundingClientRect();
+   if(e.clientY<rect.top+rect.height/2){candidate.before(placeholder);placed=true;break;}
+  }
+  if(!placed)list.appendChild(placeholder);
+  requestAnimationFrame(()=>rows.forEach(node=>{
+   const delta=before.get(node)-node.getBoundingClientRect().top;
+   if(delta){node.style.transition='none';node.style.transform='translateY('+delta+'px)';requestAnimationFrame(()=>{node.style.transition='transform 150ms cubic-bezier(.2,.75,.25,1)';node.style.transform='';});}
+  }));
+ };
+ const end=()=>{
+  if(pointerDrag){
+   const children=[...list.children],newIndex=children.indexOf(placeholder);
+   const moved=customers.splice(index,1)[0];
+   const adjusted=Math.max(0,Math.min(customers.length,newIndex>index?newIndex-1:newIndex));
+   customers.splice(adjusted,0,moved);saveLocal();renderCustomers();populateDropdowns();
+  }
+  cleanup();
+ };
+ const cancel=()=>cleanup();
+ function cleanup(){
+  row.classList.remove('dragging');row.style.transform='';row.style.transition='';
+  placeholder.remove();handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);
+  handle.removeEventListener('pointercancel',cancel);pointerDrag=null;
+ }
+ handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',cancel);
+}
         function customerDragStart(event, index) {
             draggedCustomerIndex = index;
             event.dataTransfer.effectAllowed = 'move';
