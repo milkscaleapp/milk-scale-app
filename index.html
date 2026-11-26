@@ -157,8 +157,10 @@
         .request-row:last-child{border-bottom:0}.request-actions{display:flex;gap:8px;margin-top:8px}.request-actions button{flex:1;border:0;border-radius:9px;padding:9px;font-weight:700}
         .request-time{font-size:11px;color:var(--text-light);margin-top:4px}.request-state{font-size:12px;font-weight:700;color:var(--primary)}
         .request-top-btn{width:100%;border:0;border-radius:12px;background:#eff6ff;color:#1d4ed8;padding:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
-        .auth-backdrop{position:fixed;inset:0;z-index:2500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55)}
-        .auth-backdrop.show{display:flex}.auth-card{width:min(100%,380px);background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 60px #0f172a40}
+        .auth-backdrop{position:fixed;inset:0;z-index:2500;display:none;overflow-y:auto;background:#f8fafc;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+        .auth-backdrop.show{display:block}.auth-card{width:100%;min-height:100%;max-height:none;overflow:visible;background:#f8fafc;border-radius:0;padding:22px 20px 30px;box-shadow:none}
+        .auth-card .auth-page-heading{position:sticky;top:0;background:#f8fafc;padding:8px 0 14px;z-index:2}
+        body.auth-open{overflow:hidden} #entry-tools-panel.open{margin-top:12px}
         .auth-card h2{margin:0 0 8px;font-size:21px;color:#1e293b}.auth-card p{font-size:13px;line-height:1.5;color:#64748b}
         .auth-card input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;margin:8px 0 12px}
         .auth-card button{border:0;border-radius:10px;padding:12px 15px;font-weight:700}.auth-primary{background:#2563eb;color:white;width:100%}.auth-secondary{background:#f1f5f9;color:#334155}
@@ -251,6 +253,48 @@
                 <div class="form-group"><input type="number" id="entry-rate" class="form-control" placeholder="Rate (₹)" step="0.5"></div>
                 <button class="btn btn-primary" onclick="saveEntry()"><i class="fa-solid fa-check"></i> Save</button>
             </div>
+            <div class="card">
+              <button class="request-top-btn" type="button" onclick="toggleEntryRequests()"><span><i class="fa-solid fa-link"></i> दूधिया से कनेक्शन रिक्वेस्ट</span><i class="fa-solid fa-chevron-down"></i></button>
+              <div id="entry-request-panel" class="request-panel">
+                <div id="customer-request-form" style="display:none;margin-top:12px"><input id="dairy-search-id" class="form-control" placeholder="दूधिया का Username या Dairy ID लिखें"><button class="btn btn-primary" style="margin-top:8px" onclick="sendEntryDairyRequest()">रिक्वेस्ट भेजें</button></div>
+                <div id="entry-request-list" style="margin-top:10px"><p class="request-time">रिक्वेस्ट देखने के लिए खोलें।</p></div>
+              </div>
+            </div>
+            <div class="card">
+              <button class="request-top-btn" type="button" onclick="toggleEntryTools()"><span><i class="fa-solid fa-sliders"></i> खाता और अन्य सुविधाएँ</span><i class="fa-solid fa-chevron-down"></i></button>
+              <div id="entry-tools-panel" class="request-panel"><div id="cloud-ledger-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
+            <b>Cloud दूध खाता और भुगतान</b>
+            <p style="font-size:12px;color:#64748b">Owner: ग्राहक के अकाउंट UID को स्थानीय ग्राहक नाम से जोड़ें। Customer: अपना ऑनलाइन खाता देखें।</p>
+            <div id="owner-cloud-tools" style="display:none">
+              <input id="link-local-customer" placeholder="ऐप में ग्राहक का नाम">
+              <input id="link-customer-uid" placeholder="Customer UID (कनेक्शन सूची से)">
+              <button class="auth-secondary" onclick="saveCustomerCloudLink()">ग्राहक लिंक सेव करें</button>
+              <input id="payment-customer-uid" placeholder="Customer UID">
+              <input id="payment-amount" type="number" min="1" step="0.01" placeholder="जमा भुगतान ₹">
+              <input id="payment-note" placeholder="भुगतान का विवरण">
+              <button class="auth-primary" onclick="saveCloudPayment()">भुगतान दर्ज करें</button>
+              <button class="auth-secondary" onclick="syncAllLocalEntries()">सभी लोकल एंट्री Sync करें</button>
+              <hr style="border:0;border-top:1px solid #e2e8f0;margin:12px 0">
+              <b>Audit सुधार (पुरानी एंट्री मिटेगी नहीं)</b>
+              <select id="adjust-kind"><option value="amount">रकम सुधार ₹ (+/-)</option><option value="kg">दूध मात्रा सुधार Kg (+/-)</option></select>
+              <input id="adjust-delta" type="number" step="0.01" placeholder="सुधार (+ या -)">
+              <input id="adjust-note" placeholder="कारण / विवरण (अनिवार्य)">
+              <button class="auth-secondary" onclick="saveLedgerAdjustment()">सुधार दर्ज करें</button>
+            </div>
+            <div style="display:flex;gap:8px;margin:8px 0">
+              <input id="report-start" type="date" aria-label="रिपोर्ट शुरू">
+              <input id="report-end" type="date" aria-label="रिपोर्ट समाप्त">
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <button class="auth-secondary" onclick="setCloudReportPeriod('week')">इस सप्ताह</button>
+              <button class="auth-secondary" onclick="setCloudReportPeriod('month')">इस महीने</button>
+              <button class="auth-secondary" onclick="setCloudReportPeriod('last')">पिछला महीना</button>
+            </div>
+            <input id="report-customer-uid" placeholder="Owner: Customer UID (वैकल्पिक)">
+            <button class="auth-secondary" onclick="loadCloudLedger()">रिपोर्ट / खाता Refresh करें</button>
+            <div id="cloud-ledger-result" class="auth-status"></div>
+          </div></div>
+            </div>
         </div>
 
         <!-- BILL TAB -->
@@ -315,9 +359,9 @@
 
     <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
-        <div style="display:flex;justify-content:space-between;align-items:center"><h2>Account</h2><button class="auth-secondary" onclick="closeAccount()" aria-label="Close">✕</button></div>
+        <div class="auth-page-heading" style="display:flex;justify-content:space-between;align-items:center"><h2 id="account-page-title">Account</h2><button class="auth-secondary" onclick="closeAccount()" aria-label="Close">✕</button></div>
         <div id="profile-summary" class="profile-summary" style="display:none"><div class="profile-avatar" id="profile-avatar">M</div><div class="profile-meta"><strong id="profile-name">User</strong><small id="profile-email"></small><small id="profile-dairy-id"></small></div></div>
-        <p id="auth-intro">ईमेल और पासवर्ड से अकाउंट बनाएँ या लॉगिन करें। लॉगिन वैकल्पिक है; आपका मौजूदा ऑफलाइन हिसाब चलता रहेगा।</p>
+        <p id="auth-intro">अपने अकाउंट में लॉगिन करें या नया अकाउंट बनाएँ।</p>
         <div id="auth-name-wrap" style="display:none"><label for="auth-name">नाम</label><input id="auth-name" type="text" placeholder="आपका नाम" autocomplete="name"></div>
         <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
         <div><label for="auth-password">पासवर्ड</label><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"></div>
@@ -333,65 +377,6 @@
             <option value="customer">Customer / ग्राहक</option>
           </select>
           <button class="auth-secondary" style="width:100%" onclick="saveDairyRole()">भूमिका सेव करें</button>
-          <div id="two-way-request-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
-            <b>Owner ↔ Customer कनेक्शन रिक्वेस्ट</b>
-            <input id="request-display-name" placeholder="आपका नाम (वैकल्पिक)">
-            <button class="auth-primary" onclick="createDairyRequest()">रिक्वेस्ट कोड बनाएँ (फिर WhatsApp पर साझा करें)</button>
-            <div id="request-code-result" class="auth-status"></div>
-            <input id="incoming-request-code" autocapitalize="characters" maxlength="8" placeholder="दूसरे व्यक्ति का रिक्वेस्ट कोड">
-            <div style="display:flex;gap:8px">
-              <button class="auth-primary" onclick="answerConnectionRequest(true)">Accept</button>
-              <button class="auth-secondary" onclick="answerConnectionRequest(false)">Reject</button>
-            </div>
-          </div>
-          <div id="owner-invite-area" style="display:none;margin-top:12px">
-            <b>ग्राहक को जोड़ने की रिक्वेस्ट</b>
-            <input id="invite-customer-name" placeholder="ग्राहक का नाम">
-            <input id="invite-customer-phone" type="tel" placeholder="ग्राहक का मोबाइल नंबर">
-            <button class="auth-primary" onclick="sendDairyInvitation()">Invitation Code बनाएँ</button>
-            <div id="invite-code-result" class="auth-status"></div>
-          </div>
-          <div id="customer-invite-area" style="display:none;margin-top:12px">
-            <b>दूधिया से मिली रिक्वेस्ट</b>
-            <input id="customer-invite-code" autocapitalize="characters" maxlength="8" placeholder="8 अक्षरों का Invitation Code">
-            <div style="display:flex;gap:8px">
-              <button class="auth-primary" onclick="answerDairyInvitation(true)">Accept</button>
-              <button class="auth-secondary" onclick="answerDairyInvitation(false)">Reject</button>
-            </div>
-          </div>
-          <div id="cloud-ledger-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
-            <b>Cloud दूध खाता और भुगतान</b>
-            <p style="font-size:12px;color:#64748b">Owner: ग्राहक के अकाउंट UID को स्थानीय ग्राहक नाम से जोड़ें। Customer: अपना ऑनलाइन खाता देखें।</p>
-            <div id="owner-cloud-tools" style="display:none">
-              <input id="link-local-customer" placeholder="ऐप में ग्राहक का नाम">
-              <input id="link-customer-uid" placeholder="Customer UID (कनेक्शन सूची से)">
-              <button class="auth-secondary" onclick="saveCustomerCloudLink()">ग्राहक लिंक सेव करें</button>
-              <input id="payment-customer-uid" placeholder="Customer UID">
-              <input id="payment-amount" type="number" min="1" step="0.01" placeholder="जमा भुगतान ₹">
-              <input id="payment-note" placeholder="भुगतान का विवरण">
-              <button class="auth-primary" onclick="saveCloudPayment()">भुगतान दर्ज करें</button>
-              <button class="auth-secondary" onclick="syncAllLocalEntries()">सभी लोकल एंट्री Sync करें</button>
-              <hr style="border:0;border-top:1px solid #e2e8f0;margin:12px 0">
-              <b>Audit सुधार (पुरानी एंट्री मिटेगी नहीं)</b>
-              <select id="adjust-kind"><option value="amount">रकम सुधार ₹ (+/-)</option><option value="kg">दूध मात्रा सुधार Kg (+/-)</option></select>
-              <input id="adjust-delta" type="number" step="0.01" placeholder="सुधार (+ या -)">
-              <input id="adjust-note" placeholder="कारण / विवरण (अनिवार्य)">
-              <button class="auth-secondary" onclick="saveLedgerAdjustment()">सुधार दर्ज करें</button>
-            </div>
-            <div style="display:flex;gap:8px;margin:8px 0">
-              <input id="report-start" type="date" aria-label="रिपोर्ट शुरू">
-              <input id="report-end" type="date" aria-label="रिपोर्ट समाप्त">
-            </div>
-            <div style="display:flex;gap:6px;margin-bottom:8px">
-              <button class="auth-secondary" onclick="setCloudReportPeriod('week')">इस सप्ताह</button>
-              <button class="auth-secondary" onclick="setCloudReportPeriod('month')">इस महीने</button>
-              <button class="auth-secondary" onclick="setCloudReportPeriod('last')">पिछला महीना</button>
-            </div>
-            <input id="report-customer-uid" placeholder="Owner: Customer UID (वैकल्पिक)">
-            <button class="auth-secondary" onclick="loadCloudLedger()">रिपोर्ट / खाता Refresh करें</button>
-            <div id="cloud-ledger-result" class="auth-status"></div>
-          </div>
-          <div id="dairy-connections" class="auth-status"></div>
         </div>
         <div class="auth-status" id="auth-status" aria-live="polite"></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><button class="auth-secondary" onclick="closeAccount()">बंद करें</button><button class="auth-secondary" id="auth-signout-btn" style="display:none" onclick="signOutAccount()">लॉगआउट</button></div>
@@ -1067,6 +1052,7 @@
         function toggleEntryRequests(){
           const p=document.getElementById('entry-request-panel');p.classList.toggle('open');if(p.classList.contains('open'))loadEntryRequests();
         }
+        function toggleEntryTools(){document.getElementById('entry-tools-panel').classList.toggle('open');}
         function formatRequestTime(ts){
           const d=ts?.toDate?ts.toDate():(ts?.seconds?new Date(ts.seconds*1000):null);
           return d?d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' • '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'समय उपलब्ध नहीं';
@@ -1103,9 +1089,10 @@
         let accountAuthMode = 'login';
         function openAccount() {
             document.getElementById('auth-backdrop').classList.add('show');
+            document.body.classList.add('auth-open');
             refreshAccountStatus();
         }
-        function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); }
+        function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); document.body.classList.remove('auth-open'); }
         function toggleAccountAuthMode() {
             accountAuthMode = accountAuthMode === 'login' ? 'register' : 'login';
             document.getElementById('auth-submit-btn').innerText = accountAuthMode === 'login' ? 'लॉगिन करें' : 'अकाउंट बनाएँ';
@@ -1159,9 +1146,8 @@
             }
         }
         function showDairyRoleTools(role) {
-            document.getElementById('owner-invite-area').style.display = role === 'owner' ? 'block' : 'none';
-            document.getElementById('customer-invite-area').style.display = role === 'customer' ? 'block' : 'none';
-            document.getElementById('owner-cloud-tools').style.display = role === 'owner' ? 'block' : 'none';
+            const tools=document.getElementById('owner-cloud-tools');
+            if(tools) tools.style.display=role==='owner'?'block':'none';
         }
         async function saveDairyRole() {
             const role = document.getElementById('dairy-role').value;
@@ -1174,55 +1160,13 @@
                 await renderDairyConnections();
             } catch (error) { status.innerText = (error.code === 'permission-denied' || /permission/i.test(error.message||'')) ? 'Firebase Firestore Rules में profiles create की अनुमति नहीं मिली। Firebase Console में PR #12 की firestore.rules Publish करें, फिर दोबारा प्रयास करें।' : (error.message || 'प्रोफाइल सेव नहीं हुई।'); }
         }
-        async function sendDairyInvitation() {
-            const status = document.getElementById('invite-code-result');
-            try {
-                const code = await window.MilkScaleAuth.createInvitation(
-                    document.getElementById('invite-customer-name').value,
-                    document.getElementById('invite-customer-phone').value
-                );
-                status.innerText = 'Invitation Code: ' + code + '\\nयह कोड ग्राहक को WhatsApp पर भेजें। 7 दिन में स्वीकार करना होगा। SMS से मोबाइल सत्यापित नहीं है।';
-                await renderDairyConnections();
-            } catch (error) { status.innerText = error.message || 'रिक्वेस्ट नहीं बन सकी।'; }
-        }
-        async function answerDairyInvitation(accept) {
-            const status = document.getElementById('auth-status');
-            try {
-                await window.MilkScaleAuth.respondToInvitation(document.getElementById('customer-invite-code').value, accept);
-                status.innerText = accept ? 'रिक्वेस्ट स्वीकार हुई। कनेक्शन बन गया।' : 'रिक्वेस्ट अस्वीकार कर दी गई।';
-                document.getElementById('customer-invite-code').value = '';
-                await renderDairyConnections();
-            } catch (error) { status.innerText = error.message || 'रिक्वेस्ट पर कार्रवाई नहीं हो सकी।'; }
-        }
         async function renderDairyConnections() {
-            const target = document.getElementById('dairy-connections');
-            try {
-                const profile = await window.MilkScaleAuth.getProfile();
-                if (!profile) { target.innerText = 'भूमिका सेव करने के बाद कनेक्शन दिखाई देंगे।'; return; }
-                const [connections, invitations] = await Promise.all([
-                    window.MilkScaleAuth.getMyConnections(),
-                    profile.role === 'owner' ? window.MilkScaleAuth.getMyInvitations() : Promise.resolve([])
-                ]);
-                const lines = [];
-                lines.push('सक्रिय कनेक्शन: ' + connections.length);
-                connections.forEach(c => lines.push((profile.role === 'owner' ? 'Customer UID: ' + c.customerUid : 'Owner UID: ' + c.ownerUid) + ' — कनेक्शन सक्रिय'));
-                if (profile.role === 'owner') {
-                    invitations.forEach(item => lines.push(item.customerName + ' (' + item.customerPhone + '): ' + item.status + ' — ' + item.code));
-                }
-                target.innerText = lines.join('\\n');
-            } catch (error) { target.innerText = error.message || 'कनेक्शन लोड नहीं हुए।'; }
+            const target=document.getElementById('dairy-connections'); if(!target)return;
+            try { const profile=await window.MilkScaleAuth.getProfile(); if(!profile){target.innerText='भूमिका सेव करने के बाद कनेक्शन उपलब्ध होंगे।';return;}
+              const connections=await window.MilkScaleAuth.getMyConnections(); target.innerText='सक्रिय कनेक्शन: '+connections.length;
+            } catch(e){target.innerText=e.message||'कनेक्शन लोड नहीं हुए।';}
         }
 
-        async function createDairyRequest() {
-            const out=document.getElementById('request-code-result');
-            try { const code=await window.MilkScaleAuth.createConnectionRequest(document.getElementById('request-display-name').value); out.innerText='आपका रिक्वेस्ट कोड: '+code+' — इसे दूसरे व्यक्ति को WhatsApp पर भेजें। 7 दिन तक मान्य।'; await renderDairyConnections(); }
-            catch(e){out.innerText=e.message||'रिक्वेस्ट नहीं बन सकी।';}
-        }
-        async function answerConnectionRequest(accept) {
-            const out=document.getElementById('auth-status');
-            try { await window.MilkScaleAuth.respondToConnectionRequest(document.getElementById('incoming-request-code').value,accept); out.innerText=accept?'कनेक्शन स्वीकार हो गया।':'रिक्वेस्ट अस्वीकार हो गई।'; document.getElementById('incoming-request-code').value=''; await renderDairyConnections(); }
-            catch(e){out.innerText=e.message||'रिक्वेस्ट पर कार्रवाई नहीं हो सकी।';}
-        }
         function saveCustomerCloudLink(){
             const name=document.getElementById('link-local-customer').value.trim(), uid=document.getElementById('link-customer-uid').value.trim();
             if(!name||!uid){document.getElementById('cloud-ledger-result').innerText='ग्राहक का नाम और UID दोनों दर्ज करें।';return;}
