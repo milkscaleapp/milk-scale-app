@@ -64,10 +64,10 @@ jobs:
           s = p.read_text()
           version_code = int(os.environ["BUILD_NUMBER"])
           import re
-          if re.search(r"versionCode\\s+\\d+", s):
-              s = re.sub(r"versionCode\\s+\\d+", f"versionCode {version_code}", s, count=1)
+          if re.search(r"versionCode\s+\d+", s):
+              s = re.sub(r"versionCode\s+\d+", f"versionCode {version_code}", s, count=1)
           else:
-              s = s.replace("defaultConfig {", f"defaultConfig {{\\n        versionCode {version_code}", 1)
+              s = s.replace("defaultConfig {", f"defaultConfig {{\n        versionCode {version_code}", 1)
           p.write_text(s)
           print(f"Android versionCode set to {version_code}")
           PY
