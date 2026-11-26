@@ -22,7 +22,10 @@ const fontAwesome = path.join(root, 'node_modules', '@fortawesome', 'fontawesome
 copyDirectory(path.join(fontAwesome, 'css'), path.join(www, 'vendor', 'fontawesome', 'css'));
 copyDirectory(path.join(fontAwesome, 'webfonts'), path.join(www, 'vendor', 'fontawesome', 'webfonts'));
 
-const filesystemPlugin = path.join(root, 'node_modules', '@capacitor', 'filesystem', 'dist', 'plugin.js');
+const filesystemPackagePath = path.join(root, 'node_modules', '@capacitor', 'filesystem', 'package.json');
+const filesystemPackage = JSON.parse(fs.readFileSync(filesystemPackagePath, 'utf8'));
+const filesystemBrowserEntry = filesystemPackage.unpkg || 'dist/plugin.js';
+const filesystemPlugin = path.resolve(root, 'node_modules', '@capacitor', 'filesystem', filesystemBrowserEntry);
 if (!fs.existsSync(filesystemPlugin)) {
   throw new Error('Capacitor Filesystem plugin bundle was not found. Check npm dependencies.');
 }
