@@ -87,7 +87,7 @@ service cloud.firestore {
       && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.status == 'accepted'
       && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.targetUid == request.auth.uid
       && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterUid == request.resource.data.customerUid
-      && request.resource.data.ownerUid == request.auth.uid)));
+      && request.resource.data.ownerUid == request.auth.uid));
    allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
