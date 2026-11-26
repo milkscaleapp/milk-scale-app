@@ -137,8 +137,9 @@ async function sendDairyConnectionRequest(identifier){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
  const p=await getProfile();if(!p||p.role!=='customer')throw new Error('यह सुविधा Customer अकाउंट के लिए है।');
  const dairy=await findDairy(identifier);if(dairy.ownerUid===u.uid)throw new Error('आप अपने ही अकाउंट को Request नहीं भेज सकते।');
- const existing=await getDocs(query(collection(db,'connections'),where('ownerUid','==',dairy.ownerUid),where('customerUid','==',u.uid),limit(1)));if(!existing.empty)throw new Error('आप पहले से इस दूधिया से जुड़े हुए हैं।');
- const pending=await getDocs(query(collection(db,'connectionRequests'),where('requesterUid','==',u.uid),where('targetUid','==',dairy.ownerUid),where('status','==','pending'),limit(1)));if(!pending.empty)throw new Error('आपकी Request पहले से Pending है।');
+ const [connections,requests]=await Promise.all([getMyConnections(),getMyConnectionRequests()]);
+ if(connections.some(x=>x.ownerUid===dairy.ownerUid&&x.customerUid===u.uid&&x.status==='active'))throw new Error('आप पहले से इस दूधिया से जुड़े हुए हैं।');
+ if(requests.some(x=>x.requesterUid===u.uid&&x.targetUid===dairy.ownerUid&&x.status==='pending'))throw new Error('आपकी Request पहले से Pending है।');
  const ref=doc(collection(db,'connectionRequests')),id=ref.id;
  await setDoc(ref,{requesterUid:u.uid,requesterEmail:u.email||'',requesterName:p.displayName||u.displayName||'',requesterRole:'customer',targetUid:dairy.ownerUid,targetName:dairy.displayName||'',targetDairyId:dairy.dairyId,status:'pending',createdAt:serverTimestamp()});
  return {id,dairy};
