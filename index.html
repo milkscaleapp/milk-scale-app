@@ -316,6 +316,30 @@
           <button class="auth-secondary" id="auth-mode-btn" onclick="toggleAccountAuthMode()">नया अकाउंट बनाएँ</button>
           <button class="auth-secondary" id="auth-reset-btn" onclick="resetAccountPassword()">पासवर्ड भूल गए?</button>
         </div>
+        <div id="dairy-role-area" style="display:none;border-top:1px solid #e2e8f0;margin-top:14px;padding-top:12px">
+          <label for="dairy-role">आपका अकाउंट</label>
+          <select id="dairy-role" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0 10px">
+            <option value="owner">Dairy Owner / दूधिया</option>
+            <option value="customer">Customer / ग्राहक</option>
+          </select>
+          <button class="auth-secondary" style="width:100%" onclick="saveDairyRole()">भूमिका सेव करें</button>
+          <div id="owner-invite-area" style="display:none;margin-top:12px">
+            <b>ग्राहक को जोड़ने की रिक्वेस्ट</b>
+            <input id="invite-customer-name" placeholder="ग्राहक का नाम">
+            <input id="invite-customer-phone" type="tel" placeholder="ग्राहक का मोबाइल नंबर">
+            <button class="auth-primary" onclick="sendDairyInvitation()">Invitation Code बनाएँ</button>
+            <div id="invite-code-result" class="auth-status"></div>
+          </div>
+          <div id="customer-invite-area" style="display:none;margin-top:12px">
+            <b>दूधिया से मिली रिक्वेस्ट</b>
+            <input id="customer-invite-code" autocapitalize="characters" maxlength="8" placeholder="8 अक्षरों का Invitation Code">
+            <div style="display:flex;gap:8px">
+              <button class="auth-primary" onclick="answerDairyInvitation(true)">Accept</button>
+              <button class="auth-secondary" onclick="answerDairyInvitation(false)">Reject</button>
+            </div>
+          </div>
+          <div id="dairy-connections" class="auth-status"></div>
+        </div>
         <div class="auth-status" id="auth-status" aria-live="polite"></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><button class="auth-secondary" onclick="closeAccount()">बंद करें</button><button class="auth-secondary" id="auth-signout-btn" style="display:none" onclick="signOutAccount()">लॉगआउट</button></div>
       </div>
@@ -1011,16 +1035,80 @@
                     document.getElementById('auth-submit-btn').style.display = 'none';
                     document.getElementById('auth-mode-btn').style.display = 'none';
                     document.getElementById('auth-reset-btn').style.display = 'none';
+                    document.getElementById('dairy-role-area').style.display = 'block';
+                    const profile = await window.MilkScaleAuth.getProfile();
+                    if (profile) {
+                        document.getElementById('dairy-role').value = profile.role;
+                        document.getElementById('dairy-role').disabled = true;
+                        showDairyRoleTools(profile.role);
+                    } else {
+                        document.getElementById('dairy-role').disabled = false;
+                        showDairyRoleTools('');
+                    }
+                    await renderDairyConnections();
                 } else {
                     status.innerText = 'अभी लॉगिन नहीं है। ऑफलाइन हिसाब सामान्य रूप से उपलब्ध है।';
                     signout.style.display = 'none';
                     document.getElementById('auth-submit-btn').style.display = 'block';
                     document.getElementById('auth-mode-btn').style.display = 'inline-block';
                     document.getElementById('auth-reset-btn').style.display = 'inline-block';
+                    document.getElementById('dairy-role-area').style.display = 'none';
                 }
             } catch (error) {
-                status.innerText = 'अकाउंट सेवा उपलब्ध नहीं है। इंटरनेट और Firebase सेटिंग जाँचें।';
+                status.innerText = error.message || 'अकाउंट सेवा उपलब्ध नहीं है। इंटरनेट और Firebase सेटिंग जाँचें।';
             }
+        }
+        function showDairyRoleTools(role) {
+            document.getElementById('owner-invite-area').style.display = role === 'owner' ? 'block' : 'none';
+            document.getElementById('customer-invite-area').style.display = role === 'customer' ? 'block' : 'none';
+        }
+        async function saveDairyRole() {
+            const role = document.getElementById('dairy-role').value;
+            const status = document.getElementById('auth-status');
+            try {
+                await window.MilkScaleAuth.ensureProfile(role);
+                document.getElementById('dairy-role').disabled = true;
+                showDairyRoleTools(role);
+                status.innerText = role === 'owner' ? 'Dairy Owner प्रोफाइल बन गई।' : 'Customer प्रोफाइल बन गई।';
+                await renderDairyConnections();
+            } catch (error) { status.innerText = error.message || 'प्रोफाइल सेव नहीं हुई।'; }
+        }
+        async function sendDairyInvitation() {
+            const status = document.getElementById('invite-code-result');
+            try {
+                const code = await window.MilkScaleAuth.createInvitation(
+                    document.getElementById('invite-customer-name').value,
+                    document.getElementById('invite-customer-phone').value
+                );
+                status.innerText = 'Invitation Code: ' + code + '\\nयह कोड ग्राहक को WhatsApp पर भेजें। 7 दिन में स्वीकार करना होगा। SMS से मोबाइल सत्यापित नहीं है।';
+                await renderDairyConnections();
+            } catch (error) { status.innerText = error.message || 'रिक्वेस्ट नहीं बन सकी।'; }
+        }
+        async function answerDairyInvitation(accept) {
+            const status = document.getElementById('auth-status');
+            try {
+                await window.MilkScaleAuth.respondToInvitation(document.getElementById('customer-invite-code').value, accept);
+                status.innerText = accept ? 'रिक्वेस्ट स्वीकार हुई। कनेक्शन बन गया।' : 'रिक्वेस्ट अस्वीकार कर दी गई।';
+                document.getElementById('customer-invite-code').value = '';
+                await renderDairyConnections();
+            } catch (error) { status.innerText = error.message || 'रिक्वेस्ट पर कार्रवाई नहीं हो सकी।'; }
+        }
+        async function renderDairyConnections() {
+            const target = document.getElementById('dairy-connections');
+            try {
+                const profile = await window.MilkScaleAuth.getProfile();
+                if (!profile) { target.innerText = 'भूमिका सेव करने के बाद कनेक्शन दिखाई देंगे।'; return; }
+                const [connections, invitations] = await Promise.all([
+                    window.MilkScaleAuth.getMyConnections(),
+                    profile.role === 'owner' ? window.MilkScaleAuth.getMyInvitations() : Promise.resolve([])
+                ]);
+                const lines = [];
+                lines.push('सक्रिय कनेक्शन: ' + connections.length);
+                if (profile.role === 'owner') {
+                    invitations.forEach(item => lines.push(item.customerName + ' (' + item.customerPhone + '): ' + item.status + ' — ' + item.code));
+                }
+                target.innerText = lines.join('\\n');
+            } catch (error) { target.innerText = error.message || 'कनेक्शन लोड नहीं हुए।'; }
         }
         async function submitAccountAuth() {
             const email = document.getElementById('auth-email').value.trim();
