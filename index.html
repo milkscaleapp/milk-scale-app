@@ -775,8 +775,7 @@
                             
                             saveLocal();
                             
-                            // Get the number from the file name
-                            let match = file.name.match(/\((\d+)\)/);
+                            // File number was already assigned above.
                             localStorage.setItem('ms_file_num', currentFileNumber);
                             await autoSaveToFile(currentFileNumber);
                             showFileInHeader(currentFileNumber);
