@@ -22,8 +22,13 @@ window.MilkScaleAuth={getCurrentUser,createAccount,signIn,sendPasswordReset,sign
 async function createConnectionRequest(displayName=''){
  const u=await getCurrentUser(); if(!u) throw new Error('पहले लॉगिन करें।');
  const p=await getProfile(); if(!p) throw new Error('पहले भूमिका चुनें।');
- const code=randomCode(); await setDoc(doc(db,'connectionRequests',code),{requesterUid:u.uid,requesterEmail:u.email||'',requesterRole:p.role,requesterName:String(displayName||u.email||'').slice(0,80),status:'pending',createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+7*86400000)});
- return code;
+ const data={requesterUid:u.uid,requesterEmail:u.email||'',requesterRole:p.role,requesterName:String(displayName||u.email||'').slice(0,80),status:'pending',createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+7*86400000)};
+ for(let n=0;n<5;n++){
+  const code=randomCode(), ref=doc(db,'connectionRequests',code);
+  try{await runTransaction(db,async tx=>{const old=await tx.get(ref);if(old.exists())throw new Error('CODE_COLLISION');tx.set(ref,data);});return code;}
+  catch(e){if(e.message!=='CODE_COLLISION')throw e;}
+ }
+ throw new Error('रिक्वेस्ट कोड नहीं बन पाया। दोबारा प्रयास करें।');
 }
 async function respondToConnectionRequest(code,accept){
  const u=await getCurrentUser(); if(!u) throw new Error('लॉगिन आवश्यक है।');
