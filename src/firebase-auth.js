@@ -1,77 +1,20 @@
 import { initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  setPersistence,
-  browserLocalPersistence,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signOut as firebaseSignOut
-} from 'firebase/auth';
-
-// Firebase web configuration for the existing Milk Scale project.
-const firebaseConfig = {
-  apiKey: 'AIzaSyC0ppOgik5r-4dO66DH1VOn-748iErjxS8',
-  authDomain: 'milk-scale-b4ec4.firebaseapp.com',
-  projectId: 'milk-scale-b4ec4',
-  storageBucket: 'milk-scale-b4ec4.firebasestorage.app',
-  messagingSenderId: '919647485111',
-  appId: '1:919647485111:web:74dceafb3d44d5bb536132'
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence).catch(error => {
-  console.warn('Could not set local auth persistence:', error?.code || error);
-});
-
-function getCurrentUser() {
-  if (auth.currentUser) return Promise.resolve(auth.currentUser);
-  return new Promise(resolve => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      unsubscribe();
-      resolve(user || null);
-    }, () => {
-      unsubscribe();
-      resolve(null);
-    });
-  });
-}
-
-function validateCredentials(email, password) {
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error('सही ईमेल पता दर्ज करें।');
-  }
-  if (typeof password !== 'string' || password.length < 6) {
-    throw new Error('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।');
-  }
-}
-
-async function createAccount(email, password) {
-  email = String(email || '').trim();
-  validateCredentials(email, password);
-  const result = await createUserWithEmailAndPassword(auth, email, password);
-  return result.user;
-}
-
-async function signIn(email, password) {
-  email = String(email || '').trim();
-  validateCredentials(email, password);
-  const result = await signInWithEmailAndPassword(auth, email, password);
-  return result.user;
-}
-
-async function sendPasswordReset(email) {
-  email = String(email || '').trim();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error('पासवर्ड रीसेट करने के लिए सही ईमेल पता दर्ज करें।');
-  }
-  return sendPasswordResetEmail(auth, email);
-}
-
-async function signOut() {
-  await firebaseSignOut(auth);
-}
-
-window.MilkScaleAuth = { getCurrentUser, createAccount, signIn, sendPasswordReset, signOut };
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, Timestamp, runTransaction } from 'firebase/firestore';
+const firebaseConfig = { apiKey:'AIzaSyC0ppOgik5r-4dO66DH1VOn-748iErjxS8', authDomain:'milk-scale-b4ec4.firebaseapp.com', projectId:'milk-scale-b4ec4', storageBucket:'milk-scale-b4ec4.firebasestorage.app', messagingSenderId:'919647485111', appId:'1:919647485111:web:74dceafb3d44d5bb536132' };
+const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+setPersistence(auth,browserLocalPersistence).catch(e=>console.warn('Auth persistence:',e?.code||e));
+function getCurrentUser(){if(auth.currentUser)return Promise.resolve(auth.currentUser);return new Promise(resolve=>{const unsub=onAuthStateChanged(auth,u=>{unsub();resolve(u||null)},()=>{unsub();resolve(null)})})}
+function validateCredentials(email,password){if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('सही ईमेल पता दर्ज करें।');if(typeof password!=='string'||password.length<6)throw new Error('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।')}
+async function createAccount(email,password){email=String(email||'').trim();validateCredentials(email,password);return(await createUserWithEmailAndPassword(auth,email,password)).user}
+async function signIn(email,password){email=String(email||'').trim();validateCredentials(email,password);return(await signInWithEmailAndPassword(auth,email,password)).user}
+async function sendPasswordReset(email){email=String(email||'').trim();if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('सही ईमेल पता दर्ज करें।');return sendPasswordResetEmail(auth,email)}
+async function signOut(){await firebaseSignOut(auth)}
+async function getProfile(){const u=await getCurrentUser();if(!u)return null;const s=await getDoc(doc(db,'profiles',u.uid));return s.exists()?s.data():null}
+async function ensureProfile(role){const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');if(!['owner','customer'].includes(role))throw new Error('भूमिका सही नहीं है।');const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(snap.exists()){if(snap.data().role!==role)throw new Error('इस अकाउंट की भूमिका पहले से तय है।');return snap.data()}const profile={uid:u.uid,email:u.email||'',role,createdAt:serverTimestamp()};await setDoc(ref,profile);return profile}
+function randomCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(8);crypto.getRandomValues(bytes);return Array.from(bytes,b=>chars[b%chars.length]).join('')}
+async function createInvitation(customerName,customerPhone){const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');const p=await getProfile();if(!p||p.role!=='owner')throw new Error('केवल Dairy Owner रिक्वेस्ट भेज सकता है।');customerName=String(customerName||'').trim();customerPhone=String(customerPhone||'').replace(/[^0-9+]/g,'');if(!customerName)throw new Error('ग्राहक का नाम दर्ज करें।');if(!/^\+?[0-9]{8,15}$/.test(customerPhone))throw new Error('ग्राहक का मोबाइल नंबर सही दर्ज करें।');let code=randomCode();for(let n=0;n<5;n++){const ref=doc(db,'invitations',code);try{await runTransaction(db,async tx=>{const old=await tx.get(ref);if(old.exists())throw new Error('CODE_COLLISION');tx.set(ref,{ownerUid:u.uid,customerName,customerPhone,status:'pending',createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+7*86400000)})});return code}catch(e){if(e.message!=='CODE_COLLISION')throw e;code=randomCode()}}throw new Error('Invitation Code नहीं बन पाया।')}
+async function getMyInvitations(){const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const s=await getDocs(query(collection(db,'invitations'),where('ownerUid','==',u.uid)));return s.docs.map(d=>({code:d.id,...d.data()}))}
+async function respondToInvitation(code,accept){const u=await getCurrentUser();if(!u)throw new Error('पहले Customer अकाउंट से लॉगिन करें।');code=String(code||'').trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code))throw new Error('Invitation Code सही नहीं है।');const ref=doc(db,'invitations',code);await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('Invitation Code नहीं मिला।');const d=snap.data();if(d.status!=='pending'||d.expiresAt.toMillis()<Date.now())throw new Error('रिक्वेस्ट समाप्त या पहले ही इस्तेमाल हो चुकी है।');tx.update(ref,{status:accept?'accepted':'rejected',customerUid:u.uid,respondedAt:serverTimestamp()});if(accept)tx.set(doc(db,'connections',d.ownerUid+'_'+u.uid),{ownerUid:d.ownerUid,customerUid:u.uid,invitationCode:code,status:'active',createdAt:serverTimestamp()})})}
+async function getMyConnections(){const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const [a,b]=await Promise.all([getDocs(query(collection(db,'connections'),where('ownerUid','==',u.uid))),getDocs(query(collection(db,'connections'),where('customerUid','==',u.uid)))]);return [...a.docs,...b.docs].map(d=>d.data())}
+window.MilkScaleAuth={getCurrentUser,createAccount,signIn,sendPasswordReset,signOut,getProfile,ensureProfile,createInvitation,getMyInvitations,respondToInvitation,getMyConnections};
