@@ -12,13 +12,14 @@ service cloud.firestore {
    allow update: if signedIn() && request.auth.uid == uid
     && request.resource.data.uid == resource.data.uid
     && request.resource.data.email == resource.data.email
-    && request.resource.data.role == resource.data.role
+    && request.resource.data.role in ['owner','customer']
     && (( !('dairyId' in resource.data)
       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username','dairyId'])
       && request.resource.data.dairyId is string && request.resource.data.username is string)
       || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData'])
-      && request.resource.data.avatarData is string
-      && request.resource.data.avatarData.size() < 450000));
+      && request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000)
+      || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','role'])
+      && request.resource.data.displayName is string && request.resource.data.displayName.size() >= 2));
    allow delete: if false;
   }
   match /dairyDirectory/{dairyId} {
@@ -27,10 +28,12 @@ service cloud.firestore {
    allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
     && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
     && request.resource.data.dairyId == dairyId
-    && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt','avatarData']);
+    && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt','avatarData','active']);
    allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData'])
-    && request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000;
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData','active','displayName'])
+    && (!('avatarData' in request.resource.data) || (request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000))
+    && (!('active' in request.resource.data) || request.resource.data.active is bool)
+    && (!('displayName' in request.resource.data) || request.resource.data.displayName is string);
    allow delete: if false;
   }
   match /invitations/{code} {
