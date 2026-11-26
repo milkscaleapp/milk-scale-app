@@ -22,14 +22,30 @@ async function ensureProfile(role,displayName=''){
  const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:snap.exists()?snap.data().createdAt:serverTimestamp()};
  if(snap.exists()){if(!snap.data().dairyId)await updateDoc(ref,{displayName:name,username,dairyId});}
  else await setDoc(ref,profile);
- if(role==='owner')await setDoc(doc(db,'dairyDirectory',dairyId),{ownerUid:u.uid,displayName:name,username,dairyId,createdAt:serverTimestamp()});
+ if(role==='owner')await setDoc(doc(db,'dairyDirectory',dairyId),{ownerUid:u.uid,displayName:name,username,dairyId,avatarData:snap.exists()?(snap.data().avatarData||''):'',createdAt:snap.exists()?(snap.data().createdAt||serverTimestamp()):serverTimestamp()},{merge:true});
  return profile;
+}
+async function updateProfilePhoto(avatarData){
+ const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
+ if(typeof avatarData!=='string'||!avatarData.startsWith('data:image/jpeg;base64,')||avatarData.length>450000)throw new Error('फोटो का आकार बहुत बड़ा है। दूसरी फोटो चुनें।');
+ const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(!snap.exists())throw new Error('पहले अपनी भूमिका सेव करें।');
+ await updateDoc(ref,{avatarData});
+ const p=snap.data();if(p.role==='owner'&&p.dairyId)await updateDoc(doc(db,'dairyDirectory',p.dairyId),{avatarData});
+ return true;
 }
 function randomCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(8);crypto.getRandomValues(bytes);return Array.from(bytes,b=>chars[b%chars.length]).join('')}
 async function createInvitation(customerName,customerPhone){const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');const p=await getProfile();if(!p||p.role!=='owner')throw new Error('केवल Dairy Owner रिक्वेस्ट भेज सकता है।');customerName=String(customerName||'').trim();customerPhone=String(customerPhone||'').replace(/[^0-9+]/g,'');if(!customerName)throw new Error('ग्राहक का नाम दर्ज करें।');if(!/^\+?[0-9]{8,15}$/.test(customerPhone))throw new Error('ग्राहक का मोबाइल नंबर सही दर्ज करें।');let code=randomCode();for(let n=0;n<5;n++){const ref=doc(db,'invitations',code);try{await runTransaction(db,async tx=>{const old=await tx.get(ref);if(old.exists())throw new Error('CODE_COLLISION');tx.set(ref,{ownerUid:u.uid,customerName,customerPhone,status:'pending',createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+7*86400000)})});return code}catch(e){if(e.message!=='CODE_COLLISION')throw e;code=randomCode()}}throw new Error('Invitation Code नहीं बन पाया।')}
 async function getMyInvitations(){const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const s=await getDocs(query(collection(db,'invitations'),where('ownerUid','==',u.uid)));return s.docs.map(d=>({code:d.id,...d.data()}))}
 async function respondToInvitation(code,accept){const u=await getCurrentUser();if(!u)throw new Error('पहले Customer अकाउंट से लॉगिन करें।');code=String(code||'').trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code))throw new Error('Invitation Code सही नहीं है।');const ref=doc(db,'invitations',code);await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('Invitation Code नहीं मिला।');const d=snap.data();if(d.status!=='pending'||d.expiresAt.toMillis()<Date.now())throw new Error('रिक्वेस्ट समाप्त या पहले ही इस्तेमाल हो चुकी है।');tx.update(ref,{status:accept?'accepted':'rejected',customerUid:u.uid,respondedAt:serverTimestamp()});if(accept)tx.set(doc(db,'connections',d.ownerUid+'_'+u.uid),{ownerUid:d.ownerUid,customerUid:u.uid,invitationCode:code,status:'active',createdAt:serverTimestamp()})})}
-async function getMyConnections(){const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const [a,b]=await Promise.all([getDocs(query(collection(db,'connections'),where('ownerUid','==',u.uid))),getDocs(query(collection(db,'connections'),where('customerUid','==',u.uid)))]);return [...a.docs,...b.docs].map(d=>d.data())}
+async function getMyConnections(){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
+ const [a,b]=await Promise.all([getDocs(query(collection(db,'connections'),where('ownerUid','==',u.uid))),getDocs(query(collection(db,'connections'),where('customerUid','==',u.uid)))]);
+ return await Promise.all([...a.docs,...b.docs].map(async snap=>{
+  const connection={id:snap.id,...snap.data()};
+  if(connection.ownerUid!==u.uid){const directory=await getDocs(query(collection(db,'dairyDirectory'),where('ownerUid','==',connection.ownerUid),limit(1)));connection.dairyProfile=directory.empty?null:directory.docs[0].data();}
+  return connection;
+ }));
+}
 window.MilkScaleAuth={getCurrentUser,createAccount,signIn,sendPasswordReset,signOut,getProfile,ensureProfile,createInvitation,getMyInvitations,respondToInvitation,getMyConnections};
 
 async function createConnectionRequest(displayName=''){
@@ -115,4 +131,4 @@ async function decideDairyRequest(requestId,accept){
  const ref=doc(db,'connectionRequests',requestId);
  await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('रिक्वेस्ट नहीं मिली।');const d=snap.data();if(d.targetUid!==u.uid||d.status!=='pending')throw new Error('यह रिक्वेस्ट अब उपलब्ध नहीं है।');tx.update(ref,{status:accept?'accepted':'rejected',respondedAt:serverTimestamp()});if(accept)tx.set(doc(db,'connections',u.uid+'_'+d.requesterUid),{ownerUid:u.uid,customerUid:d.requesterUid,status:'active',requestCode:requestId,createdAt:serverTimestamp()});});
 }
-window.MilkScaleAuth={...window.MilkScaleAuth,addLedgerAdjustment,getMyAdjustments,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection,findDairy,sendDairyConnectionRequest,decideDairyRequest};
+window.MilkScaleAuth={...window.MilkScaleAuth,updateProfilePhoto,addLedgerAdjustment,getMyAdjustments,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection,findDairy,sendDairyConnectionRequest,decideDairyRequest};
