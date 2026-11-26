@@ -59,11 +59,14 @@
 
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid var(--border); }
 
-        .scale-header, .scale-row { display: flex; gap: 7px; margin-bottom: 8px; align-items: center; }
-        .scale-row input { min-width: 0; width: 0; flex: 0.78; padding: 10px 4px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 15px; font-weight: 600; text-align: center; background: var(--bg); color: var(--text); outline: none; }
+        .scale-header, .scale-row { display: flex; gap: 5px; margin-bottom: 7px; align-items: center; }
+        .scale-card { background: transparent; border: 0; box-shadow: none; padding: 2px 0 !important; }
+        .scale-number { width: 20px; flex: 0 0 20px; text-align: center; color: var(--text-light); font-size: 12px; font-weight: 700; }
+        .scale-row input { min-width: 0; width: 0; flex: 0.9; padding: 10px 3px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 15px; font-weight: 600; text-align: center; background: white; color: var(--text); outline: none; }
         .scale-row input:focus { border-color: var(--primary); background: white; }
-        .scale-row .badhotri-box { min-width: 0; flex: 1.44; height: 42px; font-size: 13px; padding: 0 2px; white-space: nowrap; }
-        .scale-row input:focus { border-color: var(--primary); background: white; }
+        .scale-row .badhotri-box { min-width: 0; flex: 1.1; height: 42px; font-size: 13px; padding: 0 2px; white-space: nowrap; }
+        .scale-clear-row { display:flex; gap:8px; margin-top:8px; }
+        .scale-clear-row button { flex:1; border:0; border-radius:10px; padding:11px; font-weight:700; background:var(--primary-light); color:var(--primary); }
         
         .badhotri-box { flex: 1.2; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 15px; font-weight: 700; background: var(--bg); color: var(--text-light); border: 1.5px solid var(--border); }
         .badhotri-box.pos { background: #ecfdf5; color: var(--success); border-color: #a7f3d0; }
@@ -112,6 +115,15 @@
         .file-info { flex: 1; }
         .file-info h4 { margin: 0; font-size: 14px; word-break: break-all; }
         .file-info p { margin: 4px 0 0; font-size: 12px; color: var(--text-light); }
+        .file-location-note { display:flex; align-items:center; gap:5px; margin:8px 0 0; font-size:10px; color:#94a3b8; }
+        .file-location-note button { border:0; background:transparent; color:#64748b; padding:2px 4px; font-size:12px; }
+        .customer-summary { display:flex; justify-content:space-between; align-items:center; margin:12px 0 4px; font-size:12px; color:var(--text-light); font-weight:700; }
+        .customer-row { display:flex; align-items:center; gap:9px; padding:11px 2px; border-bottom:1px solid var(--border); touch-action:pan-y; }
+        .customer-row.dragging { opacity:.45; background:var(--primary-light); }
+        .customer-row .customer-order { width:24px; color:var(--text-light); font-size:12px; text-align:center; }
+        .customer-row .customer-name { flex:1; font-size:14px; font-weight:600; }
+        .customer-row .drag-handle { color:#94a3b8; padding:6px; }
+        .main-content { scroll-padding-bottom: 280px; }
 
         .dialog-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,.48);z-index:3000}
         .dialog-backdrop.show{display:flex}.app-dialog{width:min(100%,340px);background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.24)}
@@ -137,13 +149,17 @@
         
         <!-- SCALE TAB -->
         <div id="tab-scale" class="tab-content active">
-            <div class="card" style="padding: 12px;">
-                <div class="scale-header" style="margin-bottom: 4px; padding: 0 4px;">
-                    <div style="flex:0.78; font-size:11px; text-align:center; color:var(--text-light);">Milk (kg)</div>
-                    <div style="flex:0.78; font-size:11px; text-align:center; color:var(--text-light);">Sample</div>
-                    <div style="flex:1.44; font-size:11px; text-align:center; color:var(--text-light);">Increment</div>
+            <div class="card scale-card">
+                <div class="scale-header" style="margin-bottom: 4px;">
+                    <div class="scale-number">#</div>
+                    <div style="flex:0.9; font-size:11px; text-align:center; color:var(--text-light);">Milk (kg)</div>
+                    <div style="flex:0.9; font-size:11px; text-align:center; color:var(--text-light);">Sample</div>
+                    <div style="flex:1.1; font-size:11px; text-align:center; color:var(--text-light);">Increment</div>
                 </div>
                 <div id="scale-body"></div>
+                <div class="scale-clear-row">
+                    <button type="button" onclick="clearScaleBoard()"><i class="fa-solid fa-eraser"></i> Clear calculation</button>
+                </div>
                 <button class="add-btn" onclick="addScaleRow()"><i class="fa-solid fa-plus"></i> Add row</button>
             </div>
 
@@ -179,12 +195,13 @@
                         <button class="btn btn-primary" onclick="addCustomer()" style="padding: 12px;"><i class="fa-solid fa-plus"></i></button>
                     </div>
                 </div>
-                <div id="cust-list" style="max-height: 150px; overflow-y: auto; margin-top: 10px;"></div>
+                <div class="customer-summary"><span>Customers</span><span id="customer-count">Total: 0</span></div>
+                <div id="cust-list" style="max-height: 220px; overflow-y: auto; margin-top: 4px;"></div>
             </div>
 
             <div class="card">
                 <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
-                <div class="form-group"><select id="entry-customer" class="form-control"></select></div>
+                <div class="form-group"><input type="text" id="entry-customer" class="form-control" list="customer-options" placeholder="Search or select customer" autocomplete="off"><datalist id="customer-options"></datalist></div>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -238,6 +255,7 @@
                         <div class="file-info">
                             <h4 id="backup-filename">MilkScale_Backup.json</h4>
                             <p id="backup-filedate">Created: now</p>
+                            <div class="file-location-note">File Manager / Documents <button type="button" aria-label="File location information" onclick="notify('This file is saved in your phone File Manager app, inside the Documents folder.')"><i class="fa-solid fa-circle-info"></i></button></div>
                         </div>
                     </div>
                     
@@ -305,12 +323,49 @@
         let customers = JSON.parse(localStorage.getItem('ms_cust')) || [];
         let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
         let currentFileNumber = parseInt(localStorage.getItem('ms_file_num')) || 0;
+        let fileStore = {};
+        try { fileStore = JSON.parse(localStorage.getItem('ms_file_store') || '{}') || {}; } catch(e) { fileStore = {}; }
+        let draggedCustomerIndex = null;
+
+        function saveActiveFileData() {
+            if (currentFileNumber > 0) {
+                fileStore[String(currentFileNumber)] = {
+                    customers, entries,
+                    scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
+                    rate: document.getElementById('scale-rate').value
+                };
+                localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
+            }
+        }
+
+        function loadActiveFileData(fileNum) {
+            const data = fileStore[String(fileNum)];
+            customers = data ? (data.customers || []) : [];
+            entries = data ? (data.entries || []) : [];
+            localStorage.setItem('ms_cust', JSON.stringify(customers));
+            localStorage.setItem('ms_entries', JSON.stringify(entries));
+            localStorage.setItem('ms_scale', JSON.stringify(data?.scale || []));
+            document.getElementById('scale-rate').value = data?.rate || '';
+            localStorage.setItem('ms_rate', data?.rate || '');
+        }
         
         document.getElementById('entry-date').valueAsDate = new Date();
         setBillDatesToCurrentMonth();
 
         // --- Init ---
         async function init() {
+            if (currentFileNumber > 0) {
+                if (!fileStore[String(currentFileNumber)]) {
+                    fileStore[String(currentFileNumber)] = {
+                        customers, entries,
+                        scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
+                        rate: localStorage.getItem('ms_rate') || ''
+                    };
+                    localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
+                } else {
+                    loadActiveFileData(currentFileNumber);
+                }
+            }
             renderCustomers();
             populateDropdowns();
             const savedRate = localStorage.getItem('ms_rate');
@@ -339,6 +394,7 @@
             try {
                 localStorage.setItem('ms_cust', JSON.stringify(customers));
                 localStorage.setItem('ms_entries', JSON.stringify(entries));
+                saveActiveFileData();
             } catch (error) {
                 console.error('Local save error:', error);
                 notify('Storage is full. Create a backup and free up space.');
@@ -364,21 +420,44 @@
         // --- Customer Logic ---
         function renderCustomers() {
             const list = document.getElementById('cust-list');
+            document.getElementById('customer-count').innerText = 'Total: ' + customers.length;
             if(customers.length === 0) {
                 list.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-light);">No customers</p>';
                 return;
             }
             list.innerHTML = customers.map((c, i) => `
-                <div class="list-item">
-                    <div class="info"><h4>${escapeHtml(c)}</h4></div>
+                <div class="customer-row" draggable="true" data-customer-index="${i}" ondragstart="customerDragStart(event,${i})" ondragover="customerDragOver(event)" ondrop="customerDrop(event,${i})" ondragend="customerDragEnd()">
+                    <span class="customer-order">${i + 1}.</span>
+                    <i class="fa-solid fa-grip-vertical drag-handle" aria-label="Hold and move to reorder"></i>
+                    <span class="customer-name">${escapeHtml(c)}</span>
                     <div class="delete-icon" onclick="deleteCustomer(${i})"><i class="fa-solid fa-trash"></i></div>
                 </div>
             `).join('');
         }
 
+        function customerDragStart(event, index) {
+            draggedCustomerIndex = index;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', String(index));
+            event.currentTarget.classList.add('dragging');
+        }
+        function customerDragOver(event) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
+        function customerDrop(event, targetIndex) {
+            event.preventDefault();
+            if (draggedCustomerIndex === null || draggedCustomerIndex === targetIndex) return;
+            const moved = customers.splice(draggedCustomerIndex, 1)[0];
+            customers.splice(targetIndex, 0, moved);
+            draggedCustomerIndex = null;
+            saveLocal(); renderCustomers(); populateDropdowns();
+        }
+        function customerDragEnd() {
+            draggedCustomerIndex = null;
+            document.querySelectorAll('.customer-row').forEach(row => row.classList.remove('dragging'));
+        }
+
         function populateDropdowns() {
             const options = customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-            document.getElementById('entry-customer').innerHTML = options || '<option value="">No customers</option>';
+            document.getElementById('customer-options').innerHTML = options;
             document.getElementById('bill-customer').innerHTML = `<option value="">-- Select customer --</option>` + options;
         }
 
@@ -407,7 +486,8 @@
 
         // --- Entry Logic (Entry logic) ---
         async function saveEntry() {
-            const cust = document.getElementById('entry-customer').value;
+            const cust = document.getElementById('entry-customer').value.trim();
+            if (!customers.includes(cust)) return notify('Please search and select a customer from the list.');
             const date = document.getElementById('entry-date').value;
             const shift = document.getElementById('entry-shift').value;
             const kg = parseFloat(document.getElementById('entry-kg').value);
@@ -496,11 +576,38 @@
 
         // --- Create New Backup File Manually ---
         async function createNewBackupFile() {
+            // If legacy data exists before the first numbered file, preserve it as file 1.
+            if (currentFileNumber === 0 && (customers.length > 0 || entries.length > 0)) {
+                currentFileNumber = 1;
+                fileStore['1'] = {
+                    customers: [...customers], entries: [...entries],
+                    scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
+                    rate: document.getElementById('scale-rate').value
+                };
+                localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
+                localStorage.setItem('ms_file_num', '1');
+                await autoSaveToFile(1);
+            } else {
+                saveActiveFileData();
+            }
             currentFileNumber++;
+            customers = [];
+            entries = [];
             localStorage.setItem('ms_file_num', currentFileNumber);
+            localStorage.setItem('ms_scale', '[]');
+            localStorage.setItem('ms_rate', '');
+            document.getElementById('scale-rate').value = '';
+            fileStore[String(currentFileNumber)] = { customers: [], entries: [], scale: [], rate: '' };
+            localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
+            saveLocal();
+            renderCustomers();
+            populateDropdowns();
+            document.getElementById('entry-customer').value = '';
+            initScaleBoard();
+            loadBill();
             await autoSaveToFile(currentFileNumber);
             showFileInHeader(currentFileNumber);
-            
+            notify('A new empty file has been created.');
         }
 
         // --- Restore Logic ---
@@ -617,9 +724,9 @@
             try { saved = JSON.parse(localStorage.getItem('ms_scale') || '[]'); } catch (e) { saved = []; }
             if(saved && saved.length > 0) {
                 saved.forEach(s => addScaleRow(s.m, s.s));
-                for(let i=saved.length; i<5; i++) addScaleRow();
+                for(let i=saved.length; i<7; i++) addScaleRow();
             } else {
-                for(let i=0; i<5; i++) addScaleRow();
+                for(let i=0; i<7; i++) addScaleRow();
             }
         }
 
@@ -627,12 +734,21 @@
             const board = document.getElementById('scale-body');
             const div = document.createElement('div');
             div.className = 'scale-row';
+            const rowNumber = board.querySelectorAll('.scale-row').length + 1;
             div.innerHTML = `
+                <span class="scale-number">${rowNumber}.</span>
                 <input type="number" inputmode="decimal" enterkeyhint="next" class="s-m" placeholder="Milk" value="${m}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="Milk in kilograms">
                 <input type="number" inputmode="decimal" enterkeyhint="next" class="s-s" placeholder="Sample" value="${s}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="Sample">
                 <div class="badhotri-box">0.00 gm</div>
             `;
             board.appendChild(div);
+            calculateScale();
+        }
+
+        function clearScaleBoard() {
+            const board = document.getElementById('scale-body');
+            board.innerHTML = '';
+            for (let i = 0; i < 7; i++) addScaleRow();
             calculateScale();
         }
 
@@ -679,9 +795,25 @@
             document.getElementById('res-milk').innerText = totalKg.toFixed(2);
             document.getElementById('res-badhotri').innerText = formatBadhotri(totalBad);
             document.getElementById('res-total-kg').innerText = finalKg.toFixed(3);
-            document.getElementById('res-amount').innerText = '₹' + (finalKg * rate).toFixed(0);
+            document.getElementById('res-amount').innerText = '₹' + (finalKg * rate).toFixed(2);
             
             localStorage.setItem('ms_rate', document.getElementById('scale-rate').value);
+        }
+
+        // Keep the focused input visible above the Android keyboard.
+        document.addEventListener('focusin', event => {
+            const target = event.target;
+            if (target.matches('input, select, textarea')) {
+                setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 260);
+            }
+        });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                const active = document.activeElement;
+                if (active && active.matches('input, select, textarea')) {
+                    setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                }
+            });
         }
 
         // Start App
