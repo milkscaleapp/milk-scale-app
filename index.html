@@ -183,7 +183,14 @@
 .full-page-header{height:58px;flex:0 0 58px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border)}.full-page-header h2{font-size:18px;margin:0;flex:1}.back-icon,.refresh-icon{width:40px;height:40px;border:0;border-radius:12px;background:#eff6ff;color:#1d4ed8;display:grid;place-items:center;font-size:17px}
 .full-page-body{overflow:auto;padding:18px 16px 28px}.full-page-body section{background:#fff;border:1px solid var(--border);border-radius:16px;padding:15px;margin-bottom:14px}.full-page-body h3{font-size:15px;margin:0 0 12px}
 .profile-loader{height:54px;display:grid;place-items:center;color:#2563eb;font-size:27px}.profile-loader i{animation:profileSpin .75s linear infinite;font-weight:900}@keyframes profileSpin{to{transform:rotate(360deg)}}
-.customer-picker-wrap{position:relative}.customer-picker-list{display:none;position:absolute;top:100%;left:0;right:0;z-index:1500;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 25px rgba(15,23,42,.15)}.customer-picker-list.open{display:block}.customer-picker-option{padding:12px 14px;border-bottom:1px solid #f1f5f9;font-size:14px}.customer-picker-option:last-child{border:0}
+
+.customer-picker-modal{position:fixed;inset:0;z-index:4600;background:#f8fafc;display:none;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.customer-picker-modal.show{display:flex}.customer-picker-header{height:60px;flex:0 0 60px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border)}
+.customer-picker-header h2{font-size:18px;margin:0}.customer-picker-content{display:flex;flex-direction:column;gap:12px;padding:16px;min-height:0;flex:1}
+.customer-picker-content input{flex:0 0 auto}.customer-picker-list{display:flex;flex-direction:column;gap:0;overflow-y:auto;min-height:0;background:#fff;border:1px solid var(--border);border-radius:14px}
+.customer-picker-option{width:100%;border:0;border-bottom:1px solid #f1f5f9;background:#fff;text-align:left;padding:14px 15px;font:inherit;color:var(--text);font-size:14px}
+.customer-picker-option:last-child{border-bottom:0}.customer-picker-option:active{background:#eff6ff}.customer-picker-empty{padding:20px;text-align:center;color:var(--text-light);font-size:13px}
+
 .entry-reorder-handle{touch-action:none;user-select:none;-webkit-user-select:none}.customer-row{transition:transform 150ms cubic-bezier(.2,.75,.25,1),background .12s;will-change:transform}
 
 .edit-profile-backdrop{position:fixed;inset:0;z-index:4500;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:20px}.edit-profile-backdrop.show{display:flex}
@@ -265,7 +272,7 @@
 
             <div class="card">
                 <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
-                <div class="form-group customer-picker-wrap"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" onfocus="showCustomerPicker()" oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div><datalist id="customer-options"></datalist></div>
+                <div class="form-group"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" readonly onclick="openCustomerPicker()"><datalist id="customer-options"></datalist></div>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -342,6 +349,10 @@
         <!-- Backup icon removed from here, now it's in header -->
     </nav>
 
+<div class="customer-picker-modal" id="customer-picker-modal" role="dialog" aria-modal="true">
+ <div class="customer-picker-header"><button class="back-icon" onclick="closeCustomerPicker()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2>Customer चुनें</h2></div>
+ <div class="customer-picker-content"><input id="customer-picker-search" class="form-control" type="search" placeholder="Customer खोजें..." oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div></div>
+</div>
 <div class="full-page-backdrop" id="request-center" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeRequestCenter()"><i class="fa-solid fa-arrow-left"></i></button><h2>Requests</h2><button class="refresh-icon" onclick="loadRequestCenter()"><i class="fa-solid fa-rotate"></i></button></div><div class="full-page-body"><section><h3>आई हुई Requests</h3><div id="incoming-request-list"></div></section><section id="invite-customer-section"><h3>नया Customer जोड़ें</h3><input id="invite-customer-name" class="form-control" placeholder="Customer का नाम"><input id="invite-customer-phone" class="form-control" inputmode="tel" placeholder="मोबाइल नंबर"><button class="btn btn-primary" onclick="sendCustomerInvitation()">Request भेजें</button><div id="invite-result" class="auth-status"></div></section><section id="accept-invite-section"><h3>दूधिया की Request स्वीकार करें</h3><input id="invite-code-input" class="form-control" maxlength="8" placeholder="8 अक्षर का Request Code"><div class="row"><button class="btn btn-success" onclick="respondToCustomerInvite(true)">Accept</button><button class="btn auth-secondary" onclick="respondToCustomerInvite(false)">Reject</button></div></section></div></div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><input id="profile-edit-username" class="form-control" maxlength="24" placeholder="Username"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><input id="profile-edit-username" class="form-control" maxlength="24" placeholder="Username"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
         <div class="auth-page-heading"><button class="back-icon" onclick="closeAccount()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2 id="account-page-title">Account</h2></div>
@@ -979,6 +990,7 @@
         }
         async function refreshAccountStatus(){
  const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status'),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
+ pv.style.display='block';fv.style.display='none';
  status.innerHTML='<span class="profile-loader"><i class="fa-solid fa-circle-notch"></i></span>';
  try{
   const user=await window.MilkScaleAuth?.getCurrentUser();
@@ -1160,10 +1172,17 @@
         }
 
 
-function showCustomerPicker(){filterCustomerPicker();document.getElementById('customer-picker-list')?.classList.add('open');}
-function filterCustomerPicker(){const box=document.getElementById('customer-picker-list'),input=document.getElementById('entry-customer');if(!box||!input)return;const q=input.value.trim().toLowerCase(),rows=customers.filter(x=>x.toLowerCase().includes(q));box.innerHTML=rows.length?rows.map(x=>'<div class="customer-picker-option" onclick="chooseEntryCustomer(\''+escapeHtml(x).replace(/'/g,"\\'")+'\')">'+escapeHtml(x)+'</div>').join(''):'<div class="customer-picker-option">कोई Customer नहीं मिला</div>';box.classList.add('open');}
-function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;document.getElementById('customer-picker-list')?.classList.remove('open');}
-document.addEventListener('click',e=>{const w=document.querySelector('.customer-picker-wrap');if(w&&!w.contains(e.target))document.getElementById('customer-picker-list')?.classList.remove('open');});
+function openCustomerPicker(){
+ const modal=document.getElementById('customer-picker-modal'),search=document.getElementById('customer-picker-search');
+ search.value='';filterCustomerPicker();modal.classList.add('show');history.pushState({page:'customer-picker'},'','#customer-picker');
+}
+function closeCustomerPicker(){document.getElementById('customer-picker-modal').classList.remove('show');}
+function filterCustomerPicker(){
+ const box=document.getElementById('customer-picker-list'),q=(document.getElementById('customer-picker-search').value||'').trim().toLowerCase();
+ const rows=customers.filter(x=>x.toLowerCase().includes(q));
+ box.innerHTML=rows.length?rows.map(x=>'<button type="button" class="customer-picker-option" onclick="chooseEntryCustomer(\''+escapeHtml(x).replace(/'/g,"\\'")+'\')">'+escapeHtml(x)+'</button>').join(''):'<div class="customer-picker-empty">कोई Customer नहीं मिला</div>';
+}
+function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;closeCustomerPicker();}
 function openRequestCenter(){document.getElementById('request-center').classList.add('show');document.body.classList.add('auth-open');loadRequestCenter();history.pushState({page:'requests'},'','#requests');}
 function closeRequestCenter(){document.getElementById('request-center').classList.remove('show');document.body.classList.remove('auth-open');}
 async function loadRequestCenter(){const list=document.getElementById('incoming-request-list'),invite=document.getElementById('invite-customer-section'),accept=document.getElementById('accept-invite-section');list.innerHTML='<div class="profile-loader"><i class="fa-solid fa-circle-notch"></i></div>';try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user){list.innerHTML='<p>Requests देखने के लिए Login करें।</p>';invite.style.display='none';accept.style.display='none';return;}const p=await window.MilkScaleAuth.getProfile();invite.style.display=p?.role==='owner'?'block':'none';accept.style.display=p?.role==='customer'?'block':'none';const rows=await window.MilkScaleAuth.getMyConnectionRequests(),incoming=rows.filter(x=>x.targetUid===user.uid&&x.status==='pending');list.innerHTML=incoming.length?incoming.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.requesterName||x.requesterEmail||'Customer')+'</strong><div class="request-state">Pending</div><div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideRequestCenter(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideRequestCenter(\''+x.id+'\',false)">Reject</button></div></div>').join(''):'<p class="request-time">अभी कोई नई Request नहीं है।</p>';if(p?.role==='owner'){const sent=await window.MilkScaleAuth.getMyInvitations(),pending=sent.filter(x=>x.status==='pending');if(pending.length)list.innerHTML+='<h3>भेजी गई Requests</h3>'+pending.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.customerName)+'</strong><div class="request-state">Code: '+escapeHtml(x.code)+'</div><div class="request-time">यह Code Customer को भेजें</div></div>').join('');}}catch(e){list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Requests लोड नहीं हुईं')+'</p>';}}
@@ -1173,6 +1192,7 @@ async function respondToCustomerInvite(accept){const code=document.getElementByI
 function openSettingsPage(){document.getElementById('settings-page').classList.add('show');history.pushState({page:'settings'},'','#settings');}
 function closeSettingsPage(){document.getElementById('settings-page').classList.remove('show');}
 function handleAppBack(){
+ const customerPicker=document.getElementById('customer-picker-modal');if(customerPicker?.classList.contains('show')){closeCustomerPicker();return;}
  const editor=document.getElementById('edit-profile-modal');if(editor?.classList.contains('show')){closeProfileEditor();return;}
  const st=document.getElementById('settings-page');if(st?.classList.contains('show')){closeSettingsPage();return;}
  const r=document.getElementById('request-center');if(r?.classList.contains('show')){closeRequestCenter();return;}
