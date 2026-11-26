@@ -308,9 +308,14 @@
     <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
         <h2>Milk Scale Account</h2>
-        <p id="auth-intro">मोबाइल नंबर से लॉगिन करें। OTP सत्यापन वैकल्पिक है; आपका मौजूदा ऑफलाइन हिसाब चलता रहेगा।</p>
-        <div id="auth-phone-step"><label for="auth-phone">मोबाइल नंबर</label><input id="auth-phone" type="tel" inputmode="tel" placeholder="+91XXXXXXXXXX" autocomplete="tel"><button class="auth-primary" id="auth-send-btn" onclick="sendAccountOtp()">OTP भेजें</button></div>
-        <div id="auth-code-step" style="display:none"><label for="auth-code">6 अंकों का OTP</label><input id="auth-code" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code"><button class="auth-primary" onclick="verifyAccountOtp()">सत्यापित करें</button></div>
+        <p id="auth-intro">ईमेल और पासवर्ड से अकाउंट बनाएँ या लॉगिन करें। लॉगिन वैकल्पिक है; आपका मौजूदा ऑफलाइन हिसाब चलता रहेगा।</p>
+        <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
+        <div><label for="auth-password">पासवर्ड</label><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"></div>
+        <button class="auth-primary" id="auth-submit-btn" onclick="submitAccountAuth()">लॉगिन करें</button>
+        <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+          <button class="auth-secondary" id="auth-mode-btn" onclick="toggleAccountAuthMode()">नया अकाउंट बनाएँ</button>
+          <button class="auth-secondary" id="auth-reset-btn" onclick="resetAccountPassword()">पासवर्ड भूल गए?</button>
+        </div>
         <div class="auth-status" id="auth-status" aria-live="polite"></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><button class="auth-secondary" onclick="closeAccount()">बंद करें</button><button class="auth-secondary" id="auth-signout-btn" style="display:none" onclick="signOutAccount()">लॉगआउट</button></div>
       </div>
@@ -981,64 +986,83 @@
         }
 
 
-        // Optional Firebase phone authentication. Local/offline app data is not gated by login.
+        // Optional Firebase email/password authentication. Local/offline app data is never gated by login.
+        let accountAuthMode = 'login';
         function openAccount() {
             document.getElementById('auth-backdrop').classList.add('show');
             refreshAccountStatus();
         }
         function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); }
+        function toggleAccountAuthMode() {
+            accountAuthMode = accountAuthMode === 'login' ? 'register' : 'login';
+            document.getElementById('auth-submit-btn').innerText = accountAuthMode === 'login' ? 'लॉगिन करें' : 'अकाउंट बनाएँ';
+            document.getElementById('auth-mode-btn').innerText = accountAuthMode === 'login' ? 'नया अकाउंट बनाएँ' : 'पहले से अकाउंट है? लॉगिन';
+            document.getElementById('auth-password').autocomplete = accountAuthMode === 'login' ? 'current-password' : 'new-password';
+            document.getElementById('auth-status').innerText = '';
+        }
         async function refreshAccountStatus() {
             const status = document.getElementById('auth-status');
             const signout = document.getElementById('auth-signout-btn');
             try {
                 const user = await window.MilkScaleAuth?.getCurrentUser();
                 if (user) {
-                    status.innerText = 'लॉगिन: ' + (user.phoneNumber || 'सत्यापित मोबाइल');
+                    status.innerText = 'लॉगिन: ' + (user.email || 'अकाउंट सक्रिय');
                     signout.style.display = 'inline-block';
+                    document.getElementById('auth-submit-btn').style.display = 'none';
+                    document.getElementById('auth-mode-btn').style.display = 'none';
+                    document.getElementById('auth-reset-btn').style.display = 'none';
                 } else {
                     status.innerText = 'अभी लॉगिन नहीं है। ऑफलाइन हिसाब सामान्य रूप से उपलब्ध है।';
                     signout.style.display = 'none';
+                    document.getElementById('auth-submit-btn').style.display = 'block';
+                    document.getElementById('auth-mode-btn').style.display = 'inline-block';
+                    document.getElementById('auth-reset-btn').style.display = 'inline-block';
                 }
             } catch (error) {
-                status.innerText = 'अभी अकाउंट सेवा उपलब्ध नहीं है।';
+                status.innerText = 'अकाउंट सेवा उपलब्ध नहीं है। इंटरनेट और Firebase सेटिंग जाँचें।';
             }
         }
-        async function sendAccountOtp() {
-            const phone = document.getElementById('auth-phone').value.trim().replace(/[\s()-]/g, '');
+        async function submitAccountAuth() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
             const status = document.getElementById('auth-status');
-            const button = document.getElementById('auth-send-btn');
-            button.disabled = true; status.innerText = 'OTP भेजा जा रहा है…';
+            const button = document.getElementById('auth-submit-btn');
+            button.disabled = true;
+            status.innerText = accountAuthMode === 'login' ? 'लॉगिन हो रहा है…' : 'अकाउंट बनाया जा रहा है…';
             try {
-                await window.MilkScaleAuth.sendCode(phone, event => {
-                    if (event.type === 'codeSent') {
-                        document.getElementById('auth-phone-step').style.display = 'none';
-                        document.getElementById('auth-code-step').style.display = 'block';
-                        status.innerText = 'OTP भेज दिया गया है। SMS में आया 6 अंकों का कोड डालें।';
-                    } else if (event.type === 'verified') {
-                        status.innerText = 'मोबाइल नंबर सत्यापित हो गया।';
-                        refreshAccountStatus();
-                    } else if (event.type === 'failed') {
-                        status.innerText = event.message;
-                    }
-                });
+                const user = accountAuthMode === 'login'
+                    ? await window.MilkScaleAuth.signIn(email, password)
+                    : await window.MilkScaleAuth.createAccount(email, password);
+                status.innerText = 'सफलतापूर्वक लॉगिन: ' + (user.email || email);
+                await refreshAccountStatus();
             } catch (error) {
-                status.innerText = error.message || 'OTP भेजने में समस्या हुई।';
+                const messages = {
+                    'auth/invalid-email': 'ईमेल पता सही नहीं है।',
+                    'auth/user-not-found': 'यह ईमेल अकाउंट नहीं मिला। पहले नया अकाउंट बनाएँ।',
+                    'auth/wrong-password': 'पासवर्ड गलत है।',
+                    'auth/invalid-credential': 'ईमेल या पासवर्ड सही नहीं है।',
+                    'auth/email-already-in-use': 'इस ईमेल से अकाउंट पहले से बना है। लॉगिन करें।',
+                    'auth/weak-password': 'पासवर्ड कम से कम 6 अक्षरों का रखें।',
+                    'auth/network-request-failed': 'इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।',
+                    'auth/operation-not-allowed': 'Firebase Console में Email/Password sign-in चालू करना बाकी है।'
+                };
+                status.innerText = messages[error.code] || error.message || 'लॉगिन में समस्या हुई।';
             } finally { button.disabled = false; }
         }
-        async function verifyAccountOtp() {
+        async function resetAccountPassword() {
+            const email = document.getElementById('auth-email').value.trim();
             const status = document.getElementById('auth-status');
+            if (!email) { status.innerText = 'पहले अपना ईमेल पता लिखें।'; return; }
             try {
-                const user = await window.MilkScaleAuth.verifyCode(document.getElementById('auth-code').value.trim());
-                status.innerText = user?.phoneNumber ? 'सत्यापन सफल: ' + user.phoneNumber : 'सत्यापन सफल।';
-                document.getElementById('auth-signout-btn').style.display = 'inline-block';
-            } catch (error) { status.innerText = error.message || 'OTP गलत है या समाप्त हो गया।'; }
+                await window.MilkScaleAuth.sendPasswordReset(email);
+                status.innerText = 'पासवर्ड रीसेट लिंक ईमेल पर भेज दिया गया है।';
+            } catch (error) {
+                status.innerText = error.code === 'auth/user-not-found' ? 'इस ईमेल का अकाउंट नहीं मिला।' : (error.message || 'रीसेट ईमेल नहीं भेजा जा सका।');
+            }
         }
         async function signOutAccount() {
             try {
                 await window.MilkScaleAuth.signOut();
-                document.getElementById('auth-phone-step').style.display = 'block';
-                document.getElementById('auth-code-step').style.display = 'none';
-                document.getElementById('auth-code').value = '';
                 await refreshAccountStatus();
             } catch (error) { document.getElementById('auth-status').innerText = 'लॉगआउट नहीं हो सका।'; }
         }
