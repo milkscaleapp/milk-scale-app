@@ -1,13 +1,10 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Milk Scale</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Capacitor Plugin for Native File System -->
@@ -24,7 +21,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: 'Noto Sans Devanagari', sans-serif; background-color: var(--bg);
+            font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; background-color: var(--bg);
             color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex;
             flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top);
         }
@@ -115,6 +112,13 @@
         .file-info { flex: 1; }
         .file-info h4 { margin: 0; font-size: 14px; word-break: break-all; }
         .file-info p { margin: 4px 0 0; font-size: 12px; color: var(--text-light); }
+
+        .dialog-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,.48);z-index:3000}
+        .dialog-backdrop.show{display:flex}.app-dialog{width:min(100%,340px);background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.24)}
+        .app-dialog h3{margin:0 0 9px;font-size:18px}.app-dialog p{margin:0;font-size:14px;line-height:1.5;color:var(--text-light);white-space:pre-wrap}
+        .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.dialog-actions button{border:0;border-radius:10px;padding:10px 16px;font:600 14px inherit;cursor:pointer}
+        .dialog-cancel{background:var(--bg);color:var(--text)}.dialog-ok{background:var(--primary);color:white}
+
     </style>
 </head>
 <body>
@@ -122,7 +126,7 @@
     <header class="app-header">
         <div class="header-left">
             <h1>Milk Scale</h1>
-            <!-- फाइल शो होने वाला रंगीन बटन -->
+            <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
                 <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
             </button>
@@ -135,30 +139,30 @@
         <div id="tab-scale" class="tab-content active">
             <div class="card" style="padding: 12px;">
                 <div class="scale-header" style="margin-bottom: 4px; padding: 0 4px;">
-                    <div style="flex:0.78; font-size:11px; text-align:center; color:var(--text-light);">दूध (Kg)</div>
-                    <div style="flex:0.78; font-size:11px; text-align:center; color:var(--text-light);">सैंपल</div>
-                    <div style="flex:1.44; font-size:11px; text-align:center; color:var(--text-light);">बढ़ोतरी</div>
+                    <div style="flex:0.78; font-size:11px; text-align:center; color:var(--text-light);">Milk (kg)</div>
+                    <div style="flex:0.78; font-size:11px; text-align:center; color:var(--text-light);">Sample</div>
+                    <div style="flex:1.44; font-size:11px; text-align:center; color:var(--text-light);">Increment</div>
                 </div>
                 <div id="scale-body"></div>
-                <button class="add-btn" onclick="addScaleRow()"><i class="fa-solid fa-plus"></i> नई लाइन</button>
+                <button class="add-btn" onclick="addScaleRow()"><i class="fa-solid fa-plus"></i> Add row</button>
             </div>
 
             <div class="result-grid">
-                <div class="result-card"><p>कुल दूध</p><h3 id="res-milk">0.00</h3></div>
-                <div class="result-card"><p>कुल बढ़ोतरी</p><h3 id="res-badhotri" style="color:var(--success);">0</h3></div>
+                <div class="result-card"><p>Total milk</p><h3 id="res-milk">0.00</h3></div>
+                <div class="result-card"><p>Total increment</p><h3 id="res-badhotri" style="color:var(--success);">0</h3></div>
             </div>
 
             <div class="rate-box">
                 <div>
-                    <div style="font-size:11px; opacity:0.8;">वजन (Kg)</div>
+                    <div style="font-size:11px; opacity:0.8;">Total weight (kg)</div>
                     <div style="font-size:18px; font-weight:700;" id="res-total-kg">0.00</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="font-size:16px; opacity:0.8;">×</span>
-                    <input type="number" id="scale-rate" placeholder="दर" oninput="calculateScale()">
+                    <input type="number" id="scale-rate" placeholder="Rate" oninput="calculateScale()">
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-size:11px; opacity:0.8;">कुल राशि</div>
+                    <div style="font-size:11px; opacity:0.8;">Total amount</div>
                     <div style="font-size:20px; font-weight:700;" id="res-amount">₹0</div>
                 </div>
             </div>
@@ -169,7 +173,7 @@
             <div class="card">
                 <div class="row">
                     <div class="form-group" style="flex:2; margin-bottom:0;">
-                        <input type="text" id="new-cust-name" class="form-control" placeholder="नया ग्राहक नाम">
+                        <input type="text" id="new-cust-name" class="form-control" placeholder="New customer name">
                     </div>
                     <div class="form-group" style="flex:1; margin-bottom:0;">
                         <button class="btn btn-primary" onclick="addCustomer()" style="padding: 12px;"><i class="fa-solid fa-plus"></i></button>
@@ -179,23 +183,23 @@
             </div>
 
             <div class="card">
-                <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> दूध एंट्री</h3>
+                <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
                 <div class="form-group"><select id="entry-customer" class="form-control"></select></div>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
                         <select id="entry-shift" class="form-control">
-                            <option value="सुबह">सुबह</option>
-                            <option value="शाम">शाम</option>
+                            <option value="Morning">Morning</option>
+                            <option value="Evening">Evening</option>
                         </select>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="form-group"><input type="number" id="entry-kg" class="form-control" placeholder="दूध Kg" step="0.1"></div>
-                    <div class="form-group"><input type="number" id="entry-sample" class="form-control" placeholder="सैंपल" step="0.1"></div>
+                    <div class="form-group"><input type="number" id="entry-kg" class="form-control" placeholder="Milk (kg)" step="0.1"></div>
+                    <div class="form-group"><input type="number" id="entry-sample" class="form-control" placeholder="Sample" step="0.1"></div>
                 </div>
-                <div class="form-group"><input type="number" id="entry-rate" class="form-control" placeholder="दर (₹)" step="0.5"></div>
-                <button class="btn btn-primary" onclick="saveEntry()"><i class="fa-solid fa-check"></i> सेव करें</button>
+                <div class="form-group"><input type="number" id="entry-rate" class="form-control" placeholder="Rate (₹)" step="0.5"></div>
+                <button class="btn btn-primary" onclick="saveEntry()"><i class="fa-solid fa-check"></i> Save</button>
             </div>
         </div>
 
@@ -209,23 +213,23 @@
                 </div>
                 <div id="bill-data" style="display: none;">
                     <div style="display: flex; justify-content: space-between; background: var(--primary-light); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-                        <div><div style="font-size:11px; color:var(--text-light);">कुल दूध</div><div style="font-weight:700; font-size: 16px;" id="bill-total-kg">0</div></div>
-                        <div style="text-align:right;"><div style="font-size:11px; color:var(--text-light);">कुल राशि</div><div style="font-weight:700; font-size: 16px; color:var(--primary);" id="bill-total-amt">₹0</div></div>
+                        <div><div style="font-size:11px; color:var(--text-light);">Total milk</div><div style="font-weight:700; font-size: 16px;" id="bill-total-kg">0</div></div>
+                        <div style="text-align:right;"><div style="font-size:11px; color:var(--text-light);">Total amount</div><div style="font-weight:700; font-size: 16px; color:var(--primary);" id="bill-total-amt">₹0</div></div>
                     </div>
                     <div id="bill-list" style="max-height: 300px; overflow-y: auto;"></div>
-                    <button class="btn btn-whatsapp" onclick="shareWhatsApp()"><i class="fa-brands fa-whatsapp"></i> पर्ची भेजें</button>
+                    <button class="btn btn-whatsapp" onclick="shareWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Share bill</button>
                 </div>
             </div>
         </div>
 
-        <!-- BACKUP TAB (यह हेडर के रंगीन बटन से खुलेगा) -->
+        <!-- BACKUP TAB -->
         <div id="tab-backup" class="tab-content">
             <div class="card">
-                <h2 style="color: var(--primary); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-file-export"></i> फाइल बनाएं</h2>
-                <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">अगर आपको नई फाइल बनानी है या पुरानी फाइल रिस्टोर करनी है, तो यहाँ से करें। आपकी एंट्री अपने आप एक फाइल में सेव हो रही है।</p>
+                <h2 style="color: var(--primary); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-file-export"></i> Files</h2>
+                
                 
                 <button class="btn btn-primary" onclick="createNewBackupFile()" style="margin-bottom: 10px;">
-                    <i class="fa-solid fa-plus"></i> नई फाइल बनाएं
+                    <i class="fa-solid fa-plus"></i> Create new file
                 </button>
 
                 <div id="current-backup-file" style="display: none;">
@@ -233,18 +237,18 @@
                         <i class="fa-solid fa-file-code file-icon"></i>
                         <div class="file-info">
                             <h4 id="backup-filename">MilkScale_Backup.json</h4>
-                            <p id="backup-filedate">बनाई गई: अभी</p>
+                            <p id="backup-filedate">Created: now</p>
                         </div>
                     </div>
-                    <p style="font-size:12px; color:var(--text-light); margin-top:8px; text-align:center;">यह फाइल आपके <b>Documents</b> फोल्डर में सेव है।</p>
+                    
                 </div>
             </div>
 
             <div class="card">
-                <h2 style="color: var(--success); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-folder-open"></i> फाइल रिस्टोर करें</h2>
+                <h2 style="color: var(--success); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-folder-open"></i> Restore backup</h2>
                 <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importBackupFile(event)">
                 <button class="btn btn-warning" onclick="document.getElementById('fileInput').click()">
-                    <i class="fa-solid fa-upload"></i> फाइल चुनें
+                    <i class="fa-solid fa-upload"></i> Choose file
                 </button>
             </div>
         </div>
@@ -254,18 +258,49 @@
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('scale', this)">
-            <i class="fa-solid fa-calculator"></i><span>स्केल</span>
+            <i class="fa-solid fa-calculator"></i><span>Calculator</span>
         </div>
         <div class="nav-item" onclick="switchTab('entry', this)" id="nav-entry">
-            <i class="fa-solid fa-plus-circle"></i><span>एंट्री</span>
+            <i class="fa-solid fa-plus-circle"></i><span>Entries</span>
         </div>
         <div class="nav-item" onclick="switchTab('bill', this)">
-            <i class="fa-solid fa-file-invoice"></i><span>बिल</span>
+            <i class="fa-solid fa-file-invoice"></i><span>Bill</span>
         </div>
         <!-- Backup icon removed from here, now it's in header -->
     </nav>
 
+    <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+        <div class="app-dialog">
+            <h3 id="dialog-title">Milk Scale</h3>
+            <p id="dialog-message"></p>
+            <div class="dialog-actions">
+                <button class="dialog-cancel" id="dialog-cancel" type="button">Cancel</button>
+                <button class="dialog-ok" id="dialog-ok" type="button">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+
+        let dialogResolver = null;
+        function appDialog(message, confirmMode=false, title='Milk Scale') {
+            const modal=document.getElementById('app-dialog');
+            document.getElementById('dialog-title').textContent=title;
+            document.getElementById('dialog-message').textContent=message;
+            document.getElementById('dialog-cancel').style.display=confirmMode?'inline-block':'none';
+            modal.classList.add('show');
+            return new Promise(resolve=>{
+                dialogResolver=resolve;
+                document.getElementById('dialog-ok').onclick=()=>closeAppDialog(true);
+                document.getElementById('dialog-cancel').onclick=()=>closeAppDialog(false);
+            });
+        }
+        function closeAppDialog(result) {
+            document.getElementById('app-dialog').classList.remove('show');
+            if(dialogResolver){const resolve=dialogResolver;dialogResolver=null;resolve(result);}
+        }
+        function notify(message){appDialog(message,false);}
+
         // --- Variables ---
         let customers = JSON.parse(localStorage.getItem('ms_cust')) || [];
         let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
@@ -283,7 +318,7 @@
             initScaleBoard();
             loadBill();
             
-            // हेडर पर फाइल दिखाएं अगर पहले से बनी है
+            // Show the file in the header if one exists
             if(entries.length > 0 && currentFileNumber > 0) {
                 showFileInHeader(currentFileNumber);
             }
@@ -306,7 +341,7 @@
                 localStorage.setItem('ms_entries', JSON.stringify(entries));
             } catch (error) {
                 console.error('Local save error:', error);
-                alert('फोन में स्टोरेज की जगह कम है। कृपया बैकअप बनाकर कुछ जगह खाली करें।');
+                notify('Storage is full. Create a backup and free up space.');
             }
         }
 
@@ -330,7 +365,7 @@
         function renderCustomers() {
             const list = document.getElementById('cust-list');
             if(customers.length === 0) {
-                list.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-light);">कोई ग्राहक नहीं</p>';
+                list.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-light);">No customers</p>';
                 return;
             }
             list.innerHTML = customers.map((c, i) => `
@@ -343,8 +378,8 @@
 
         function populateDropdowns() {
             const options = customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-            document.getElementById('entry-customer').innerHTML = options || '<option value="">कोई ग्राहक नहीं</option>';
-            document.getElementById('bill-customer').innerHTML = `<option value="">-- ग्राहक चुनें --</option>` + options;
+            document.getElementById('entry-customer').innerHTML = options || '<option value="">No customers</option>';
+            document.getElementById('bill-customer').innerHTML = `<option value="">-- Select customer --</option>` + options;
         }
 
         function addCustomer() {
@@ -359,8 +394,8 @@
             }
         }
 
-        function deleteCustomer(index) {
-            if(confirm('ग्राहक और उसका हिसाब डिलीट करें?')) {
+        async function deleteCustomer(index) {
+            if(await appDialog('Delete this customer and all related entries?',true,'Delete customer')) {
                 const name = customers[index];
                 customers.splice(index, 1);
                 entries = entries.filter(e => e.customer !== name);
@@ -370,7 +405,7 @@
             }
         }
 
-        // --- Entry Logic (यहाँ फाइल ऑटोमैटिक बनेगी) ---
+        // --- Entry Logic (Entry logic) ---
         async function saveEntry() {
             const cust = document.getElementById('entry-customer').value;
             const date = document.getElementById('entry-date').value;
@@ -379,7 +414,7 @@
             const sample = parseFloat(document.getElementById('entry-sample').value) || 0;
             const rate = parseFloat(document.getElementById('entry-rate').value);
 
-            if(!cust || !date || !Number.isFinite(kg) || kg <= 0 || !Number.isFinite(rate) || rate < 0 || !Number.isFinite(sample) || sample < 0) return alert('सही जानकारी भरें। दूध और दर जाँचें।');
+            if(!cust || !date || !Number.isFinite(kg) || kg <= 0 || !Number.isFinite(rate) || rate < 0 || !Number.isFinite(sample) || sample < 0) return notify('Please enter valid details. Check milk quantity and rate.');
 
             entries.push({
                 id: Date.now(), customer: cust, date: date, shift: shift,
@@ -388,18 +423,18 @@
             
             saveLocal(); 
             
-            // अगर यह पहली एंट्री है, तो पहली फाइल (1) बनाओ
+            // Create the first file for the first entry
             if(currentFileNumber === 0) {
                 currentFileNumber = 1;
                 localStorage.setItem('ms_file_num', currentFileNumber);
                 await autoSaveToFile(currentFileNumber);
                 showFileInHeader(currentFileNumber);
             } else {
-                // अगर पहले से फाइल है, तो उसी में डेटा अपडेट करो
+                // Update the active file
                 await autoSaveToFile(currentFileNumber);
             }
             
-            alert('एंट्री ऐप में सेव हो गई। बैकअप फाइल डाउनलोड/सेव करने का प्रयास किया गया है।');
+            
             
             document.getElementById('entry-kg').value = '';
             document.getElementById('entry-sample').value = '';
@@ -429,7 +464,7 @@
                         directory: 'DOCUMENTS',
                         encoding: 'utf8'
                     });
-                    document.getElementById('backup-filedate').innerText = `अपडेटेड: ${new Date().toLocaleString()}`;
+                    document.getElementById('backup-filedate').innerText = `Updated: ${new Date().toLocaleString()}`;
                     document.getElementById('current-backup-file').style.display = 'block';
                     document.getElementById('backup-filename').innerText = fileName;
                     return true;
@@ -450,11 +485,11 @@
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
                 document.getElementById('current-backup-file').style.display = 'block';
                 document.getElementById('backup-filename').innerText = fileName;
-                document.getElementById('backup-filedate').innerText = `डाउनलोड किया गया: ${new Date().toLocaleString()}`;
+                document.getElementById('backup-filedate').innerText = `Downloaded: ${new Date().toLocaleString()}`;
                 return true;
             } catch (e) {
                 console.error('Backup download failed:', e);
-                alert('बैकअप फाइल नहीं बन पाई। कृपया दोबारा कोशिश करें।');
+                notify('Could not create backup file. Please try again.');
                 return false;
             }
         }
@@ -465,22 +500,22 @@
             localStorage.setItem('ms_file_num', currentFileNumber);
             await autoSaveToFile(currentFileNumber);
             showFileInHeader(currentFileNumber);
-            alert(`नई फाइल (${currentFileNumber}) बन गई!`);
+            
         }
 
         // --- Restore Logic ---
-        function importBackupFile(event) {
+        async function importBackupFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const content = e.target.result;
                     const savedData = JSON.parse(content);
 
                     if(savedData.customers && savedData.entries) {
-                        if(confirm('क्या आप वाकई इस फाइल का डेटा अपने ऐप में लोड करना चाहते हैं?')) {
+                        if(await appDialog('Replace the current data with this file?',true,'Restore backup')) {
                             customers = savedData.customers;
                             entries = savedData.entries;
                             
@@ -489,7 +524,7 @@
                             
                             saveLocal();
                             
-                            // नंबर निकालें फाइल के नाम से
+                            // Get the number from the file name
                             let match = file.name.match(/\((\d+)\)/);
                             if(match) {
                                 currentFileNumber = parseInt(match[1]);
@@ -502,21 +537,21 @@
                             initScaleBoard();
                             loadBill();
                             
-                            alert('डेटा सफलतापूर्वक रिस्टोर हो गया!');
+                            
                             switchTab('scale', document.querySelector('.nav-item'));
                         }
                     } else {
-                        alert('यह सही बैकअप फाइल नहीं है!');
+                        notify('This is not a valid backup file.');
                     }
                 } catch(err) {
-                    alert('फाइल पढ़ने में एरर आई।');
+                    notify('Could not read the file.');
                 }
             };
             reader.readAsText(file);
             event.target.value = ''; 
         }
 
-        // --- Bill & Scale Logic (पहले जैसा ही) ---
+        // --- Bill & Scale Logic (Existing calculation and bill logic) ---
         function setBillDatesToCurrentMonth() {
             const now = new Date();
             const toLocalDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -546,7 +581,7 @@
                     <div class="list-item">
                         <div class="info">
                             <h4>${d} <span style="font-size:10px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${e.shift}</span></h4>
-                            <p>${e.kg} Kg | सैंपल: ${e.sample}</p>
+                            <p>${e.kg} Kg | Sample: ${e.sample}</p>
                         </div>
                         <div class="amount">₹${e.total.toFixed(0)}</div>
                     </div>`;
@@ -554,7 +589,7 @@
 
             document.getElementById('bill-total-kg').innerText = totalKg.toFixed(1);
             document.getElementById('bill-total-amt').innerText = '₹' + totalAmt.toFixed(0);
-            document.getElementById('bill-list').innerHTML = listHtml || '<p style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">कोई एंट्री नहीं</p>';
+            document.getElementById('bill-list').innerHTML = listHtml || '<p style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No entries</p>';
             dataDiv.style.display = 'block';
         }
 
@@ -564,14 +599,14 @@
             const end = document.getElementById('bill-end').value;
             let filtered = entries.filter(e => e.customer === cust && e.date >= start && e.date <= end);
             
-            if(filtered.length === 0) return alert('कोई एंट्री नहीं है');
+            if(filtered.length === 0) return notify('No entries to share.');
 
             let totalKg = 0, totalAmt = 0;
             filtered.forEach(e => { totalKg += e.kg; totalAmt += e.total; });
 
-            let msg = `*🥛 मिल्क स्केल - हिसाब*\nग्राहक: *${cust}*\n\n`;
-            msg += `कुल दूध: *${totalKg.toFixed(1)} Kg*\n`;
-            msg += `कुल राशि: *₹${totalAmt.toFixed(0)}*`;
+            let msg = `*🥛 Milk Scale Bill*\nCustomer: *${cust}*\n\n`;
+            msg += `Total milk: *${totalKg.toFixed(1)} Kg*\n`;
+            msg += `Total amount: *₹${totalAmt.toFixed(0)}*`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
@@ -593,8 +628,8 @@
             const div = document.createElement('div');
             div.className = 'scale-row';
             div.innerHTML = `
-                <input type="number" inputmode="decimal" enterkeyhint="next" class="s-m" placeholder="दूध" value="${m}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="दूध किलोग्राम">
-                <input type="number" inputmode="decimal" enterkeyhint="next" class="s-s" placeholder="सैंपल" value="${s}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="सैंपल">
+                <input type="number" inputmode="decimal" enterkeyhint="next" class="s-m" placeholder="Milk" value="${m}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="Milk in kilograms">
+                <input type="number" inputmode="decimal" enterkeyhint="next" class="s-s" placeholder="Sample" value="${s}" oninput="calculateScale()" onkeydown="handleScaleNext(event)" aria-label="Sample">
                 <div class="badhotri-box">0.00 gm</div>
             `;
             board.appendChild(div);
