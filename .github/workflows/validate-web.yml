@@ -29,15 +29,18 @@ jobs:
           test -d www/vendor/fontawesome/webfonts
       - name: Check JavaScript syntax
         run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const html = fs.readFileSync('www/index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)]
-            .map(match => match[1]).filter(code => code.trim());
-          if (!scripts.length) throw new Error('No inline JavaScript found');
-          scripts.forEach((code, index) => fs.writeFileSync('/tmp/milk-scale-' + index + '.js', code));
-          console.log('Extracted', scripts.length, 'inline script(s)');
-          NODE
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("www/index.html").read_text()
+          scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.S | re.I)
+          scripts = [script for script in scripts if script.strip()]
+          if not scripts:
+              raise SystemExit("No inline JavaScript found")
+          for index, script in enumerate(scripts):
+              Path(f"/tmp/milk-scale-{index}.js").write_text(script)
+          print(f"Extracted {len(scripts)} inline script(s)")
+          PY
           for file in /tmp/milk-scale-*.js; do node --check "$file"; done
       - name: Ensure no remote app dependencies
         run: |
