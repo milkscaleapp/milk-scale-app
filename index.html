@@ -698,13 +698,31 @@
         }
         function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file · ':'')+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet.</p>';}
         async function refreshActiveFilePresence(loadCurrentData=true){
- const fs=window.Capacitor?.Plugins?.Filesystem;
- for(const n of getKnownFileNumbers()){
+ const fs=window.Capacitor?.Plugins?.Filesystem,unreadable=new Set();
+ if(fs?.readdir){
   try{
-   const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
+   const directory=await fs.readdir({path:'',directory:'DOCUMENTS'});
+   for(const item of (directory.files||[])){
+    const match=String(item.name||'').match(/^MilkScale_Backup_\((\d+)\)\.json$/i);
+    if(!match)continue;
+    const n=Number(match[1]),key=String(n);
+    if(!fileStore[key])fileStore[key]={customers:[],entries:[],scale:[],rate:''};
+    try{
+     const pending=fileWriteQueues[key];if(pending)await pending.catch(()=>{});
+     await readManagedFileData(n);filePresence[key]=true;
+    }catch(e){unreadable.add(key);filePresence[key]=false;}
+   }
+   localStorage.setItem('ms_file_store',JSON.stringify(fileStore));
+  }catch(e){console.warn('Documents folder scan unavailable:',e);}
+ }
+ for(const n of getKnownFileNumbers()){
+  const key=String(n);
+  try{
+   const pending=fileWriteQueues[key];if(pending)await pending.catch(()=>{});
    if(!fs?.stat)throw new Error('Native file storage unavailable');
-   await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;
-  }catch(e){filePresence[String(n)]=false;}
+   await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+   filePresence[key]=unreadable.has(key)?false:true;
+  }catch(e){filePresence[key]=false;}
  }
  if(currentFileNumber>0&&filePresence[String(currentFileNumber)]===true&&loadCurrentData){
   try{
