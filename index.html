@@ -372,6 +372,11 @@
               <input id="report-start" type="date" aria-label="रिपोर्ट शुरू">
               <input id="report-end" type="date" aria-label="रिपोर्ट समाप्त">
             </div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <button class="auth-secondary" onclick="setCloudReportPeriod('week')">इस सप्ताह</button>
+              <button class="auth-secondary" onclick="setCloudReportPeriod('month')">इस महीने</button>
+              <button class="auth-secondary" onclick="setCloudReportPeriod('last')">पिछला महीना</button>
+            </div>
             <input id="report-customer-uid" placeholder="Owner: Customer UID (वैकल्पिक)">
             <button class="auth-secondary" onclick="loadCloudLedger()">रिपोर्ट / खाता Refresh करें</button>
             <div id="cloud-ledger-result" class="auth-status"></div>
@@ -1192,6 +1197,15 @@
         async function saveCloudPayment(){
             try{const id=await window.MilkScaleAuth.addPayment(document.getElementById('payment-customer-uid').value.trim(),document.getElementById('payment-amount').value,document.getElementById('payment-note').value);document.getElementById('cloud-ledger-result').innerText='भुगतान दर्ज हुआ: '+id;await loadCloudLedger();}
             catch(e){document.getElementById('cloud-ledger-result').innerText=e.message||'भुगतान सेव नहीं हुआ।';}
+        }
+
+        function setCloudReportPeriod(period){
+            const now=new Date(), fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+            let start,end=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+            if(period==='week'){const day=(now.getDay()+6)%7;start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-day);}
+            else if(period==='month'){start=new Date(now.getFullYear(),now.getMonth(),1);}
+            else {start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0);}
+            document.getElementById('report-start').value=fmt(start);document.getElementById('report-end').value=fmt(end);loadCloudLedger();
         }
         async function saveLedgerAdjustment(){
             const uid=document.getElementById('payment-customer-uid').value.trim();
