@@ -53,6 +53,25 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Set Android version code for upgrade installs
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          version_code = int(os.environ["BUILD_NUMBER"])
+          import re
+          if re.search(r"versionCode\\s+\\d+", s):
+              s = re.sub(r"versionCode\\s+\\d+", f"versionCode {version_code}", s, count=1)
+          else:
+              s = s.replace("defaultConfig {", f"defaultConfig {{\\n        versionCode {version_code}", 1)
+          p.write_text(s)
+          print(f"Android versionCode set to {version_code}")
+          PY
+
       - name: Configure persistent Android signing
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
