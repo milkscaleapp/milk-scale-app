@@ -20,7 +20,7 @@ service cloud.firestore {
       && request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000)
       || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','role','username'])
       && request.resource.data.displayName is string && request.resource.data.displayName.size() >= 2
-      && request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}
+      && request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')));
    allow delete: if false;
   }
   match /dairyDirectory/{dairyId} {
@@ -35,7 +35,7 @@ service cloud.firestore {
     && (!('avatarData' in request.resource.data) || (request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000))
     && (!('active' in request.resource.data) || request.resource.data.active is bool)
     && (!('displayName' in request.resource.data) || request.resource.data.displayName is string)
-    && (!('username' in request.resource.data) || (request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}
+    && (!('username' in request.resource.data) || (request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')));
    allow delete: if false;
   }
   match /invitations/{code} {
