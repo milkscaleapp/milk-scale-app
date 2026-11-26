@@ -323,6 +323,17 @@
             <option value="customer">Customer / ग्राहक</option>
           </select>
           <button class="auth-secondary" style="width:100%" onclick="saveDairyRole()">भूमिका सेव करें</button>
+          <div id="two-way-request-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
+            <b>Owner ↔ Customer कनेक्शन रिक्वेस्ट</b>
+            <input id="request-display-name" placeholder="आपका नाम (वैकल्पिक)">
+            <button class="auth-primary" onclick="createDairyRequest()">रिक्वेस्ट कोड बनाएँ (फिर WhatsApp पर साझा करें)</button>
+            <div id="request-code-result" class="auth-status"></div>
+            <input id="incoming-request-code" autocapitalize="characters" maxlength="8" placeholder="दूसरे व्यक्ति का रिक्वेस्ट कोड">
+            <div style="display:flex;gap:8px">
+              <button class="auth-primary" onclick="answerConnectionRequest(true)">Accept</button>
+              <button class="auth-secondary" onclick="answerConnectionRequest(false)">Reject</button>
+            </div>
+          </div>
           <div id="owner-invite-area" style="display:none;margin-top:12px">
             <b>ग्राहक को जोड़ने की रिक्वेस्ट</b>
             <input id="invite-customer-name" placeholder="ग्राहक का नाम">
@@ -336,17 +347,6 @@
             <div style="display:flex;gap:8px">
               <button class="auth-primary" onclick="answerDairyInvitation(true)">Accept</button>
               <button class="auth-secondary" onclick="answerDairyInvitation(false)">Reject</button>
-            </div>
-          </div>
-          <div id="two-way-request-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
-            <b>दोनों तरफ़ से कनेक्शन रिक्वेस्ट</b>
-            <input id="request-display-name" placeholder="आपका नाम (वैकल्पिक)">
-            <button class="auth-primary" onclick="createDairyRequest()">रिक्वेस्ट कोड बनाएँ / भेजें</button>
-            <div id="request-code-result" class="auth-status"></div>
-            <input id="incoming-request-code" autocapitalize="characters" maxlength="8" placeholder="दूसरे व्यक्ति का रिक्वेस्ट कोड">
-            <div style="display:flex;gap:8px">
-              <button class="auth-primary" onclick="answerConnectionRequest(true)">Accept</button>
-              <button class="auth-secondary" onclick="answerConnectionRequest(false)">Reject</button>
             </div>
           </div>
           <div id="cloud-ledger-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
@@ -1088,8 +1088,10 @@
                         document.getElementById('dairy-role').disabled = true;
                         showDairyRoleTools(profile.role);
                     } else {
+                        document.getElementById('dairy-role-area').style.display = 'block';
                         document.getElementById('dairy-role').disabled = false;
                         showDairyRoleTools('');
+                        status.innerText = 'पहले भूमिका सेव करें। उसके बाद Owner/Customer रिक्वेस्ट और Cloud खाता विकल्प खुलेंगे।';
                     }
                     await renderDairyConnections();
                 } else {
@@ -1118,7 +1120,7 @@
                 showDairyRoleTools(role);
                 status.innerText = role === 'owner' ? 'Dairy Owner प्रोफाइल बन गई।' : 'Customer प्रोफाइल बन गई।';
                 await renderDairyConnections();
-            } catch (error) { status.innerText = error.message || 'प्रोफाइल सेव नहीं हुई।'; }
+            } catch (error) { status.innerText = (error.code === 'permission-denied' || /permission/i.test(error.message||'')) ? 'Firebase Firestore Rules में profiles create की अनुमति नहीं मिली। Firebase Console में PR #12 की firestore.rules Publish करें, फिर दोबारा प्रयास करें।' : (error.message || 'प्रोफाइल सेव नहीं हुई।'); }
         }
         async function sendDairyInvitation() {
             const status = document.getElementById('invite-code-result');
