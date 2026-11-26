@@ -134,7 +134,7 @@ async function findDairy(identifier){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
  const key=String(identifier||'').trim();if(!key)throw new Error('दूधिया की ID या Username लिखें।');
  let snap=await getDoc(doc(db,'dairyDirectory',key.toUpperCase()));
- if(!snap.exists()) {const q=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',key.toLowerCase()),where('active','==',true)));if(q.empty)throw new Error('इस ID या Username का दूधिया नहीं मिला।');snap=q.docs[0];}
+ if(!snap.exists()) {const q=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',key.toLowerCase())));const found=q.docs.find(d=>d.data().active!==false);if(!found)throw new Error('इस ID या Username का दूधिया नहीं मिला या वह सक्रिय नहीं है।');snap=found;}
  const dairy={id:snap.id,...snap.data()};if(dairy.active===false)throw new Error('यह Dairy ID अभी सक्रिय नहीं है।');
  if(!dairy.ownerUid||!dairy.dairyId)throw new Error('यह Dairy अकाउंट अब सक्रिय नहीं है।');
  return dairy;
