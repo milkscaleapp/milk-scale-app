@@ -33,3 +33,14 @@ fs.mkdirSync(path.join(www, 'vendor'), { recursive: true });
 fs.copyFileSync(filesystemPlugin, path.join(www, 'vendor', 'capacitor-filesystem.js'));
 
 console.log('Built local Milk Scale web assets in www/.');
+
+// Bundle the native Firebase Authentication bridge for the WebView.
+const esbuild = require('esbuild');
+esbuild.buildSync({
+  entryPoints: [path.join(root, 'src', 'firebase-auth.js')],
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  outfile: path.join(www, 'vendor', 'firebase-auth.js'),
+  target: ['es2020']
+});

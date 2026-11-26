@@ -147,6 +147,14 @@
         .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.dialog-actions button{border:0;border-radius:10px;padding:10px 16px;font:600 14px inherit;cursor:pointer}
         .dialog-cancel{background:var(--bg);color:var(--text)}.dialog-ok{background:var(--primary);color:white}
 
+
+        .account-btn{border:0;border-radius:20px;padding:8px 11px;background:#eaf1ff;color:#2563eb;font-weight:700;font-size:12px}
+        .auth-backdrop{position:fixed;inset:0;z-index:2500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55)}
+        .auth-backdrop.show{display:flex}.auth-card{width:min(100%,380px);background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 60px #0f172a40}
+        .auth-card h2{margin:0 0 8px;font-size:21px;color:#1e293b}.auth-card p{font-size:13px;line-height:1.5;color:#64748b}
+        .auth-card input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;margin:8px 0 12px}
+        .auth-card button{border:0;border-radius:10px;padding:12px 15px;font-weight:700}.auth-primary{background:#2563eb;color:white;width:100%}.auth-secondary{background:#f1f5f9;color:#334155}
+        .auth-status{min-height:20px;color:#475569;font-size:12px;margin:8px 0}
     </style>
 </head>
 <body>
@@ -154,6 +162,7 @@
     <header class="app-header">
         <div class="header-left">
             <h1>Milk Scale</h1>
+            <button class="account-btn" onclick="openAccount()">Account</button>
             <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
                 <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
@@ -296,6 +305,46 @@
         <!-- Backup icon removed from here, now it's in header -->
     </nav>
 
+    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
+      <div class="auth-card">
+        <h2>Milk Scale Account</h2>
+        <p id="auth-intro">ईमेल और पासवर्ड से अकाउंट बनाएँ या लॉगिन करें। लॉगिन वैकल्पिक है; आपका मौजूदा ऑफलाइन हिसाब चलता रहेगा।</p>
+        <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
+        <div><label for="auth-password">पासवर्ड</label><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"></div>
+        <button class="auth-primary" id="auth-submit-btn" onclick="submitAccountAuth()">लॉगिन करें</button>
+        <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+          <button class="auth-secondary" id="auth-mode-btn" onclick="toggleAccountAuthMode()">नया अकाउंट बनाएँ</button>
+          <button class="auth-secondary" id="auth-reset-btn" onclick="resetAccountPassword()">पासवर्ड भूल गए?</button>
+        </div>
+        <div id="dairy-role-area" style="display:none;border-top:1px solid #e2e8f0;margin-top:14px;padding-top:12px">
+          <label for="dairy-role">आपका अकाउंट</label>
+          <select id="dairy-role" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0 10px">
+            <option value="owner">Dairy Owner / दूधिया</option>
+            <option value="customer">Customer / ग्राहक</option>
+          </select>
+          <button class="auth-secondary" style="width:100%" onclick="saveDairyRole()">भूमिका सेव करें</button>
+          <div id="owner-invite-area" style="display:none;margin-top:12px">
+            <b>ग्राहक को जोड़ने की रिक्वेस्ट</b>
+            <input id="invite-customer-name" placeholder="ग्राहक का नाम">
+            <input id="invite-customer-phone" type="tel" placeholder="ग्राहक का मोबाइल नंबर">
+            <button class="auth-primary" onclick="sendDairyInvitation()">Invitation Code बनाएँ</button>
+            <div id="invite-code-result" class="auth-status"></div>
+          </div>
+          <div id="customer-invite-area" style="display:none;margin-top:12px">
+            <b>दूधिया से मिली रिक्वेस्ट</b>
+            <input id="customer-invite-code" autocapitalize="characters" maxlength="8" placeholder="8 अक्षरों का Invitation Code">
+            <div style="display:flex;gap:8px">
+              <button class="auth-primary" onclick="answerDairyInvitation(true)">Accept</button>
+              <button class="auth-secondary" onclick="answerDairyInvitation(false)">Reject</button>
+            </div>
+          </div>
+          <div id="dairy-connections" class="auth-status"></div>
+        </div>
+        <div class="auth-status" id="auth-status" aria-live="polite"></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><button class="auth-secondary" onclick="closeAccount()">बंद करें</button><button class="auth-secondary" id="auth-signout-btn" style="display:none" onclick="signOutAccount()">लॉगआउट</button></div>
+      </div>
+    </div>
+
     <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <div class="app-dialog">
             <h3 id="dialog-title">Milk Scale</h3>
@@ -307,6 +356,7 @@
         </div>
     </div>
 
+    <script src="./vendor/firebase-auth.js"></script>
     <script>
 
         let dialogResolver = null;
@@ -957,6 +1007,152 @@
                     setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
                 }
             });
+        }
+
+
+        // Optional Firebase email/password authentication. Local/offline app data is never gated by login.
+        let accountAuthMode = 'login';
+        function openAccount() {
+            document.getElementById('auth-backdrop').classList.add('show');
+            refreshAccountStatus();
+        }
+        function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); }
+        function toggleAccountAuthMode() {
+            accountAuthMode = accountAuthMode === 'login' ? 'register' : 'login';
+            document.getElementById('auth-submit-btn').innerText = accountAuthMode === 'login' ? 'लॉगिन करें' : 'अकाउंट बनाएँ';
+            document.getElementById('auth-mode-btn').innerText = accountAuthMode === 'login' ? 'नया अकाउंट बनाएँ' : 'पहले से अकाउंट है? लॉगिन';
+            document.getElementById('auth-password').autocomplete = accountAuthMode === 'login' ? 'current-password' : 'new-password';
+            document.getElementById('auth-status').innerText = '';
+        }
+        async function refreshAccountStatus() {
+            const status = document.getElementById('auth-status');
+            const signout = document.getElementById('auth-signout-btn');
+            try {
+                const user = await window.MilkScaleAuth?.getCurrentUser();
+                if (user) {
+                    status.innerText = 'लॉगिन: ' + (user.email || 'अकाउंट सक्रिय');
+                    signout.style.display = 'inline-block';
+                    document.getElementById('auth-submit-btn').style.display = 'none';
+                    document.getElementById('auth-mode-btn').style.display = 'none';
+                    document.getElementById('auth-reset-btn').style.display = 'none';
+                    document.getElementById('dairy-role-area').style.display = 'block';
+                    const profile = await window.MilkScaleAuth.getProfile();
+                    if (profile) {
+                        document.getElementById('dairy-role').value = profile.role;
+                        document.getElementById('dairy-role').disabled = true;
+                        showDairyRoleTools(profile.role);
+                    } else {
+                        document.getElementById('dairy-role').disabled = false;
+                        showDairyRoleTools('');
+                    }
+                    await renderDairyConnections();
+                } else {
+                    status.innerText = 'अभी लॉगिन नहीं है। ऑफलाइन हिसाब सामान्य रूप से उपलब्ध है।';
+                    signout.style.display = 'none';
+                    document.getElementById('auth-submit-btn').style.display = 'block';
+                    document.getElementById('auth-mode-btn').style.display = 'inline-block';
+                    document.getElementById('auth-reset-btn').style.display = 'inline-block';
+                    document.getElementById('dairy-role-area').style.display = 'none';
+                }
+            } catch (error) {
+                status.innerText = error.message || 'अकाउंट सेवा उपलब्ध नहीं है। इंटरनेट और Firebase सेटिंग जाँचें।';
+            }
+        }
+        function showDairyRoleTools(role) {
+            document.getElementById('owner-invite-area').style.display = role === 'owner' ? 'block' : 'none';
+            document.getElementById('customer-invite-area').style.display = role === 'customer' ? 'block' : 'none';
+        }
+        async function saveDairyRole() {
+            const role = document.getElementById('dairy-role').value;
+            const status = document.getElementById('auth-status');
+            try {
+                await window.MilkScaleAuth.ensureProfile(role);
+                document.getElementById('dairy-role').disabled = true;
+                showDairyRoleTools(role);
+                status.innerText = role === 'owner' ? 'Dairy Owner प्रोफाइल बन गई।' : 'Customer प्रोफाइल बन गई।';
+                await renderDairyConnections();
+            } catch (error) { status.innerText = error.message || 'प्रोफाइल सेव नहीं हुई।'; }
+        }
+        async function sendDairyInvitation() {
+            const status = document.getElementById('invite-code-result');
+            try {
+                const code = await window.MilkScaleAuth.createInvitation(
+                    document.getElementById('invite-customer-name').value,
+                    document.getElementById('invite-customer-phone').value
+                );
+                status.innerText = 'Invitation Code: ' + code + '\\nयह कोड ग्राहक को WhatsApp पर भेजें। 7 दिन में स्वीकार करना होगा। SMS से मोबाइल सत्यापित नहीं है।';
+                await renderDairyConnections();
+            } catch (error) { status.innerText = error.message || 'रिक्वेस्ट नहीं बन सकी।'; }
+        }
+        async function answerDairyInvitation(accept) {
+            const status = document.getElementById('auth-status');
+            try {
+                await window.MilkScaleAuth.respondToInvitation(document.getElementById('customer-invite-code').value, accept);
+                status.innerText = accept ? 'रिक्वेस्ट स्वीकार हुई। कनेक्शन बन गया।' : 'रिक्वेस्ट अस्वीकार कर दी गई।';
+                document.getElementById('customer-invite-code').value = '';
+                await renderDairyConnections();
+            } catch (error) { status.innerText = error.message || 'रिक्वेस्ट पर कार्रवाई नहीं हो सकी।'; }
+        }
+        async function renderDairyConnections() {
+            const target = document.getElementById('dairy-connections');
+            try {
+                const profile = await window.MilkScaleAuth.getProfile();
+                if (!profile) { target.innerText = 'भूमिका सेव करने के बाद कनेक्शन दिखाई देंगे।'; return; }
+                const [connections, invitations] = await Promise.all([
+                    window.MilkScaleAuth.getMyConnections(),
+                    profile.role === 'owner' ? window.MilkScaleAuth.getMyInvitations() : Promise.resolve([])
+                ]);
+                const lines = [];
+                lines.push('सक्रिय कनेक्शन: ' + connections.length);
+                if (profile.role === 'owner') {
+                    invitations.forEach(item => lines.push(item.customerName + ' (' + item.customerPhone + '): ' + item.status + ' — ' + item.code));
+                }
+                target.innerText = lines.join('\\n');
+            } catch (error) { target.innerText = error.message || 'कनेक्शन लोड नहीं हुए।'; }
+        }
+        async function submitAccountAuth() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const status = document.getElementById('auth-status');
+            const button = document.getElementById('auth-submit-btn');
+            button.disabled = true;
+            status.innerText = accountAuthMode === 'login' ? 'लॉगिन हो रहा है…' : 'अकाउंट बनाया जा रहा है…';
+            try {
+                const user = accountAuthMode === 'login'
+                    ? await window.MilkScaleAuth.signIn(email, password)
+                    : await window.MilkScaleAuth.createAccount(email, password);
+                status.innerText = 'सफलतापूर्वक लॉगिन: ' + (user.email || email);
+                await refreshAccountStatus();
+            } catch (error) {
+                const messages = {
+                    'auth/invalid-email': 'ईमेल पता सही नहीं है।',
+                    'auth/user-not-found': 'यह ईमेल अकाउंट नहीं मिला। पहले नया अकाउंट बनाएँ।',
+                    'auth/wrong-password': 'पासवर्ड गलत है।',
+                    'auth/invalid-credential': 'ईमेल या पासवर्ड सही नहीं है।',
+                    'auth/email-already-in-use': 'इस ईमेल से अकाउंट पहले से बना है। लॉगिन करें।',
+                    'auth/weak-password': 'पासवर्ड कम से कम 6 अक्षरों का रखें।',
+                    'auth/network-request-failed': 'इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।',
+                    'auth/operation-not-allowed': 'Firebase Console में Email/Password sign-in चालू करना बाकी है।'
+                };
+                status.innerText = messages[error.code] || error.message || 'लॉगिन में समस्या हुई।';
+            } finally { button.disabled = false; }
+        }
+        async function resetAccountPassword() {
+            const email = document.getElementById('auth-email').value.trim();
+            const status = document.getElementById('auth-status');
+            if (!email) { status.innerText = 'पहले अपना ईमेल पता लिखें।'; return; }
+            try {
+                await window.MilkScaleAuth.sendPasswordReset(email);
+                status.innerText = 'पासवर्ड रीसेट लिंक ईमेल पर भेज दिया गया है।';
+            } catch (error) {
+                status.innerText = error.code === 'auth/user-not-found' ? 'इस ईमेल का अकाउंट नहीं मिला।' : (error.message || 'रीसेट ईमेल नहीं भेजा जा सका।');
+            }
+        }
+        async function signOutAccount() {
+            try {
+                await window.MilkScaleAuth.signOut();
+                await refreshAccountStatus();
+            } catch (error) { document.getElementById('auth-status').innerText = 'लॉगआउट नहीं हो सका।'; }
         }
 
         // Start App
