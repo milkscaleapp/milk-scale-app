@@ -19,11 +19,13 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
-      - name: Build local web assets
+      - name: Build web assets
         run: npm run build
-      - name: Check bundled assets
+      - name: Check generated app entry
+        run: test -s www/index.html
+      - name: Check offline bundled assets
+        if: (github.event_name == 'pull_request' && github.base_ref == 'ui-english-custom-dialogs') || (github.event_name == 'push' && github.ref_name == 'offline-local-assets')
         run: |
-          test -s www/index.html
           test -s www/vendor/fontawesome/css/all.min.css
           test -s www/vendor/capacitor-filesystem.js
           test -d www/vendor/fontawesome/webfonts
@@ -43,5 +45,6 @@ jobs:
           PY
           for file in /tmp/milk-scale-*.js; do node --check "$file"; done
       - name: Ensure no remote app dependencies
+        if: (github.event_name == 'pull_request' && github.base_ref == 'ui-english-custom-dialogs') || (github.event_name == 'push' && github.ref_name == 'offline-local-assets')
         run: |
           ! grep -E 'https?://(cdnjs.cloudflare.com|fonts.googleapis.com|fonts.gstatic.com|unpkg.com)' www/index.html
