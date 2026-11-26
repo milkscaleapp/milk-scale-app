@@ -1,52 +1,83 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
-  function signedIn(){return request.auth != null && request.auth.token.email_verified == true;}
-  function ownerProfile(){return signedIn() && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner';}
+  function signedIn() {
+   return request.auth != null && request.auth.token.email_verified == true;
+  }
+  function ownerProfile() {
+   return signedIn() && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner';
+  }
+
   match /profiles/{uid} {
    allow read: if signedIn() && request.auth.uid == uid;
-   // A newly created account may save its basic profile before email verification.
+   // Basic profile is created at signup, before the user follows the email verification link.
    allow create: if request.auth != null && request.auth.uid == uid
     && request.resource.data.keys().hasOnly(['uid','email','displayName','username','dairyId','role','createdAt','avatarData'])
-    && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
+    && request.resource.data.uid == uid
+    && request.resource.data.email == request.auth.token.email
     && request.resource.data.role == 'customer'
-    && request.resource.data.displayName is string && request.resource.data.displayName.size() >= 2
-    && request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
-    && request.resource.data.dairyId is string && request.resource.data.dairyId.matches('^MS[A-Z0-9]{8}$')
+    && request.resource.data.displayName is string
+    && request.resource.data.displayName.size() >= 2
+    && request.resource.data.username is string
+    && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
+    && request.resource.data.dairyId is string
+    && request.resource.data.dairyId.matches('^MS[A-Z0-9]{8}$')
     && request.resource.data.createdAt == request.time;
    allow update: if signedIn() && request.auth.uid == uid
     && request.resource.data.uid == resource.data.uid
     && request.resource.data.email == resource.data.email
     && request.resource.data.role in ['owner','customer']
-    && (( !('dairyId' in resource.data)
+    && (
+     // One-time migration for older profiles without an ID.
+     (!('dairyId' in resource.data)
       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username','dairyId'])
-      && request.resource.data.dairyId is string && request.resource.data.username is string
+      && request.resource.data.dairyId is string
+      && request.resource.data.dairyId.matches('^MS[A-Z0-9]{8}$')
+      && request.resource.data.username is string
       && request.resource.data.username.matches('^[a-z0-9._]{3,24}$'))
-      || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData'])
-      && request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000)
-      || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','role','username'])
-      && request.resource.data.displayName is string && request.resource.data.displayName.size() >= 2
-      && request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}
+     ||
+     // One-time username migration when the existing ID is already present.
+     (!('username' in resource.data) && ('dairyId' in resource.data)
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username'])
+      && request.resource.data.dairyId == resource.data.dairyId
+      && request.resource.data.username is string
+      && request.resource.data.username.matches('^[a-z0-9._]{3,24}$'))
+     ||
+     // Username and display name may change; the generated dairyId is never editable.
+     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','role','username'])
+      && request.resource.data.displayName is string
+      && request.resource.data.displayName.size() >= 2
+      && request.resource.data.username is string
+      && request.resource.data.username.matches('^[a-z0-9._]{3,24}$'))
+     ||
+     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData'])
+      && request.resource.data.avatarData is string
+      && request.resource.data.avatarData.size() < 450000)
+    );
    allow delete: if false;
   }
+
   match /dairyDirectory/{dairyId} {
    allow get: if signedIn();
    allow list: if signedIn();
-   allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+   allow create: if signedIn()
+    && request.resource.data.ownerUid == request.auth.uid
     && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
     && request.resource.data.dairyId == dairyId
     && request.resource.data.username is string
     && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
     && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt','avatarData','active']);
-   allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
+   allow update: if signedIn()
+    && resource.data.ownerUid == request.auth.uid
     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData','active','displayName','username'])
     && (!('avatarData' in request.resource.data) || (request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000))
     && (!('active' in request.resource.data) || request.resource.data.active is bool)
     && (!('displayName' in request.resource.data) || request.resource.data.displayName is string)
-    && (!('username' in request.resource.data) || (request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}
+    && (!('username' in request.resource.data) || (request.resource.data.username is string && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')));
    allow delete: if false;
   }
-  match /connectionRequests/{code} {
+
+  match /connectionRequests/{requestId} {
    allow create: if signedIn()
     && request.resource.data.keys().hasOnly(['requesterUid','requesterEmail','requesterRole','requesterName','targetUid','targetName','targetDairyId','status','createdAt'])
     && request.resource.data.requesterUid == request.auth.uid
@@ -55,10 +86,12 @@ service cloud.firestore {
     && get(/databases/$(database)/documents/profiles/$(request.resource.data.targetUid)).data.role == 'owner'
     && exists(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId))
     && get(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId)).data.ownerUid == request.resource.data.targetUid
-    && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
+    && request.resource.data.status == 'pending'
+    && request.resource.data.createdAt == request.time;
    allow get: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
    allow list: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
-   allow update: if signedIn() && resource.data.status == 'pending'
+   allow update: if signedIn()
+    && resource.data.status == 'pending'
     && resource.data.targetUid == request.auth.uid
     && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','respondedAt'])
@@ -66,13 +99,15 @@ service cloud.firestore {
     && request.resource.data.respondedAt == request.time;
    allow delete: if false;
   }
+
   match /connections/{id} {
    allow create: if signedIn()
     && request.resource.data.keys().hasOnly(['ownerUid','customerUid','customerName','requestId','status','createdAt'])
     && request.resource.data.ownerUid == request.auth.uid
     && request.resource.data.customerUid is string
     && request.resource.data.customerName is string
-    && request.resource.data.status == 'active' && request.resource.data.createdAt == request.time
+    && request.resource.data.status == 'active'
+    && request.resource.data.createdAt == request.time
     && existsAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId))
     && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.status == 'accepted'
     && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.targetUid == request.auth.uid
@@ -80,292 +115,51 @@ service cloud.firestore {
    allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
-  match /dairyEntries/{entryId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.kg is number && request.resource.data.kg > 0
-    && request.resource.data.sample is number && request.resource.data.rate is number
-    && request.resource.data.total is number && request.resource.data.date is string
-    && request.resource.data.shift in ['Morning','Evening','सुबह','शाम']
-    && request.resource.data.entryId is string && request.resource.data.createdAt == request.time;
-   allow get: if signedIn() && (!exists(/databases/$(database)/documents/dairyEntries/$(entryId)) || resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
 
-  match /dairyAdjustments/{adjustmentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.kind in ['amount','kg']
-    && request.resource.data.delta is number && request.resource.data.delta != 0
-    && request.resource.data.note is string && request.resource.data.date is string
-    && request.resource.data.createdBy == request.auth.uid
-    && request.resource.data.createdAt == request.time;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-  match /dairyPayments/{paymentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.amount is number && request.resource.data.amount > 0
-    && request.resource.data.date is string && request.resource.data.status == 'saved'
-    && request.resource.data.createdAt == request.time;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
- }
-})));
-   allow delete: if false;
-  }
-  match /dairyDirectory/{dairyId} {
-   allow get: if signedIn();
-   allow list: if signedIn();
-   allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
-    && request.resource.data.dairyId == dairyId
-    && request.resource.data.username is string
-    && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
-    && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt','avatarData','active']);
-   allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData','active','displayName'])
-    && (!('avatarData' in request.resource.data) || (request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000))
-    && (!('active' in request.resource.data) || request.resource.data.active is bool)
-    && (!('displayName' in request.resource.data) || request.resource.data.displayName is string);
-   allow delete: if false;
-  }
-  match /connectionRequests/{code} {
-   allow create: if signedIn()
-    && request.resource.data.keys().hasOnly(['requesterUid','requesterEmail','requesterRole','requesterName','targetUid','targetName','targetDairyId','status','createdAt'])
-    && request.resource.data.requesterUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'customer'
-    && request.resource.data.requesterRole == 'customer'
-    && get(/databases/$(database)/documents/profiles/$(request.resource.data.targetUid)).data.role == 'owner'
-    && exists(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId))
-    && get(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId)).data.ownerUid == request.resource.data.targetUid
-    && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
-   allow get: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
-   allow list: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
-   allow update: if signedIn() && resource.data.status == 'pending'
-    && resource.data.targetUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','respondedAt'])
-    && request.resource.data.status in ['accepted','rejected']
-    && request.resource.data.respondedAt == request.time;
-   allow delete: if false;
-  }
-  match /connections/{id} {
-   allow create: if signedIn()
-    && request.resource.data.keys().hasOnly(['ownerUid','customerUid','customerName','requestId','status','createdAt'])
+  match /dairyEntries/{entryId} {
+   allow create: if ownerProfile()
     && request.resource.data.ownerUid == request.auth.uid
     && request.resource.data.customerUid is string
-    && request.resource.data.customerName is string
-    && request.resource.data.status == 'active' && request.resource.data.createdAt == request.time
-    && existsAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId))
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.status == 'accepted'
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.targetUid == request.auth.uid
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.requesterUid == request.resource.data.customerUid;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-  match /dairyEntries/{entryId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
     && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.kg is number && request.resource.data.kg > 0
-    && request.resource.data.sample is number && request.resource.data.rate is number
-    && request.resource.data.total is number && request.resource.data.date is string
+    && request.resource.data.kg is number
+    && request.resource.data.kg > 0
+    && request.resource.data.sample is number
+    && request.resource.data.rate is number
+    && request.resource.data.total is number
+    && request.resource.data.date is string
     && request.resource.data.shift in ['Morning','Evening','सुबह','शाम']
-    && request.resource.data.entryId is string && request.resource.data.createdAt == request.time;
+    && request.resource.data.entryId is string
+    && request.resource.data.createdAt == request.time;
    allow get: if signedIn() && (!exists(/databases/$(database)/documents/dairyEntries/$(entryId)) || resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
 
   match /dairyAdjustments/{adjustmentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.kind in ['amount','kg']
-    && request.resource.data.delta is number && request.resource.data.delta != 0
-    && request.resource.data.note is string && request.resource.data.date is string
-    && request.resource.data.createdBy == request.auth.uid
-    && request.resource.data.createdAt == request.time;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-  match /dairyPayments/{paymentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.amount is number && request.resource.data.amount > 0
-    && request.resource.data.date is string && request.resource.data.status == 'saved'
-    && request.resource.data.createdAt == request.time;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
- }
-})));
-   allow delete: if false;
-  }
-  match /connectionRequests/{code} {
-   allow create: if signedIn()
-    && request.resource.data.keys().hasOnly(['requesterUid','requesterEmail','requesterRole','requesterName','targetUid','targetName','targetDairyId','status','createdAt'])
-    && request.resource.data.requesterUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'customer'
-    && request.resource.data.requesterRole == 'customer'
-    && get(/databases/$(database)/documents/profiles/$(request.resource.data.targetUid)).data.role == 'owner'
-    && exists(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId))
-    && get(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId)).data.ownerUid == request.resource.data.targetUid
-    && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
-   allow get: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
-   allow list: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
-   allow update: if signedIn() && resource.data.status == 'pending'
-    && resource.data.targetUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','respondedAt'])
-    && request.resource.data.status in ['accepted','rejected']
-    && request.resource.data.respondedAt == request.time;
-   allow delete: if false;
-  }
-  match /connections/{id} {
-   allow create: if signedIn()
-    && request.resource.data.keys().hasOnly(['ownerUid','customerUid','customerName','requestId','status','createdAt'])
+   allow create: if ownerProfile()
     && request.resource.data.ownerUid == request.auth.uid
     && request.resource.data.customerUid is string
-    && request.resource.data.customerName is string
-    && request.resource.data.status == 'active' && request.resource.data.createdAt == request.time
-    && existsAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId))
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.status == 'accepted'
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.targetUid == request.auth.uid
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.requesterUid == request.resource.data.customerUid;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-  match /dairyEntries/{entryId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.kg is number && request.resource.data.kg > 0
-    && request.resource.data.sample is number && request.resource.data.rate is number
-    && request.resource.data.total is number && request.resource.data.date is string
-    && request.resource.data.shift in ['Morning','Evening','सुबह','शाम']
-    && request.resource.data.entryId is string && request.resource.data.createdAt == request.time;
-   allow get: if signedIn() && (!exists(/databases/$(database)/documents/dairyEntries/$(entryId)) || resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-
-  match /dairyAdjustments/{adjustmentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
     && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
     && request.resource.data.kind in ['amount','kg']
-    && request.resource.data.delta is number && request.resource.data.delta != 0
-    && request.resource.data.note is string && request.resource.data.date is string
+    && request.resource.data.delta is number
+    && request.resource.data.delta != 0
+    && request.resource.data.note is string
+    && request.resource.data.date is string
     && request.resource.data.createdBy == request.auth.uid
     && request.resource.data.createdAt == request.time;
    allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
+
   match /dairyPayments/{paymentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.amount is number && request.resource.data.amount > 0
-    && request.resource.data.date is string && request.resource.data.status == 'saved'
-    && request.resource.data.createdAt == request.time;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
- }
-})));
-   allow delete: if false;
-  }
-  match /dairyDirectory/{dairyId} {
-   allow get: if signedIn();
-   allow list: if signedIn();
-   allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
-    && request.resource.data.dairyId == dairyId
-    && request.resource.data.username is string
-    && request.resource.data.username.matches('^[a-z0-9._]{3,24}$')
-    && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt','avatarData','active']);
-   allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData','active','displayName'])
-    && (!('avatarData' in request.resource.data) || (request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000))
-    && (!('active' in request.resource.data) || request.resource.data.active is bool)
-    && (!('displayName' in request.resource.data) || request.resource.data.displayName is string);
-   allow delete: if false;
-  }
-  match /connectionRequests/{code} {
-   allow create: if signedIn()
-    && request.resource.data.keys().hasOnly(['requesterUid','requesterEmail','requesterRole','requesterName','targetUid','targetName','targetDairyId','status','createdAt'])
-    && request.resource.data.requesterUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'customer'
-    && request.resource.data.requesterRole == 'customer'
-    && get(/databases/$(database)/documents/profiles/$(request.resource.data.targetUid)).data.role == 'owner'
-    && exists(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId))
-    && get(/databases/$(database)/documents/dairyDirectory/$(request.resource.data.targetDairyId)).data.ownerUid == request.resource.data.targetUid
-    && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
-   allow get: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
-   allow list: if signedIn() && (resource.data.requesterUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
-   allow update: if signedIn() && resource.data.status == 'pending'
-    && resource.data.targetUid == request.auth.uid
-    && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','respondedAt'])
-    && request.resource.data.status in ['accepted','rejected']
-    && request.resource.data.respondedAt == request.time;
-   allow delete: if false;
-  }
-  match /connections/{id} {
-   allow create: if signedIn()
-    && request.resource.data.keys().hasOnly(['ownerUid','customerUid','customerName','requestId','status','createdAt'])
+   allow create: if ownerProfile()
     && request.resource.data.ownerUid == request.auth.uid
     && request.resource.data.customerUid is string
-    && request.resource.data.customerName is string
-    && request.resource.data.status == 'active' && request.resource.data.createdAt == request.time
-    && existsAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId))
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.status == 'accepted'
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.targetUid == request.auth.uid
-    && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestId)).data.requesterUid == request.resource.data.customerUid;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-  match /dairyEntries/{entryId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
     && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.kg is number && request.resource.data.kg > 0
-    && request.resource.data.sample is number && request.resource.data.rate is number
-    && request.resource.data.total is number && request.resource.data.date is string
-    && request.resource.data.shift in ['Morning','Evening','सुबह','शाम']
-    && request.resource.data.entryId is string && request.resource.data.createdAt == request.time;
-   allow get: if signedIn() && (!exists(/databases/$(database)/documents/dairyEntries/$(entryId)) || resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-
-  match /dairyAdjustments/{adjustmentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.kind in ['amount','kg']
-    && request.resource.data.delta is number && request.resource.data.delta != 0
-    && request.resource.data.note is string && request.resource.data.date is string
-    && request.resource.data.createdBy == request.auth.uid
-    && request.resource.data.createdAt == request.time;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
-   allow update, delete: if false;
-  }
-  match /dairyPayments/{paymentId} {
-   allow create: if ownerProfile() && request.resource.data.ownerUid == request.auth.uid
-    && request.resource.data.customerUid is string
-    && exists(/databases/$(database)/documents/connections/$(request.auth.uid + '_' + request.resource.data.customerUid))
-    && request.resource.data.amount is number && request.resource.data.amount > 0
-    && request.resource.data.date is string && request.resource.data.status == 'saved'
+    && request.resource.data.amount is number
+    && request.resource.data.amount > 0
+    && request.resource.data.date is string
+    && request.resource.data.status == 'saved'
     && request.resource.data.createdAt == request.time;
    allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
