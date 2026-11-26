@@ -501,11 +501,7 @@
             if (!target) return;
             target.classList.add('active');
             if (tabId === 'entry') { loadEntryRequests(); }
-            if (tabId === 'entry' && currentFileNumber === 0) {
-                appDialog('Please add or create a JSON file before adding entries.', false, 'File required');
-                switchTab('backup', null);
-                return;
-            }
+            // Keep the Entries screen accessible for dairy connection requests even before a backup file is selected.
             if (el) el.classList.add('active');
             else if (tabId === 'backup') document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
         }
