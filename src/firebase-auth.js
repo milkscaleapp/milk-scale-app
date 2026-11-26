@@ -46,21 +46,26 @@ async function ensureProfile(role,displayName=''){
  }
  return profile;
 }
-async function updateProfileDetails(displayName,role){
+async function updateProfileDetails(displayName,role,username){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
  displayName=String(displayName||'').trim().slice(0,60);if(displayName.length<2)throw new Error('नाम कम से कम 2 अक्षर का लिखें।');
  if(!['owner','customer'].includes(role))throw new Error('अकाउंट का प्रकार चुनें।');
  const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(!snap.exists())throw new Error('प्रोफाइल उपलब्ध नहीं है।');
- const old=snap.data();if(!old.username||!old.dairyId)throw new Error('Username या ID उपलब्ध नहीं है। सहायता से संपर्क करें।');
- if(role==='owner'){const matches=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',old.username),limit(2)));if(matches.docs.some(d=>d.data().ownerUid!==u.uid))throw new Error('यह Username पहले से किसी दूसरे दूधिया ने लिया हुआ है।');}
+ const old=snap.data();if(!old.dairyId)throw new Error('Account ID उपलब्ध नहीं है। सहायता से संपर्क करें।');
+ username=String(username||old.username||'').trim().toLowerCase().replace(/^@/,'');
+ if(!/^[a-z0-9._]{3,24}$/.test(username))throw new Error('Username 3–24 अक्षरों का हो और बिना Space के लिखें।');
+ if(role==='owner'){
+  const matches=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',username),limit(2)));
+  if(matches.docs.some(d=>d.data().ownerUid!==u.uid))throw new Error('यह Username पहले से किसी दूसरे दूधिया ने लिया हुआ है।');
+ }
  if(old.role!==role){const connections=await getMyConnections();if(connections.length)throw new Error('Role बदलने से पहले सक्रिय Dairy कनेक्शन हटाने होंगे।');}
- await updateDoc(ref,{displayName,role});
+ await updateDoc(ref,{displayName,role,username});
  if(old.dairyId){
   const directoryRef=doc(db,'dairyDirectory',old.dairyId),directorySnap=await getDoc(directoryRef);
   if(role==='owner'){
-   if(directorySnap.exists())await updateDoc(directoryRef,{displayName,active:true});
-   else await setDoc(directoryRef,{ownerUid:u.uid,displayName,username:old.username,dairyId:old.dairyId,avatarData:old.avatarData||'',active:true,createdAt:old.createdAt||serverTimestamp()});
-  }else if(old.role==='owner'&&directorySnap.exists())await updateDoc(directoryRef,{displayName,active:false});
+   if(directorySnap.exists())await updateDoc(directoryRef,{displayName,username,active:true});
+   else await setDoc(directoryRef,{ownerUid:u.uid,displayName,username,dairyId:old.dairyId,avatarData:old.avatarData||'',active:true,createdAt:old.createdAt||serverTimestamp()});
+  }else if(old.role==='owner'&&directorySnap.exists())await updateDoc(directoryRef,{displayName,username,active:false});
  }
  return true;
 }
