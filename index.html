@@ -665,8 +665,11 @@
                 kg: kg, sample: sample, rate: rate, total: kg * rate
             });
             
-            saveLocal(); 
-            
+            saveLocal();
+            // Queue cloud sync without blocking the offline-first local save.
+            const linkedUid = (JSON.parse(localStorage.getItem('ms_customer_links') || '{}'))[cust];
+            if (linkedUid) queueCloudMilkEntry(entries[entries.length - 1], linkedUid);
+
             // Create the first file for the first entry
             if(currentFileNumber === 0) {
                 currentFileNumber = 1;
@@ -1088,6 +1091,7 @@
         function showDairyRoleTools(role) {
             document.getElementById('owner-invite-area').style.display = role === 'owner' ? 'block' : 'none';
             document.getElementById('customer-invite-area').style.display = role === 'customer' ? 'block' : 'none';
+            document.getElementById('owner-cloud-tools').style.display = role === 'owner' ? 'block' : 'none';
         }
         async function saveDairyRole() {
             const role = document.getElementById('dairy-role').value;
@@ -1137,6 +1141,55 @@
                 target.innerText = lines.join('\\n');
             } catch (error) { target.innerText = error.message || 'कनेक्शन लोड नहीं हुए।'; }
         }
+
+        async function createDairyRequest() {
+            const out=document.getElementById('request-code-result');
+            try { const code=await window.MilkScaleAuth.createConnectionRequest(document.getElementById('request-display-name').value); out.innerText='आपका रिक्वेस्ट कोड: '+code+' — इसे दूसरे व्यक्ति को WhatsApp पर भेजें। 7 दिन तक मान्य।'; await renderDairyConnections(); }
+            catch(e){out.innerText=e.message||'रिक्वेस्ट नहीं बन सकी।';}
+        }
+        async function answerConnectionRequest(accept) {
+            const out=document.getElementById('auth-status');
+            try { await window.MilkScaleAuth.respondToConnectionRequest(document.getElementById('incoming-request-code').value,accept); out.innerText=accept?'कनेक्शन स्वीकार हो गया।':'रिक्वेस्ट अस्वीकार हो गई।'; document.getElementById('incoming-request-code').value=''; await renderDairyConnections(); }
+            catch(e){out.innerText=e.message||'रिक्वेस्ट पर कार्रवाई नहीं हो सकी।';}
+        }
+        function saveCustomerCloudLink(){
+            const name=document.getElementById('link-local-customer').value.trim(), uid=document.getElementById('link-customer-uid').value.trim();
+            if(!name||!uid){document.getElementById('cloud-ledger-result').innerText='ग्राहक का नाम और UID दोनों दर्ज करें।';return;}
+            const links=JSON.parse(localStorage.getItem('ms_customer_links')||'{}'); links[name]=uid; localStorage.setItem('ms_customer_links',JSON.stringify(links));
+            document.getElementById('cloud-ledger-result').innerText='ग्राहक लिंक सेव हो गया। अब नई एंट्री अपने-आप Sync queue में जाएगी।';
+        }
+        function queueCloudMilkEntry(entry,uid){
+            const queue=JSON.parse(localStorage.getItem('ms_cloud_queue')||'[]');
+            if(!queue.some(x=>String(x.entry.id)===String(entry.id)&&x.uid===uid)){queue.push({entry,uid});localStorage.setItem('ms_cloud_queue',JSON.stringify(queue));}
+            flushCloudMilkQueue();
+        }
+        async function flushCloudMilkQueue(){
+            if(!navigator.onLine||!window.MilkScaleAuth)return;
+            let queue=JSON.parse(localStorage.getItem('ms_cloud_queue')||'[]'); if(!queue.length)return;
+            const remain=[];
+            for(const item of queue){try{await window.MilkScaleAuth.syncMilkEntry(item.entry,item.uid);}catch(e){remain.push(item);}}
+            localStorage.setItem('ms_cloud_queue',JSON.stringify(remain));
+            const out=document.getElementById('cloud-ledger-result'); if(out)out.innerText=remain.length?'Sync बाकी: '+remain.length+' एंट्री (इंटरनेट/कनेक्शन जाँचें)।':'Cloud Sync पूरा हो गया।';
+        }
+        window.addEventListener('online',flushCloudMilkQueue);
+        async function syncAllLocalEntries(){
+            const links=JSON.parse(localStorage.getItem('ms_customer_links')||'{}');
+            for(const e of entries){const uid=links[e.customer];if(uid)queueCloudMilkEntry(e,uid);}
+            await flushCloudMilkQueue();
+        }
+        async function saveCloudPayment(){
+            try{const id=await window.MilkScaleAuth.addPayment(document.getElementById('payment-customer-uid').value.trim(),document.getElementById('payment-amount').value,document.getElementById('payment-note').value);document.getElementById('cloud-ledger-result').innerText='भुगतान दर्ज हुआ: '+id;await loadCloudLedger();}
+            catch(e){document.getElementById('cloud-ledger-result').innerText=e.message||'भुगतान सेव नहीं हुआ।';}
+        }
+        async function loadCloudLedger(){
+            const out=document.getElementById('cloud-ledger-result');
+            try{
+                const [rows,payments]=await Promise.all([window.MilkScaleAuth.getMyMilkEntries(),window.MilkScaleAuth.getMyPayments()]);
+                const milkTotal=rows.reduce((a,x)=>a+(Number(x.total)||0),0), paid=payments.reduce((a,x)=>a+(Number(x.amount)||0),0);
+                out.innerText='ऑनलाइन दूध एंट्री: '+rows.length+' | दूध का कुल: ₹'+milkTotal.toFixed(2)+' | जमा भुगतान: ₹'+paid.toFixed(2)+' | शेष: ₹'+(milkTotal-paid).toFixed(2)+'\n'+rows.slice(0,30).map(x=>x.date+' '+x.shift+' — '+x.kg+' kg — ₹'+Number(x.total).toFixed(2)).join('\n');
+            }catch(e){out.innerText=e.message||'Cloud खाता लोड नहीं हुआ।';}
+        }
+
         async function submitAccountAuth() {
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
