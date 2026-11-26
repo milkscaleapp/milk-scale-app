@@ -540,7 +540,7 @@
             const list = document.getElementById('cust-list');
             document.getElementById('customer-count').innerText = 'Total: ' + customers.length;
             if(customers.length === 0) {
-                list.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-light);">No customers</p>';
+                list.innerHTML = '<p class="empty-state">अभी कोई Customer जुड़ा नहीं है।</p>';
                 return;
             }
             list.innerHTML = customers.map((c, i) => `
@@ -631,18 +631,6 @@
             if (customers.includes(previous)) bill.value = previous;
         }
 
-        function addCustomer() {
-            const name = document.getElementById('new-cust-name').value.trim();
-            if(!name) return;
-            if(!customers.includes(name)) {
-                customers.push(name);
-                saveLocal();
-                renderCustomers();
-                populateDropdowns();
-                document.getElementById('new-cust-name').value = '';
-            }
-        }
-
         async function deleteCustomer(index) {
             if(await appDialog('Delete this customer and all related entries?',true,'Delete customer')) {
                 const name = customers[index];
@@ -725,7 +713,7 @@
         function getKnownFileNumbers() {
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
-        function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file · ':'')+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet.</p>';}
+        function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file · ':'')+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p class="empty-state">अभी कोई JSON फाइल उपलब्ध नहीं है।</p>';}
         async function refreshActiveFilePresence(loadCurrentData=true){
  const fs=window.Capacitor?.Plugins?.Filesystem,unreadable=new Set();
  if(fs?.readdir){
@@ -1052,7 +1040,9 @@
  try{const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('फोटो पढ़ी नहीं जा सकी।'));r.readAsDataURL(file);});
   const im=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो खुल नहीं सकी।'));x.src=data;});
   const c=document.createElement('canvas'),scale=Math.min(1,320/Math.max(im.width,im.height));c.width=Math.max(1,Math.round(im.width*scale));c.height=Math.max(1,Math.round(im.height*scale));c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-  await window.MilkScaleAuth.updateProfilePhoto(c.toDataURL('image/jpeg',0.62));await refreshAccountStatus();notify('प्रोफाइल फोटो सेव हो गई।');
+  const compressed=c.toDataURL('image/jpeg',0.62);await window.MilkScaleAuth.updateProfilePhoto(compressed);await refreshAccountStatus();
+  const full=document.getElementById('profile-photo-full');if(full){full.src=compressed;full.style.display='block';document.getElementById('profile-photo-fallback').style.display='none';}
+  notify('प्रोफाइल फोटो सेव हो गई।');
  }catch(e){notify(e.message||'फोटो सेव नहीं हो सकी।');}finally{input.value='';}
 }
         async function renderConnectedDairyProfile(p){
@@ -1220,6 +1210,7 @@ async function decideRequestCenter(id,accept){try{await window.MilkScaleAuth.dec
 function openSettingsPage(){document.getElementById('settings-page').classList.add('show');history.pushState({page:'settings'},'','#settings');}
 function closeSettingsPage(){document.getElementById('settings-page').classList.remove('show');}
 function handleAppBack(){
+ const photoViewer=document.getElementById('profile-photo-viewer');if(photoViewer?.classList.contains('show')){closeProfilePhotoViewer();return;}
  const customerPicker=document.getElementById('customer-picker-modal');if(customerPicker?.classList.contains('show')){closeCustomerPicker();return;}
  const editor=document.getElementById('edit-profile-modal');if(editor?.classList.contains('show')){closeProfileEditor();return;}
  const st=document.getElementById('settings-page');if(st?.classList.contains('show')){closeSettingsPage();return;}
