@@ -1246,11 +1246,15 @@
             button.disabled = true;
             status.innerText = accountAuthMode === 'login' ? 'लॉगिन हो रहा है…' : 'अकाउंट बनाया जा रहा है…';
             try {
-                const user = accountAuthMode === 'login'
-                    ? await window.MilkScaleAuth.signIn(email, password)
-                    : await window.MilkScaleAuth.createAccount(email, password);
-                status.innerText = 'सफलतापूर्वक लॉगिन: ' + (user.email || email);
-                await refreshAccountStatus();
+                if (accountAuthMode === 'register') {
+                    const result = await window.MilkScaleAuth.createAccount(email, password);
+                    status.innerText = 'अकाउंट बन गया है। ' + email + ' पर Verification Link भेजा गया है। Inbox/Spam में लिंक खोलकर ईमेल सत्यापित करें, फिर लॉगिन करें। सत्यापन से पहले Dairy Cloud सुविधाएँ बंद रहेंगी।';
+                    await refreshAccountStatus();
+                } else {
+                    const user = await window.MilkScaleAuth.signIn(email, password);
+                    status.innerText = 'सफलतापूर्वक लॉगिन: ' + (user.email || email);
+                    await refreshAccountStatus();
+                }
             } catch (error) {
                 const messages = {
                     'auth/invalid-email': 'ईमेल पता सही नहीं है।',
@@ -1260,7 +1264,8 @@
                     'auth/email-already-in-use': 'इस ईमेल से अकाउंट पहले से बना है। लॉगिन करें।',
                     'auth/weak-password': 'पासवर्ड कम से कम 6 अक्षरों का रखें।',
                     'auth/network-request-failed': 'इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।',
-                    'auth/operation-not-allowed': 'Firebase Console में Email/Password sign-in चालू करना बाकी है।'
+                    'auth/operation-not-allowed': 'Firebase Console में Email/Password sign-in चालू करना बाकी है।',
+                    'auth/email-not-verified': error.message || 'पहले ईमेल सत्यापित करें।'
                 };
                 status.innerText = messages[error.code] || error.message || 'लॉगिन में समस्या हुई।';
             } finally { button.disabled = false; }
