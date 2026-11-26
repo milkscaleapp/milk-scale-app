@@ -225,13 +225,31 @@
 #app-splash.hide{opacity:0;visibility:hidden;pointer-events:none}.splash-mark{width:68px;height:68px;border-radius:23px;background:linear-gradient(145deg,#2563eb,#38bdf8);display:grid;place-items:center;color:#fff;font-size:34px;box-shadow:0 12px 28px rgba(37,99,235,.22);animation:splashFloat .85s ease-in-out infinite alternate}
 .splash-wordmark{font-size:29px;font-weight:900;letter-spacing:-.8px;white-space:nowrap}.splash-loader{width:92px;height:3px;border-radius:5px;background:#dbeafe;overflow:hidden}.splash-loader span{display:block;width:38%;height:100%;border-radius:5px;background:#2563eb;animation:splashLoad .75s ease-in-out infinite}
 @keyframes splashFloat{to{transform:translateY(-7px) scale(1.04)}}@keyframes splashLoad{from{transform:translateX(-110%)}to{transform:translateX(270%)}}
+
+/* Latest interface refinements */
+.app-brand-mark{width:31px;height:31px;flex:0 0 31px;border-radius:11px;background:linear-gradient(145deg,#2563eb,#38bdf8);display:grid;place-items:center;color:#fff;font-size:17px;box-shadow:0 5px 12px rgba(37,99,235,.2);animation:splashFloat .85s ease-in-out infinite alternate}
+.header-left h1{font-size:21px}
+.managed-file.active{position:relative;border:2px solid #2563eb!important;border-radius:11px!important;background:linear-gradient(145deg,#eaf3ff,#dbeafe)!important;box-shadow:inset 0 0 0 3px rgba(255,255,255,.8),inset 0 0 14px rgba(37,99,235,.13),0 3px 0 #93c5fd,0 7px 13px rgba(37,99,235,.12)!important;padding:16px 14px 17px 18px!important}
+.managed-file.active:before{content:'';position:absolute;left:9px;right:9px;top:-5px;height:5px;border-radius:5px 5px 0 0;background:repeating-linear-gradient(90deg,#94a3b8 0 8px,transparent 8px 15px);opacity:.9}
+.managed-file.active:after{content:'FITTED';position:absolute;right:10px;top:-8px;padding:3px 8px;border-radius:7px;background:#1d4ed8;color:#fff;font-size:9px;font-weight:800;letter-spacing:.7px;box-shadow:0 2px 4px rgba(30,64,175,.2)}
+.managed-file .file-alert-dot{left:auto!important;right:-5px!important;top:-5px!important;bottom:auto!important;transform:none!important;width:11px!important;height:11px!important;border:2px solid #fff!important;border-radius:50%!important;background:#ef4444!important;z-index:3}
+.profile-photo-button{width:76px!important;height:76px!important;flex:0 0 76px!important;border-radius:12px!important;clip-path:none!important;overflow:hidden!important}
+.profile-photo-button img{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;object-fit:cover!important;border-radius:0!important;aspect-ratio:auto!important}
+.profile-photo-button>i{display:none!important}
+.photo-viewer-content img{width:100%!important;height:min(74vh,760px)!important;max-width:100%!important;object-fit:contain!important;border-radius:16px!important;background:#182235!important}
+.photo-viewer-fallback{width:100%!important;height:min(74vh,760px)!important;max-width:100%!important;border-radius:16px!important}
+.photo-viewer-content{width:100%;padding:12px 0}
+.photo-edit-action{display:inline-flex;align-items:center;gap:7px}
+.backup-success-toast{position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translate(-50%,14px);z-index:7000;display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:12px;background:#ecfdf5;border:1px solid #86efac;color:#166534;font-size:13px;font-weight:800;box-shadow:0 8px 24px rgba(22,101,52,.16);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+.backup-success-toast i{font-size:17px;color:#16a34a}
+.backup-success-toast.show{opacity:1;transform:translate(-50%,0)}
     </style>
 </head>
 <body>
     <div id="app-splash" aria-label="Milk Scale loading"><div class="splash-mark"><i class="fa-solid fa-droplet"></i></div><div class="splash-wordmark">Milk Scale</div><div class="splash-loader"><span></span></div></div>
     <header class="app-header">
         <div class="header-left">
-            <h1>Milk Scale</h1>
+            <span class="app-brand-mark" aria-hidden="true"><i class="fa-solid fa-droplet"></i></span><h1>Milk Scale</h1>
             <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" aria-label="JSON files">
                 <span class="header-file-icon-wrap"><i class="fa-solid fa-file-invoice"></i><span class="file-alert-dot" id="header-file-dot"></span></span><span id="header-file-name">JSON</span>
@@ -395,7 +413,7 @@
         <div class="auth-page-heading"><button class="back-icon" onclick="closeAccount()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2 id="account-page-title">Account</h2></div>
         <div id="profile-view" style="display:none">
           <div class="profile-board"><div class="profile-board-top">
-            <button class="profile-photo-button" type="button" onclick="openProfilePhotoViewer()"><img id="profile-photo" alt="Profile photo" style="display:none"><span id="profile-avatar">M</span><i class="fa-solid fa-camera"></i></button>
+            <button class="profile-photo-button" type="button" onclick="openProfilePhotoViewer()" aria-label="View or change profile photo"><img id="profile-photo" alt="Profile photo" style="display:none"><span id="profile-avatar">M</span></button>
             <div class="profile-board-meta"><strong id="profile-name">User</strong><span id="profile-dairy-id">—</span><span id="profile-role-label" class="profile-role-label"></span></div>
             <button class="profile-edit-icon" onclick="openProfileEditor()" aria-label="Edit profile"><i class="fa-solid fa-pen"></i></button>
             <input id="profile-photo-input" type="file" accept="image/*" style="display:none" onchange="saveProfilePhoto(this)">
@@ -414,6 +432,7 @@
     </div>
 
     <div class="profile-photo-viewer" id="profile-photo-viewer" role="dialog" aria-modal="true"><div class="photo-viewer-top"><button class="back-icon" onclick="closeProfilePhotoViewer()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><span>Profile Photo</span><button class="photo-edit-action" onclick="document.getElementById('profile-photo-input').click()"><i class="fa-solid fa-pen"></i> Edit</button></div><div class="photo-viewer-content"><img id="profile-photo-full" alt="Profile photo preview"><div id="profile-photo-fallback" class="photo-viewer-fallback">M</div><strong id="profile-photo-full-name">User</strong></div></div>
+<div id="backup-success-toast" class="backup-success-toast" role="status" aria-live="polite"><i class="fa-solid fa-circle-check"></i><span>File created successfully</span></div>
 <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <div class="app-dialog">
             <h3 id="dialog-title">Milk Scale</h3>
@@ -446,6 +465,8 @@
             if(dialogResolver){const resolve=dialogResolver;dialogResolver=null;resolve(result);}
         }
         function notify(message){appDialog(message,false);}
+        let backupToastTimer=null;
+        function showBackupToast(message){const toast=document.getElementById('backup-success-toast');if(!toast)return;toast.querySelector('span').textContent=message;toast.classList.add('show');clearTimeout(backupToastTimer);backupToastTimer=setTimeout(()=>toast.classList.remove('show'),1900);}
 
         // --- Variables ---
         let customers = JSON.parse(localStorage.getItem('ms_cust')) || [];
@@ -728,7 +749,8 @@
  const ok=await autoSaveToFile(n,true);
  if(!ok){delete fileStore[String(n)];currentFileNumber=previous;customers=oldCustomers;entries=oldEntries;if(previous>0)loadActiveFileData(previous);localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',previous);return;}
  localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',n);saveLocal();
- renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));
+ renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();
+ showBackupToast('New file created successfully');
 }
         function getKnownFileNumbers() {
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
