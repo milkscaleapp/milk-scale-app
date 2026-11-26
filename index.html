@@ -160,6 +160,13 @@
         .auth-backdrop{position:fixed;inset:0;z-index:2500;display:none;overflow-y:auto;background:#f8fafc;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
         .auth-backdrop.show{display:block}.auth-card{width:100%;min-height:100%;max-height:none;overflow:visible;background:#f8fafc;border-radius:0;padding:22px 20px 30px;box-shadow:none}
         .auth-card .auth-page-heading{position:sticky;top:0;background:#f8fafc;padding:8px 0 14px;z-index:2}
+        .profile-hero{display:flex;align-items:center;gap:14px;padding:16px;background:#eff6ff;border-radius:16px;margin:14px 0}
+        .profile-photo-button{position:relative;width:76px;height:76px;flex:0 0 76px;border:0!important;padding:0!important;border-radius:50%!important;background:#2563eb;color:white;overflow:visible;display:grid;place-items:center;font-size:28px}
+        .profile-photo-button img{width:100%;height:100%;object-fit:cover;border-radius:50%}.profile-photo-button>i{position:absolute;right:-2px;bottom:-2px;background:#fff;color:#2563eb;border:1px solid #dbeafe;border-radius:50%;padding:7px;font-size:12px}
+        .profile-id-card{display:flex;flex-direction:column;gap:5px;border:1px solid #dbeafe;background:#fff;border-radius:14px;padding:14px}.profile-id-card small{font-size:12px;color:#64748b}.profile-id-card strong{font-size:20px;letter-spacing:.6px;color:#1d4ed8}
+        .profile-settings{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:18px;background:#f1f5f9;color:#334155}.logout-danger{width:100%;margin-top:24px;background:#dc2626!important;color:#fff!important;padding:15px!important;border-radius:12px!important}
+        .password-wrap{position:relative}.auth-card .password-wrap input{padding-right:52px}.password-eye{position:absolute;right:8px;top:13px;background:transparent!important;color:#64748b;padding:8px!important}
+        .connected-dairy-card{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e2e8f0}.connected-dairy-card img,.connected-dairy-card .fallback{width:46px;height:46px;object-fit:cover;border-radius:50%;background:#dbeafe;display:grid;place-items:center;color:#1d4ed8;font-weight:800}
         body.auth-open{overflow:hidden} #entry-tools-panel.open{margin-top:12px}
         .auth-card h2{margin:0 0 8px;font-size:21px;color:#1e293b}.auth-card p{font-size:13px;line-height:1.5;color:#64748b}
         .auth-card input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;margin:8px 0 12px}
@@ -360,27 +367,20 @@
     <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
         <div class="auth-page-heading" style="display:flex;justify-content:space-between;align-items:center"><h2 id="account-page-title">Account</h2><button class="auth-secondary" onclick="closeAccount()" aria-label="Close">✕</button></div>
-        <div id="profile-summary" class="profile-summary" style="display:none"><div class="profile-avatar" id="profile-avatar">M</div><div class="profile-meta"><strong id="profile-name">User</strong><small id="profile-email"></small><small id="profile-dairy-id"></small></div></div>
-        <p id="auth-intro">अपने अकाउंट में लॉगिन करें या नया अकाउंट बनाएँ।</p>
-        <div id="auth-name-wrap" style="display:none"><label for="auth-name">नाम</label><input id="auth-name" type="text" placeholder="आपका नाम" autocomplete="name"></div>
-        <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
-        <div><label for="auth-password">पासवर्ड</label><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"></div>
-        <button class="auth-primary" id="auth-submit-btn" onclick="submitAccountAuth()">लॉगिन करें</button>
-        <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
-          <button class="auth-secondary" id="auth-mode-btn" onclick="toggleAccountAuthMode()">नया अकाउंट बनाएँ</button>
-          <button class="auth-secondary" id="auth-reset-btn" onclick="resetAccountPassword()">पासवर्ड भूल गए?</button>
+        <div id="profile-view" style="display:none">
+          <div class="profile-hero"><button class="profile-photo-button" type="button" onclick="document.getElementById('profile-photo-input').click()"><img id="profile-photo" alt="Profile photo" style="display:none"><span id="profile-avatar">M</span><i class="fa-solid fa-camera"></i></button><div class="profile-meta"><strong id="profile-name">User</strong><small id="profile-email"></small></div><input id="profile-photo-input" type="file" accept="image/*" style="display:none" onchange="saveProfilePhoto(this)"></div>
+          <div class="profile-id-card"><small>आपकी स्थायी Dairy ID</small><strong id="profile-dairy-id">—</strong><small id="profile-username"></small></div>
+          <div id="dairy-role-area" style="display:none;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-top:14px"><label for="dairy-role">आपका अकाउंट</label><select id="dairy-role" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0 10px"><option value="owner">Dairy Owner / दूधिया</option><option value="customer">Customer / ग्राहक</option></select><button class="auth-secondary" style="width:100%" onclick="saveDairyRole()">भूमिका सेव करें</button></div>
+          <div id="connected-dairy-list" style="display:none;margin-top:16px"></div>
+          <button class="profile-settings" type="button" onclick="toggleProfileSettings()"><span><i class="fa-solid fa-gear"></i> Settings</span><i class="fa-solid fa-chevron-down"></i></button><div id="profile-settings-panel" style="display:none;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:8px;color:#94a3b8">जल्द आ रहा है</div>
+          <div class="auth-status" id="auth-status" aria-live="polite"></div><button class="logout-danger" id="auth-signout-btn" onclick="signOutAccount()"><i class="fa-solid fa-right-from-bracket"></i> लॉगआउट</button>
         </div>
-        <div id="dairy-role-area" style="display:none;border-top:1px solid #e2e8f0;margin-top:14px;padding-top:12px">
-          <label for="dairy-role">आपका अकाउंट</label>
-          <select id="dairy-role" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0 10px">
-            <option value="owner">Dairy Owner / दूधिया</option>
-            <option value="customer">Customer / ग्राहक</option>
-          </select>
-          <button class="auth-secondary" style="width:100%" onclick="saveDairyRole()">भूमिका सेव करें</button>
-        </div>
-        <div class="auth-status" id="auth-status" aria-live="polite"></div>
-        <div style="display:flex;justify-content:space-between;gap:8px"><button class="auth-secondary" onclick="closeAccount()">बंद करें</button><button class="auth-secondary" id="auth-signout-btn" style="display:none" onclick="signOutAccount()">लॉगआउट</button></div>
-      </div>
+        <div id="auth-form-view"><p id="auth-intro">अपने अकाउंट में लॉगिन करें या नया अकाउंट बनाएँ।</p>
+          <div id="auth-name-wrap" style="display:none"><label for="auth-name">नाम</label><input id="auth-name" type="text" placeholder="आपका नाम" autocomplete="name"></div>
+          <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
+          <div><label for="auth-password">पासवर्ड</label><div class="password-wrap"><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"><button type="button" class="password-eye" onclick="togglePasswordVisibility('auth-password',this)" aria-label="पासवर्ड दिखाएँ"><i class="fa-solid fa-eye"></i></button></div></div>
+          <button class="auth-primary" id="auth-submit-btn" onclick="submitAccountAuth()">लॉगिन करें</button><div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap"><button class="auth-secondary" id="auth-mode-btn" onclick="toggleAccountAuthMode()">नया अकाउंट बनाएँ</button><button class="auth-secondary" id="auth-reset-btn" onclick="resetAccountPassword()">पासवर्ड भूल गए?</button></div><div class="auth-status" id="auth-form-status" aria-live="polite"></div>
+        </div>      </div>
     </div>
 
     <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
@@ -1101,49 +1101,32 @@
             document.getElementById('auth-password').autocomplete = accountAuthMode === 'login' ? 'current-password' : 'new-password';
             document.getElementById('auth-status').innerText = '';
         }
-        async function refreshAccountStatus() {
-            const status = document.getElementById('auth-status');
-            const signout = document.getElementById('auth-signout-btn');
-            try {
-                const user = await window.MilkScaleAuth?.getCurrentUser();
-                if (user) {
-                    status.innerText = '';
-                    const summary=document.getElementById('profile-summary');summary.style.display='flex';
-                    document.getElementById('profile-name').innerText=user.displayName||user.email?.split('@')[0]||'User';
-                    document.getElementById('profile-avatar').innerText=(user.displayName||user.email||'M').charAt(0).toUpperCase();
-                    document.getElementById('profile-email').innerText=user.email||'';
-                    let profile=await window.MilkScaleAuth.getProfile();
-                    if(profile) profile=await window.MilkScaleAuth.ensureProfile(profile.role,profile.displayName||user.displayName);
-                    document.getElementById('profile-dairy-id').innerText=profile?.dairyId?'ID: '+profile.dairyId+' • Username: '+(profile.username||''):'';
-                    status.innerText = '';
-                    signout.style.display = 'inline-block';
-                    document.getElementById('auth-submit-btn').style.display = 'none';
-                    document.getElementById('auth-mode-btn').style.display = 'none';
-                    document.getElementById('auth-reset-btn').style.display = 'none';
-                    document.getElementById('dairy-role-area').style.display = 'block';
-                    if (profile) {
-                        document.getElementById('dairy-role').value = profile.role;
-                        document.getElementById('dairy-role').disabled = true;
-                        showDairyRoleTools(profile.role);
-                    } else {
-                        document.getElementById('dairy-role-area').style.display = 'block';
-                        document.getElementById('dairy-role').disabled = false;
-                        showDairyRoleTools('');
-                        status.innerText = 'पहले भूमिका सेव करें। उसके बाद Owner/Customer रिक्वेस्ट और Cloud खाता विकल्प खुलेंगे।';
-                    }
-                    await renderDairyConnections();
-                } else {
-                    document.getElementById('profile-summary').style.display='none';
-                    status.innerText = 'अभी लॉगिन नहीं है।';
-                    signout.style.display = 'none';
-                    document.getElementById('auth-submit-btn').style.display = 'block';
-                    document.getElementById('auth-mode-btn').style.display = 'inline-block';
-                    document.getElementById('auth-reset-btn').style.display = 'inline-block';
-                    document.getElementById('dairy-role-area').style.display = 'none';
-                }
-            } catch (error) {
-                status.innerText = error.message || 'अकाउंट सेवा उपलब्ध नहीं है। इंटरनेट और Firebase सेटिंग जाँचें।';
-            }
+        async function refreshAccountStatus(){
+          const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status');
+          try{const user=await window.MilkScaleAuth?.getCurrentUser(),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
+            if(user){let p=await window.MilkScaleAuth.getProfile();if(p)p=await window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName);pv.style.display='block';fv.style.display='none';
+              const name=p?.displayName||user.displayName||user.email?.split('@')[0]||'User';document.getElementById('profile-name').innerText=name;document.getElementById('profile-email').innerText=user.email||'';
+              document.getElementById('profile-avatar').innerText=name.charAt(0).toUpperCase();document.getElementById('profile-dairy-id').innerText=p?.dairyId||'ID अभी उपलब्ध नहीं';document.getElementById('profile-username').innerText=p?.username?'Username: '+p.username:'';
+              const img=document.getElementById('profile-photo');if(p?.avatarData){img.src=p.avatarData;img.style.display='block';document.getElementById('profile-avatar').style.display='none';}else{img.removeAttribute('src');img.style.display='none';document.getElementById('profile-avatar').style.display='block';}
+              document.getElementById('dairy-role-area').style.display=p?'none':'block';if(p){document.getElementById('dairy-role').value=p.role;document.getElementById('dairy-role').disabled=true;showDairyRoleTools(p.role);}else{document.getElementById('dairy-role').disabled=false;showDairyRoleTools('');}
+              await renderConnectedDairyProfile(p);status.innerText=p?'':'पहले अपनी भूमिका चुनें।';
+            }else{pv.style.display='none';fv.style.display='block';formStatus.innerText='';status.innerText='';}
+          }catch(e){if(status)status.innerText=e.message||'अकाउंट जानकारी लोड नहीं हुई।';}
+        }
+        function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input)return;const show=input.type==='password';input.type=show?'text':'password';button.innerHTML=show?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',show?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');}
+        function toggleProfileSettings(){const p=document.getElementById('profile-settings-panel');p.style.display=p.style.display==='none'?'block':'none';}
+        async function saveProfilePhoto(input){
+          const file=input.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){notify('कृपया फोटो फ़ाइल चुनें।');input.value='';return;}
+          try{const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(file);});
+            const im=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=no;x.src=data;});const c=document.createElement('canvas'),scale=Math.min(1,320/Math.max(im.width,im.height));c.width=Math.round(im.width*scale);c.height=Math.round(im.height*scale);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+            await window.MilkScaleAuth.updateProfilePhoto(c.toDataURL('image/jpeg',0.7));await refreshAccountStatus();notify('प्रोफाइल फोटो सेव हो गई।');
+          }catch(e){notify(e.message||'फोटो सेव नहीं हो सकी।');}finally{input.value='';}
+        }
+        async function renderConnectedDairyProfile(p){
+          const box=document.getElementById('connected-dairy-list');if(!box)return;if(!p||p.role!=='customer'){box.style.display='none';return;}
+          try{const rows=await window.MilkScaleAuth.getMyConnections(),owners=rows.map(x=>x.dairyProfile).filter(Boolean);box.style.display='block';
+            box.innerHTML='<strong>मेरा दूधिया</strong>'+(owners.length?owners.map(x=>'<div class="connected-dairy-card">'+(x.avatarData?'<img src="'+x.avatarData+'" alt="Dairy profile">':'<span class="fallback">'+escapeHtml((x.displayName||'D').charAt(0))+'</span>')+'<div><b>'+escapeHtml(x.displayName||'Dairy Owner')+'</b><div class="request-time">ID: '+escapeHtml(x.dairyId||'')+'</div></div></div>').join(''):'<p class="request-time">अभी कोई दूधिया कनेक्ट नहीं है।</p>');
+          }catch(e){box.style.display='none';}
         }
         function showDairyRoleTools(role) {
             const tools=document.getElementById('owner-cloud-tools');
@@ -1237,7 +1220,7 @@
         async function submitAccountAuth() {
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
-            const status = document.getElementById('auth-status');
+            const status = document.getElementById('auth-form-status');
             const button = document.getElementById('auth-submit-btn');
             button.disabled = true;
             status.innerText = accountAuthMode === 'login' ? 'लॉगिन हो रहा है…' : 'अकाउंट बनाया जा रहा है…';
@@ -1269,7 +1252,7 @@
         }
         async function resetAccountPassword() {
             const email = document.getElementById('auth-email').value.trim();
-            const status = document.getElementById('auth-status');
+            const status = document.getElementById('auth-form-status');
             if (!email) { status.innerText = 'पहले अपना ईमेल पता लिखें।'; return; }
             try {
                 await window.MilkScaleAuth.sendPasswordReset(email);
