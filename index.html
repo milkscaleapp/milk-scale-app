@@ -658,7 +658,7 @@
             const linkedUid = (JSON.parse(localStorage.getItem('ms_customer_links') || '{}'))[cust];
             if (linkedUid) queueCloudMilkEntry(entries[entries.length - 1], linkedUid);
 
-            if(!(await autoSaveToFile(currentFileNumber,false)))return;
+            if(!(await autoSaveToFile(currentFileNumber,false))){entries.pop();saveLocal(false);return;}
             
             
             
@@ -704,7 +704,7 @@
   catch(e){filePresence[String(n)]=false;}
  }
  if(currentFileNumber>0&&filePresence[String(currentFileNumber)]===true){
-  try{await readManagedFileData(currentFileNumber);loadActiveFileData(currentFileNumber);}
+  try{await readManagedFileData(currentFileNumber);loadActiveFileData(currentFileNumber);renderCustomers();populateDropdowns();initScaleBoard();loadBill();}
   catch(e){filePresence[String(currentFileNumber)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');}
  }else if(currentFileNumber>0){currentFileNumber=0;localStorage.removeItem('ms_file_num');}
  showFileInHeader(currentFileNumber);renderFileList();
@@ -1182,6 +1182,7 @@ function handleAppBack(){
  const stack=window.__msTabStack||[],previous=stack.pop()||'scale';
  switchTab(previous,null,true);
 }
+        document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshActiveFilePresence();});
         window.addEventListener('popstate',handleAppBack);
         document.addEventListener('backbutton',e=>{e.preventDefault?.();handleAppBack();},false);
         function openProfileEditor(){document.getElementById('profile-edit-status').innerText='';document.getElementById('profile-edit-name').value=document.getElementById('profile-name').innerText;document.getElementById('profile-edit-username').value=(document.getElementById('profile-username').innerText||'').replace(/^@/,'');document.getElementById('edit-profile-modal').classList.add('show');}

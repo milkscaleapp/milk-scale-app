@@ -10,4 +10,10 @@ if (window.Capacitor?.isNativePlatform?.()) {
       App.exitApp();
     }
   }).catch(error => console.warn('Native back listener:', error));
+
+  App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive && typeof window.refreshActiveFilePresence === 'function') {
+      window.refreshActiveFilePresence().catch(error => console.warn('File refresh:', error));
+    }
+  }).catch(error => console.warn('App state listener:', error));
 }
