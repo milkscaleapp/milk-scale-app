@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "919647485111",
+    "project_id": "milk-scale-b4ec4",
+    "storage_bucket": "milk-scale-b4ec4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:919647485111:android:f8109791f978493e536132",
+        "android_client_info": {
+          "package_name": "com.milkscale.nakul"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0ppOgik5r-4dO66DH1VOn-748iErjxS8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
