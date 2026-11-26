@@ -20,9 +20,17 @@ async function ensureProfile(role,displayName=''){
  const username=snap.exists()?(snap.data().username||((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase())):((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase());
  if(snap.exists()&&snap.data().role!==role)throw new Error('इस अकाउंट की भूमिका पहले से तय है।');
  const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:snap.exists()?snap.data().createdAt:serverTimestamp()};
- if(snap.exists()){if(!snap.data().dairyId)await updateDoc(ref,{displayName:name,username,dairyId});}
+ if(snap.exists()){if(!snap.data().dairyId||!snap.data().username)await updateDoc(ref,{displayName:name,username,dairyId});}
  else await setDoc(ref,profile);
- if(role==='owner')await setDoc(doc(db,'dairyDirectory',dairyId),{ownerUid:u.uid,displayName:name,username,dairyId,avatarData:snap.exists()?(snap.data().avatarData||''):'',active:true,createdAt:snap.exists()?(snap.data().createdAt||serverTimestamp()):serverTimestamp()},{merge:true});
+ if(role==='owner'){
+  const directoryRef=doc(db,'dairyDirectory',dairyId);
+  const directorySnap=await getDoc(directoryRef);
+  if(!directorySnap.exists()){
+   await setDoc(directoryRef,{ownerUid:u.uid,displayName:name,username,dairyId,avatarData:snap.exists()?(snap.data().avatarData||''):'',active:true,createdAt:serverTimestamp()});
+  }else if(directorySnap.data().ownerUid!==u.uid){
+   throw new Error('इस Dairy ID का रिकॉर्ड किसी दूसरे Owner से जुड़ा है। सहायता के बिना इसे न बदलें।');
+  }
+ }
  return profile;
 }
 async function updateProfileDetails(displayName,role){
