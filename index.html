@@ -672,7 +672,7 @@
         }
 
         // --- Auto File Save Logic ---
-        async async function autoSaveToFile(fileNum,createIfMissing=false){
+        async function autoSaveToFile(fileNum,createIfMissing=false){
  const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}
  const fileName='MilkScale_Backup_('+fileNum+').json';
  if(!createIfMissing){
@@ -697,7 +697,7 @@
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
         function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file':'Tap to fit')+' · '+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';}
-        async async function refreshActiveFilePresence(){
+        async function refreshActiveFilePresence(){
  const fs=window.Capacitor?.Plugins?.Filesystem;
  for(const n of getKnownFileNumbers()){
   try{if(!fs?.stat)throw new Error('Native file storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;}
@@ -709,7 +709,7 @@
  }else if(currentFileNumber>0){currentFileNumber=0;localStorage.removeItem('ms_file_num');}
  showFileInHeader(currentFileNumber);renderFileList();
 }
-        async async function selectManagedFile(n){
+        async function selectManagedFile(n){
  if(!fileStore[String(n)])return;
  const fs=window.Capacitor?.Plugins?.Filesystem;
  try{if(!fs?.stat)throw new Error('File Manager storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});}
