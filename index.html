@@ -372,7 +372,7 @@
   </section>
   <section id="customer-dairy-request" style="display:none">
    <h3>दूधिया से जुड़ें</h3><p class="request-help">दूधिया की 6 अक्षरों वाली ID डालें।</p>
-   <input id="dairy-search-id" class="form-control" autocomplete="off" maxlength="6" autocapitalize="none" placeholder="जैसे: abacde" oninput="this.value=this.value.toLowerCase().replace(/[^a-z]/g,'')">
+   <input id="dairy-search-id" class="form-control" autocomplete="off" maxlength="10" autocapitalize="none" placeholder="दूधिया की ID" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9]/g,'')">
    <button class="btn btn-primary" onclick="sendEntryDairyRequest()"><i class="fa-solid fa-paper-plane"></i> Request भेजें</button>
    <div id="customer-request-status" class="auth-status"></div>
   </section>
