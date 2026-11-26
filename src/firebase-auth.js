@@ -33,15 +33,21 @@ async function ensureProfile(role,displayName=''){
  }
  return profile;
 }
-async function updateProfileDetails(displayName,role){
+async function updateProfileDetails(displayName,role,username){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
  displayName=String(displayName||'').trim().slice(0,60);if(displayName.length<2)throw new Error('नाम कम से कम 2 अक्षर का लिखें।');
  if(!['owner','customer'].includes(role))throw new Error('अकाउंट का प्रकार चुनें।');
+ username=String(username||'').trim().toLowerCase().replace(/^@/,'');
+ if(!/^[a-z0-9._]{3,24}$/.test(username))throw new Error('Username 3–24 अक्षरों का हो; केवल a-z, 0-9, dot और underscore इस्तेमाल करें।');
  const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(!snap.exists())throw new Error('प्रोफाइल उपलब्ध नहीं है।');
- const old=snap.data();if(old.role!==role){const connections=await getMyConnections();if(connections.length)throw new Error('अकाउंट का प्रकार बदलने से पहले सभी सक्रिय Dairy कनेक्शन हटाने होंगे।');}
- await updateDoc(ref,{displayName,role});
- if(old.role==='owner'&&role!=='owner'&&old.dairyId)await updateDoc(doc(db,'dairyDirectory',old.dairyId),{active:false,displayName});
- if(role==='owner')await setDoc(doc(db,'dairyDirectory',old.dairyId),{ownerUid:u.uid,displayName,username:old.username,dairyId:old.dairyId,avatarData:old.avatarData||'',active:true,createdAt:old.createdAt||serverTimestamp()},{merge:true});
+ const old=snap.data();
+ const matches=await getDocs(query(collection(db,'profiles'),where('username','==',username),limit(2)));
+ if(matches.docs.some(d=>d.id!==u.uid))throw new Error('यह Username पहले से इस्तेमाल हो रहा है।');
+ if(old.role!==role){const connections=await getMyConnections();if(connections.length)throw new Error('Role बदलने से पहले सक्रिय Dairy कनेक्शन हटाने होंगे।');}
+ await updateDoc(ref,{displayName,username,role});
+ if(old.role==='owner'&&old.dairyId){
+  await setDoc(doc(db,'dairyDirectory',old.dairyId),{ownerUid:u.uid,displayName,username,dairyId:old.dairyId,avatarData:old.avatarData||'',active:role==='owner',createdAt:old.createdAt||serverTimestamp()},{merge:true});
+ }
  return true;
 }
 async function updateProfilePhoto(avatarData){
