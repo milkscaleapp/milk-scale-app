@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut as firebaseSignOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, Timestamp, runTransaction } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, runTransaction, orderBy, limit } from 'firebase/firestore';
 const firebaseConfig = { apiKey:'AIzaSyC0ppOgik5r-4dO66DH1VOn-748iErjxS8', authDomain:'milk-scale-b4ec4.firebaseapp.com', projectId:'milk-scale-b4ec4', storageBucket:'milk-scale-b4ec4.firebasestorage.app', messagingSenderId:'919647485111', appId:'1:919647485111:web:74dceafb3d44d5bb536132' };
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 setPersistence(auth,browserLocalPersistence).catch(e=>console.warn('Auth persistence:',e?.code||e));
@@ -18,3 +18,48 @@ async function getMyInvitations(){const u=await getCurrentUser();if(!u)throw new
 async function respondToInvitation(code,accept){const u=await getCurrentUser();if(!u)throw new Error('पहले Customer अकाउंट से लॉगिन करें।');code=String(code||'').trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code))throw new Error('Invitation Code सही नहीं है।');const ref=doc(db,'invitations',code);await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('Invitation Code नहीं मिला।');const d=snap.data();if(d.status!=='pending'||d.expiresAt.toMillis()<Date.now())throw new Error('रिक्वेस्ट समाप्त या पहले ही इस्तेमाल हो चुकी है।');tx.update(ref,{status:accept?'accepted':'rejected',customerUid:u.uid,respondedAt:serverTimestamp()});if(accept)tx.set(doc(db,'connections',d.ownerUid+'_'+u.uid),{ownerUid:d.ownerUid,customerUid:u.uid,invitationCode:code,status:'active',createdAt:serverTimestamp()})})}
 async function getMyConnections(){const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const [a,b]=await Promise.all([getDocs(query(collection(db,'connections'),where('ownerUid','==',u.uid))),getDocs(query(collection(db,'connections'),where('customerUid','==',u.uid)))]);return [...a.docs,...b.docs].map(d=>d.data())}
 window.MilkScaleAuth={getCurrentUser,createAccount,signIn,sendPasswordReset,signOut,getProfile,ensureProfile,createInvitation,getMyInvitations,respondToInvitation,getMyConnections};
+
+async function createConnectionRequest(displayName=''){
+ const u=await getCurrentUser(); if(!u) throw new Error('पहले लॉगिन करें।');
+ const p=await getProfile(); if(!p) throw new Error('पहले भूमिका चुनें।');
+ const code=randomCode(); await setDoc(doc(db,'connectionRequests',code),{requesterUid:u.uid,requesterEmail:u.email||'',requesterRole:p.role,requesterName:String(displayName||u.email||'').slice(0,80),status:'pending',createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+7*86400000)});
+ return code;
+}
+async function respondToConnectionRequest(code,accept){
+ const u=await getCurrentUser(); if(!u) throw new Error('लॉगिन आवश्यक है।');
+ const p=await getProfile(); if(!p) throw new Error('पहले भूमिका सेव करें।');
+ code=String(code||'').trim().toUpperCase(); const ref=doc(db,'connectionRequests',code);
+ await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('रिक्वेस्ट कोड नहीं मिला।');const d=snap.data();if(d.status!=='pending'||d.expiresAt.toMillis()<Date.now())throw new Error('रिक्वेस्ट समाप्त या पहले इस्तेमाल हो चुकी है।');if(d.requesterUid===u.uid)throw new Error('अपनी ही रिक्वेस्ट स्वीकार नहीं कर सकते।');if(d.requesterRole===p.role)throw new Error('Owner और Customer की अलग-अलग भूमिकाएँ होनी चाहिए।');tx.update(ref,{status:accept?'accepted':'rejected',targetUid:u.uid,targetEmail:u.email||'',targetRole:p.role,respondedAt:serverTimestamp()});if(accept){const ownerUid=p.role==='owner'?u.uid:d.requesterUid;const customerUid=p.role==='customer'?u.uid:d.requesterUid;tx.set(doc(db,'connections',ownerUid+'_'+customerUid),{ownerUid,customerUid,status:'active',requestCode:code,createdAt:serverTimestamp()});}});
+}
+async function getMyConnectionRequests(){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
+ const [a,b]=await Promise.all([getDocs(query(collection(db,'connectionRequests'),where('requesterUid','==',u.uid))),getDocs(query(collection(db,'connectionRequests'),where('targetUid','==',u.uid)))]);
+ return [...a.docs,...b.docs].map(d=>({code:d.id,...d.data()}));
+}
+async function syncMilkEntry(entry,customerUid){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
+ const p=await getProfile();if(!p||p.role!=='owner')throw new Error('केवल Owner दूध की एंट्री भेज सकता है।');
+ if(!customerUid)throw new Error('पहले ग्राहक अकाउंट जोड़ें।');
+ const id=String(entry.id||Date.now()); const ref=doc(db,'dairyEntries',u.uid+'_'+customerUid+'_'+id);
+ await setDoc(ref,{ownerUid:u.uid,customerUid,entryId:id,customer:String(entry.customer||''),date:String(entry.date||''),shift:String(entry.shift||''),kg:Number(entry.kg),sample:Number(entry.sample||0),rate:Number(entry.rate),total:Number(entry.total),createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:false});
+ return id;
+}
+async function getMyMilkEntries(){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है。');
+ const p=await getProfile();const field=p?.role==='owner'?'ownerUid':'customerUid';
+ const snap=await getDocs(query(collection(db,'dairyEntries'),where(field,'==',u.uid),orderBy('date','desc'),limit(500)));
+ return snap.docs.map(d=>({cloudId:d.id,...d.data()}));
+}
+async function addPayment(customerUid,amount,note='',date=new Date().toISOString().slice(0,10)){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const p=await getProfile();
+ if(!p||p.role!=='owner')throw new Error('भुगतान केवल Owner दर्ज कर सकता है।');
+ amount=Number(amount);if(!customerUid||!Number.isFinite(amount)||amount<=0)throw new Error('रकम सही दर्ज करें।');
+ const ref=await addDoc(collection(db,'dairyPayments'),{ownerUid:u.uid,customerUid,amount,note:String(note||'').slice(0,200),date,status:'saved',createdAt:serverTimestamp()});return ref.id;
+}
+async function getMyPayments(){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const p=await getProfile();const field=p?.role==='owner'?'ownerUid':'customerUid';
+ const snap=await getDocs(query(collection(db,'dairyPayments'),where(field,'==',u.uid),orderBy('date','desc'),limit(500)));
+ return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function removeConnection(connectionId){throw new Error('कनेक्शन हटाने की सुविधा अगले सुरक्षा अपडेट में जोड़ी जाएगी।');}
+window.MilkScaleAuth={...window.MilkScaleAuth,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection};
