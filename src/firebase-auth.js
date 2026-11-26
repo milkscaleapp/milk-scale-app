@@ -83,7 +83,7 @@ async function getMyConnections(){
 }
 window.MilkScaleAuth={getCurrentUser,createAccount,signIn,sendPasswordReset,signOut,getProfile,ensureProfile,getMyConnections,updateProfilePhoto,updateProfileDetails};
 
-async function syncMilkEntry(entry,customerUid){async function syncMilkEntry(entry,customerUid){
+async function syncMilkEntry(entry,customerUid){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
  const p=await getProfile();if(!p||p.role!=='owner')throw new Error('केवल Owner दूध की एंट्री भेज सकता है।');
  if(!customerUid)throw new Error('पहले ग्राहक अकाउंट जोड़ें।');
@@ -154,4 +154,4 @@ async function decideDairyRequest(requestId,accept){
  const ref=doc(db,'connectionRequests',requestId);
  await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('रिक्वेस्ट नहीं मिली।');const d=snap.data();if(d.targetUid!==u.uid||d.status!=='pending')throw new Error('यह रिक्वेस्ट अब उपलब्ध नहीं है।');tx.update(ref,{status:accept?'accepted':'rejected',respondedAt:serverTimestamp()});if(accept)tx.set(doc(db,'connections',u.uid+'_'+d.requesterUid),{ownerUid:u.uid,customerUid:d.requesterUid,customerName:d.requesterName||'Customer',status:'active',requestId:requestId,createdAt:serverTimestamp()});});
 }
-window.MilkScaleAuth={...window.MilkScaleAuth,updateProfilePhoto,addLedgerAdjustment,getMyAdjustments,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection,findDairy,sendDairyConnectionRequest,decideDairyRequest};
+window.MilkScaleAuth={...window.MilkScaleAuth,updateProfilePhoto,addLedgerAdjustment,getMyAdjustments,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection,findDairy,sendDairyConnectionRequest,decideDairyRequest};
