@@ -1014,7 +1014,7 @@
   const user=await window.MilkScaleAuth?.getCurrentUser();
   if(!user){pv.style.display='none';fv.style.display='block';formStatus.innerText='';status.innerText='';return;}
   pv.style.display='block';fv.style.display='none';formStatus.innerText='';
-  let p=await window.MilkScaleAuth.getProfile();if(p&&p.role)p=await window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName);
+  let p=await window.MilkScaleAuth.getProfile();if(!p)p=await window.MilkScaleAuth.ensureProfile('customer',user.displayName);else if(p.role)p=await window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName);
   const name=p?.displayName||user.displayName||user.email?.split('@')[0]||'User';
   document.getElementById('profile-name').innerText=name;document.getElementById('profile-avatar').innerText=name.charAt(0).toUpperCase();
   document.getElementById('profile-dairy-id').innerText='ID: '+(p?.dairyId||'—');
