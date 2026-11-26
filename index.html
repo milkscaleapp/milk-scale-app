@@ -10,6 +10,7 @@
     <!-- Capacitor Plugin for Native File System -->
     <script src="capacitor.js"></script> 
     <script src="./vendor/capacitor-filesystem.js"></script>
+    <script src="./vendor/native-app.js"></script>
 
     <style>
         :root {
@@ -406,6 +407,17 @@
         let pointerDrag = null;
         let filePresence = {};
 
+        async function readManagedFileData(fileNum){
+            const fs=window.Capacitor?.Plugins?.Filesystem;
+            if(!fs?.readFile)throw new Error('File Manager से JSON पढ़ने की सुविधा उपलब्ध नहीं है।');
+            const result=await fs.readFile({path:'MilkScale_Backup_('+fileNum+').json',directory:'DOCUMENTS',encoding:'utf8'});
+            const parsed=JSON.parse(result.data);
+            if(!parsed||!Array.isArray(parsed.customers)||!Array.isArray(parsed.entries))throw new Error('यह वैध Milk Scale JSON फाइल नहीं है।');
+            fileStore[String(fileNum)]={customers:parsed.customers,entries:parsed.entries,scale:Array.isArray(parsed.scale)?parsed.scale:[],rate:parsed.rate==null?'':String(parsed.rate)};
+            localStorage.setItem('ms_file_store',JSON.stringify(fileStore));
+            return fileStore[String(fileNum)];
+        }
+
         function saveActiveFileData() {
             if (currentFileNumber > 0) {
                 fileStore[String(currentFileNumber)] = {
@@ -467,17 +479,14 @@
  if(el)el.classList.add('active');else if(tabId==='backup')document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
  if(tabId==='backup')refreshActiveFilePresence();
 }
-        function saveLocal() {
-            try {
-                localStorage.setItem('ms_cust', JSON.stringify(customers));
-                localStorage.setItem('ms_entries', JSON.stringify(entries));
-                saveActiveFileData();
-            } catch (error) {
-                console.error('Local save error:', error);
-                notify('Storage is full. Create a backup and free up space.');
-            }
-        }
-
+        function saveLocal(persistFile=true){
+ try{
+  localStorage.setItem('ms_cust',JSON.stringify(customers));
+  localStorage.setItem('ms_entries',JSON.stringify(entries));
+  saveActiveFileData();
+  if(persistFile&&currentFileNumber>0)autoSaveToFile(currentFileNumber,false);
+ }catch(error){console.error('Local save error:',error);notify('Storage is full. Create a backup and free up space.');}
+}
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, ch => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -644,21 +653,12 @@
                 kg: kg, sample: sample, rate: rate, total: kg * rate
             });
             
-            saveLocal();
+            saveLocal(false);
             // Queue cloud sync without blocking the offline-first local save.
             const linkedUid = (JSON.parse(localStorage.getItem('ms_customer_links') || '{}'))[cust];
             if (linkedUid) queueCloudMilkEntry(entries[entries.length - 1], linkedUid);
 
-            // Create the first file for the first entry
-            if(currentFileNumber === 0) {
-                currentFileNumber = 1;
-                localStorage.setItem('ms_file_num', currentFileNumber);
-                await autoSaveToFile(currentFileNumber);
-                showFileInHeader(currentFileNumber);
-            } else {
-                // Update the active file
-                await autoSaveToFile(currentFileNumber);
-            }
+            if(!(await autoSaveToFile(currentFileNumber,false)))return;
             
             
             
@@ -672,13 +672,23 @@
         }
 
         // --- Auto File Save Logic ---
-        async function autoSaveToFile(fileNum){const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}const data={customers,entries,scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value},fileName='MilkScale_Backup_('+fileNum+').json';try{await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});filePresence[String(fileNum)]=true;const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();return true;}catch(e){console.error('Native file save failed:',e);notify(e.message||'JSON file सेव नहीं हुई।');return false;}}
+        async async function autoSaveToFile(fileNum,createIfMissing=false){
+ const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}
+ const fileName='MilkScale_Backup_('+fileNum+').json';
+ if(!createIfMissing){
+  try{if(!fs.stat)throw new Error('stat unavailable');await fs.stat({path:fileName,directory:'DOCUMENTS'});}
+  catch(e){filePresence[String(fileNum)]=false;if(Number(currentFileNumber)===Number(fileNum)){currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);}renderFileList();return false;}
+ }
+ const data={customers,entries,scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value};
+ try{await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});filePresence[String(fileNum)]=true;const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();renderFileList();return true;}
+ catch(e){console.error('Native file save failed:',e);notify(e.message||'JSON file सेव नहीं हुई।');return false;}
+}
         async function createNewBackupFile(){
  if(currentFileNumber>0)saveActiveFileData();
  const previous=currentFileNumber,oldCustomers=customers,oldEntries=entries;
  const n=Math.max(0,...Object.keys(fileStore).map(Number).filter(Number.isFinite))+1;
  fileStore[String(n)]={customers:[],entries:[],scale:[],rate:''};currentFileNumber=n;customers=[];entries=[];
- const ok=await autoSaveToFile(n);
+ const ok=await autoSaveToFile(n,true);
  if(!ok){delete fileStore[String(n)];currentFileNumber=previous;customers=oldCustomers;entries=oldEntries;if(previous>0)loadActiveFileData(previous);localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',previous);return;}
  localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',n);saveLocal();
  renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));
@@ -687,15 +697,36 @@
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
         function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file':'Tap to fit')+' · '+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';}
-        async function refreshActiveFilePresence(){const fs=window.Capacitor?.Plugins?.Filesystem;for(const n of getKnownFileNumbers()){try{if(!fs?.stat)throw new Error('Native file storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;}catch(e){filePresence[String(n)]=false;}}if(currentFileNumber>0&&filePresence[String(currentFileNumber)]!==true){currentFileNumber=0;localStorage.removeItem('ms_file_num');}showFileInHeader(currentFileNumber);renderFileList();}
-        async function selectManagedFile(n){if(!fileStore[String(n)])return;const fs=window.Capacitor?.Plugins?.Filesystem;try{if(!fs?.stat)throw new Error('File Manager storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});}catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}if(currentFileNumber>0)saveActiveFileData();currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal();renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));}
+        async async function refreshActiveFilePresence(){
+ const fs=window.Capacitor?.Plugins?.Filesystem;
+ for(const n of getKnownFileNumbers()){
+  try{if(!fs?.stat)throw new Error('Native file storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;}
+  catch(e){filePresence[String(n)]=false;}
+ }
+ if(currentFileNumber>0&&filePresence[String(currentFileNumber)]===true){
+  try{await readManagedFileData(currentFileNumber);loadActiveFileData(currentFileNumber);}
+  catch(e){filePresence[String(currentFileNumber)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');}
+ }else if(currentFileNumber>0){currentFileNumber=0;localStorage.removeItem('ms_file_num');}
+ showFileInHeader(currentFileNumber);renderFileList();
+}
+        async async function selectManagedFile(n){
+ if(!fileStore[String(n)])return;
+ const fs=window.Capacitor?.Plugins?.Filesystem;
+ try{if(!fs?.stat)throw new Error('File Manager storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});}
+ catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}
+ try{await readManagedFileData(n);}catch(e){notify(e.message||'JSON फाइल पढ़ी नहीं जा सकी।');return;}
+ if(currentFileNumber>0)saveActiveFileData();
+ currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal(false);
+ renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();
+ showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));
+}
         async function recreateManagedFile(n) {
             if (!fileStore[String(n)]) return;
             const old = currentFileNumber;
             saveActiveFileData();
             currentFileNumber = n;
             loadActiveFileData(n);
-            const ok = await autoSaveToFile(n);
+            const ok = await autoSaveToFile(n,true);
             currentFileNumber = old;
             if (old > 0) loadActiveFileData(old);
             localStorage.setItem('ms_file_num', currentFileNumber);
@@ -707,55 +738,30 @@
             }
         }
         async function ensureFileSelected(){const n=Number(currentFileNumber),fs=window.Capacitor?.Plugins?.Filesystem;if(n>0&&fs?.stat){try{await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;return true;}catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}}await appDialog('नई Entry जोड़ने से पहले File Manager से मौजूद JSON फाइल फिट करें या नई JSON फाइल बनाएँ।',false,'JSON file required');switchTab('backup',null);return false;}
-        async function importBackupFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const content = e.target.result;
-                    const savedData = JSON.parse(content);
-
-                    if(savedData.customers && savedData.entries) {
-                        if(await appDialog('Add this JSON file to your file list?',true,'Add backup file')) {
-                            const match = file.name.match(/\((\d+)\)/);
-                            const fileNum = match ? parseInt(match[1]) : (Math.max(0, ...getKnownFileNumbers()) + 1);
-                            fileStore[String(fileNum)] = { customers:savedData.customers, entries:savedData.entries, scale:savedData.scale||[], rate:savedData.rate||'' };
-                            localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
-                            currentFileNumber = fileNum;
-                            customers = savedData.customers;
-                            entries = savedData.entries;
-                            
-                            if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
-                            if(savedData.rate) document.getElementById('scale-rate').value = savedData.rate;
-                            
-                            saveLocal();
-                            
-                            // File number was already assigned above.
-                            localStorage.setItem('ms_file_num', currentFileNumber);
-                            await autoSaveToFile(currentFileNumber);
-                            showFileInHeader(currentFileNumber);
-                            renderFileList();
-                            refreshActiveFilePresence();
-
-                            renderCustomers();
-                            populateDropdowns();
-                            initScaleBoard();
-                            loadBill();
-                            
-                            
-                            switchTab('scale', document.querySelector('.nav-item'));
-                        }
-                    } else {
-                        notify('This is not a valid backup file.');
-                    }
-                } catch(err) {
-                    notify('Could not read the file.');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; 
+        async function importBackupFile(event){
+            const file=event.target.files?.[0];if(!file)return;
+            const previous={number:currentFileNumber,customers,entries,store:JSON.parse(JSON.stringify(fileStore))};
+            try{
+                const content=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('फाइल पढ़ी नहीं जा सकी।'));reader.readAsText(file);});
+                const savedData=JSON.parse(content);
+                if(!savedData||!Array.isArray(savedData.customers)||!Array.isArray(savedData.entries))throw new Error('यह वैध Milk Scale JSON फाइल नहीं है।');
+                if(!(await appDialog('इस JSON फाइल को Milk Scale में जोड़ें?',true,'Add backup file')))return;
+                const match=file.name.match(/\((\d+)\)/),fileNum=match?parseInt(match[1],10):(Math.max(0,...getKnownFileNumbers())+1);
+                fileStore[String(fileNum)]={customers:savedData.customers,entries:savedData.entries,scale:Array.isArray(savedData.scale)?savedData.scale:[],rate:savedData.rate==null?'':String(savedData.rate)};
+                currentFileNumber=fileNum;customers=savedData.customers;entries=savedData.entries;
+                localStorage.setItem('ms_scale',JSON.stringify(fileStore[String(fileNum)].scale));
+                document.getElementById('scale-rate').value=fileStore[String(fileNum)].rate;
+                saveActiveFileData();
+                if(!(await autoSaveToFile(fileNum,true)))throw new Error('JSON फाइल Documents में सेव नहीं हो सकी।');
+                localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',fileNum);saveLocal(false);
+                showFileInHeader(fileNum);renderFileList();renderCustomers();populateDropdowns();initScaleBoard();loadBill();
+                switchTab('scale',document.querySelector('.nav-item'));
+            }catch(err){
+                fileStore=previous.store;currentFileNumber=previous.number;customers=previous.customers;entries=previous.entries;
+                localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',currentFileNumber);
+                if(currentFileNumber>0)loadActiveFileData(currentFileNumber);else{localStorage.setItem('ms_cust',JSON.stringify(customers));localStorage.setItem('ms_entries',JSON.stringify(entries));}
+                notify(err.message||'JSON फाइल इम्पोर्ट नहीं हुई।');
+            }finally{event.target.value='';}
         }
 
         // --- Bill & Scale Logic (Existing calculation and bill logic) ---
@@ -1172,7 +1178,7 @@ function handleAppBack(){
  const r=document.getElementById('request-center');if(r?.classList.contains('show')){closeRequestCenter();return;}
  const ac=document.getElementById('auth-backdrop');if(ac?.classList.contains('show')){closeAccount();return;}
  const active=document.querySelector('.tab-content.active');
- if(!active||active.id==='tab-scale'){window.Capacitor?.Plugins?.App?.exitApp?.();return;}
+ if(!active||active.id==='tab-scale'){(window.MilkScaleNativeApp?.exitApp?.()||window.Capacitor?.Plugins?.App?.exitApp?.());return;}
  const stack=window.__msTabStack||[],previous=stack.pop()||'scale';
  switchTab(previous,null,true);
 }

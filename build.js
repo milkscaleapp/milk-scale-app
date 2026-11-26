@@ -32,6 +32,17 @@ if (!fs.existsSync(filesystemPlugin)) {
 fs.mkdirSync(path.join(www, 'vendor'), { recursive: true });
 fs.copyFileSync(filesystemPlugin, path.join(www, 'vendor', 'capacitor-filesystem.js'));
 
+const nativeAppEntry = path.join(root, 'src', 'native-app.js');
+if (!fs.existsSync(nativeAppEntry)) throw new Error('Native App bridge entry was not found.');
+esbuild.buildSync({
+  entryPoints: [nativeAppEntry],
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  outfile: path.join(www, 'vendor', 'native-app.js'),
+  target: ['es2020']
+});
+
 console.log('Built local Milk Scale web assets in www/.');
 
 // Bundle the native Firebase Authentication bridge for the WebView.

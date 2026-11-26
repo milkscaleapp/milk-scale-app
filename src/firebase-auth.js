@@ -19,7 +19,7 @@ async function ensureProfile(role,displayName=''){
  const dairyId=snap.exists()?(snap.data().dairyId||'MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase()):'MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase();
  const username=snap.exists()?(snap.data().username||((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase())):((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase());
  if(snap.exists()&&snap.data().role!==role)throw new Error('इस अकाउंट की भूमिका पहले से तय है।');
- const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:snap.exists()?snap.data().createdAt:serverTimestamp()};
+ const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:snap.exists()?snap.data().createdAt:serverTimestamp(),avatarData:snap.exists()?(snap.data().avatarData||''):''};
  if(snap.exists()){if(!snap.data().dairyId||!snap.data().username)await updateDoc(ref,{displayName:name,username,dairyId});}
  else await setDoc(ref,profile);
  if(role==='owner'){
