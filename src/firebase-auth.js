@@ -4,7 +4,7 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where,
 const firebaseConfig = { apiKey:'AIzaSyC0ppOgik5r-4dO66DH1VOn-748iErjxS8', authDomain:'milk-scale-b4ec4.firebaseapp.com', projectId:'milk-scale-b4ec4', storageBucket:'milk-scale-b4ec4.firebasestorage.app', messagingSenderId:'919647485111', appId:'1:919647485111:web:74dceafb3d44d5bb536132' };
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 setPersistence(auth,browserLocalPersistence).catch(e=>console.warn('Auth persistence:',e?.code||e));
-function getCurrentUser(){if(auth.currentUser)return Promise.resolve(auth.currentUser);return new Promise(resolve=>{const unsub=onAuthStateChanged(auth,u=>{unsub();resolve(u||null)},()=>{unsub();resolve(null)})})}
+async function getCurrentUser(){let u=auth.currentUser;if(!u)u=await new Promise(resolve=>{const unsub=onAuthStateChanged(auth,user=>{unsub();resolve(user||null)},()=>{unsub();resolve(null)})});if(!u)return null;try{await u.reload()}catch(e){return null}return u.emailVerified?u:null}
 function validateCredentials(email,password){if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('सही ईमेल पता दर्ज करें।');if(typeof password!=='string'||password.length<6)throw new Error('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।')}
 async function createAccount(displayName,email,password){displayName=String(displayName||'').trim().slice(0,60);email=String(email||'').trim();validateCredentials(email,password);if(!displayName)throw new Error('अपना नाम दर्ज करें।');const credential=await createUserWithEmailAndPassword(auth,email,password);await updateProfile(credential.user,{displayName});await sendEmailVerification(credential.user);await firebaseSignOut(auth);return {email:credential.user.email,displayName,verificationSent:true}}
 async function signIn(email,password){email=String(email||'').trim();validateCredentials(email,password);const credential=await signInWithEmailAndPassword(auth,email,password);await credential.user.reload();if(!credential.user.emailVerified){await sendEmailVerification(credential.user);await firebaseSignOut(auth);const e=new Error('ईमेल अभी सत्यापित नहीं है। आपके ईमेल पर नया Verification Link भेजा गया है। Inbox/Spam में लिंक खोलकर फिर लॉगिन करें।');e.code='auth/email-not-verified';throw e;}return credential.user}
@@ -15,13 +15,14 @@ async function ensureProfile(role,displayName=''){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
  if(!['owner','customer'].includes(role))throw new Error('भूमिका सही नहीं है।');
  const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);
- if(snap.exists()){if(snap.data().role!==role)throw new Error('इस अकाउंट की भूमिका पहले से तय है।');return snap.data();}
  const name=String(displayName||u.displayName||u.email?.split('@')[0]||'Milk Scale User').trim().slice(0,60);
- const dairyId='MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase();
- const username=(name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase();
- const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:serverTimestamp()};
- await setDoc(ref,profile);
- if(role==='owner') await setDoc(doc(db,'dairyDirectory',dairyId),{ownerUid:u.uid,displayName:name,username,dairyId,createdAt:serverTimestamp()});
+ const dairyId=snap.exists()?(snap.data().dairyId||'MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase()):'MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase();
+ const username=snap.exists()?(snap.data().username||((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase())):((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase());
+ if(snap.exists()&&snap.data().role!==role)throw new Error('इस अकाउंट की भूमिका पहले से तय है।');
+ const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:snap.exists()?snap.data().createdAt:serverTimestamp()};
+ if(snap.exists()){if(!snap.data().dairyId)await updateDoc(ref,{displayName:name,username,dairyId});}
+ else await setDoc(ref,profile);
+ if(role==='owner')await setDoc(doc(db,'dairyDirectory',dairyId),{ownerUid:u.uid,displayName:name,username,dairyId,createdAt:serverTimestamp()});
  return profile;
 }
 function randomCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(8);crypto.getRandomValues(bytes);return Array.from(bytes,b=>chars[b%chars.length]).join('')}
