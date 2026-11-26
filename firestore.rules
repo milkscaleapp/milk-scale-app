@@ -59,8 +59,14 @@ service cloud.firestore {
      || (existsAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode))
       && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.status == 'accepted'
       && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.targetUid == request.auth.uid
-      && (getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterUid == request.resource.data.ownerUid
-       || getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterUid == request.resource.data.customerUid)));
+      && ((getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterRole == 'owner'
+         && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterUid == request.resource.data.ownerUid
+         && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.targetRole == 'customer'
+         && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.targetUid == request.resource.data.customerUid)
+        || (getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterRole == 'customer'
+         && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.requesterUid == request.resource.data.customerUid
+         && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.targetRole == 'owner'
+         && getAfter(/databases/$(database)/documents/connectionRequests/$(request.resource.data.requestCode)).data.targetUid == request.resource.data.ownerUid))));
    allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
