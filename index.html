@@ -338,6 +338,33 @@
               <button class="auth-secondary" onclick="answerDairyInvitation(false)">Reject</button>
             </div>
           </div>
+          <div id="two-way-request-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
+            <b>दोनों तरफ़ से कनेक्शन रिक्वेस्ट</b>
+            <input id="request-display-name" placeholder="आपका नाम (वैकल्पिक)">
+            <button class="auth-primary" onclick="createDairyRequest()">रिक्वेस्ट कोड बनाएँ / भेजें</button>
+            <div id="request-code-result" class="auth-status"></div>
+            <input id="incoming-request-code" autocapitalize="characters" maxlength="8" placeholder="दूसरे व्यक्ति का रिक्वेस्ट कोड">
+            <div style="display:flex;gap:8px">
+              <button class="auth-primary" onclick="answerConnectionRequest(true)">Accept</button>
+              <button class="auth-secondary" onclick="answerConnectionRequest(false)">Reject</button>
+            </div>
+          </div>
+          <div id="cloud-ledger-area" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px">
+            <b>Cloud दूध खाता और भुगतान</b>
+            <p style="font-size:12px;color:#64748b">Owner: ग्राहक के अकाउंट UID को स्थानीय ग्राहक नाम से जोड़ें। Customer: अपना ऑनलाइन खाता देखें।</p>
+            <div id="owner-cloud-tools" style="display:none">
+              <input id="link-local-customer" placeholder="ऐप में ग्राहक का नाम">
+              <input id="link-customer-uid" placeholder="Customer UID (कनेक्शन सूची से)">
+              <button class="auth-secondary" onclick="saveCustomerCloudLink()">ग्राहक लिंक सेव करें</button>
+              <input id="payment-customer-uid" placeholder="Customer UID">
+              <input id="payment-amount" type="number" min="1" step="0.01" placeholder="जमा भुगतान ₹">
+              <input id="payment-note" placeholder="भुगतान का विवरण">
+              <button class="auth-primary" onclick="saveCloudPayment()">भुगतान दर्ज करें</button>
+              <button class="auth-secondary" onclick="syncAllLocalEntries()">सभी लोकल एंट्री Sync करें</button>
+            </div>
+            <button class="auth-secondary" onclick="loadCloudLedger()">खाता Refresh करें</button>
+            <div id="cloud-ledger-result" class="auth-status"></div>
+          </div>
           <div id="dairy-connections" class="auth-status"></div>
         </div>
         <div class="auth-status" id="auth-status" aria-live="polite"></div>
