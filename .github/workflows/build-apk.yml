@@ -5,6 +5,8 @@ on:
     branches: ["main"]
     paths:
       - "index.html"
+      - "src/**"
+      - "firestore.rules"
       - "package.json"
       - "build.js"
       - "capacitor.config.json"
@@ -14,6 +16,8 @@ on:
     branches: ["main"]
     paths:
       - "index.html"
+      - "src/**"
+      - "firestore.rules"
       - "package.json"
       - "build.js"
       - ".github/workflows/validate-web.yml"
