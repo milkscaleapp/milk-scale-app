@@ -63,6 +63,30 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Set light Milk Scale launch screen background
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          for path in (
+              Path("android/app/src/main/res/values/styles.xml"),
+              Path("android/app/src/main/res/values-v31/styles.xml"),
+          ):
+              if not path.exists():
+                  continue
+              source = path.read_text()
+              def update_style(match):
+                  name, body = match.group(1), match.group(2)
+                  if "android:windowBackground" not in body:
+                      body += '\n        <item name="android:windowBackground">#F8FBFF</item>\n    '
+                  if "Launch" in name and "windowSplashScreenBackground" not in body:
+                      body += '\n        <item name="windowSplashScreenBackground">#F8FBFF</item>\n    '
+                  return '<style name="' + name + '"' + match.group(3) + '>' + body + '</style>'
+              source = re.sub(r'<style name="([^"]+)"([^>]*)>(.*?)</style>', update_style, source, flags=re.S)
+              path.write_text(source)
+          PY
+
       - name: Configure Firebase for Android
         run: |
           test -s google-services.json
