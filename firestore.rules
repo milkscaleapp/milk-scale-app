@@ -9,7 +9,14 @@ service cloud.firestore {
     && request.resource.data.keys().hasOnly(['uid','email','displayName','username','dairyId','role','createdAt'])
     && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
     && request.resource.data.role in ['owner','customer'] && request.resource.data.displayName is string && request.resource.data.username is string && request.resource.data.dairyId is string && request.resource.data.createdAt == request.time;
-   allow update, delete: if false;
+   allow update: if signedIn() && request.auth.uid == uid
+    && !('dairyId' in resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username','dairyId'])
+    && request.resource.data.uid == resource.data.uid
+    && request.resource.data.email == resource.data.email
+    && request.resource.data.role == resource.data.role
+    && request.resource.data.dairyId is string && request.resource.data.username is string;
+   allow delete: if false;
   }
   match /dairyDirectory/{dairyId} {
    allow get: if signedIn();
