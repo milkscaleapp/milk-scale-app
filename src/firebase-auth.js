@@ -71,7 +71,6 @@ async function updateProfilePhoto(avatarData){
  const p=snap.data();if(p.role==='owner'&&p.dairyId)await updateDoc(doc(db,'dairyDirectory',p.dairyId),{avatarData});
  return true;
 }
-function randomCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(8);crypto.getRandomValues(bytes);return Array.from(bytes,b=>chars[b%chars.length]).join('')}
 async function getMyConnections(){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
  const [a,b]=await Promise.all([getDocs(query(collection(db,'connections'),where('ownerUid','==',u.uid))),getDocs(query(collection(db,'connections'),where('customerUid','==',u.uid)))]);
@@ -140,7 +139,7 @@ async function sendDairyConnectionRequest(identifier){
  const dairy=await findDairy(identifier);if(dairy.ownerUid===u.uid)throw new Error('आप अपने ही अकाउंट को Request नहीं भेज सकते।');
  const existing=await getDocs(query(collection(db,'connections'),where('ownerUid','==',dairy.ownerUid),where('customerUid','==',u.uid),limit(1)));if(!existing.empty)throw new Error('आप पहले से इस दूधिया से जुड़े हुए हैं।');
  const pending=await getDocs(query(collection(db,'connectionRequests'),where('requesterUid','==',u.uid),where('targetUid','==',dairy.ownerUid),where('status','==','pending'),limit(1)));if(!pending.empty)throw new Error('आपकी Request पहले से Pending है।');
- const id=randomCode(),ref=doc(db,'connectionRequests',id);
+ const ref=doc(collection(db,'connectionRequests')),id=ref.id;
  await setDoc(ref,{requesterUid:u.uid,requesterEmail:u.email||'',requesterName:p.displayName||u.displayName||'',requesterRole:'customer',targetUid:dairy.ownerUid,targetName:dairy.displayName||'',targetDairyId:dairy.dairyId,status:'pending',createdAt:serverTimestamp()});
  return {id,dairy};
 }
@@ -153,6 +152,6 @@ async function decideDairyRequest(requestId,accept){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
  const p=await getProfile();if(!p||p.role!=='owner')throw new Error('केवल दूधिया आई हुई Customer Request स्वीकार या अस्वीकार कर सकता है।');
  const ref=doc(db,'connectionRequests',requestId);
- await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('रिक्वेस्ट नहीं मिली।');const d=snap.data();if(d.targetUid!==u.uid||d.status!=='pending')throw new Error('यह रिक्वेस्ट अब उपलब्ध नहीं है।');tx.update(ref,{status:accept?'accepted':'rejected',respondedAt:serverTimestamp()});if(accept)tx.set(doc(db,'connections',u.uid+'_'+d.requesterUid),{ownerUid:u.uid,customerUid:d.requesterUid,customerName:d.requesterName||'Customer',status:'active',requestCode:requestId,createdAt:serverTimestamp()});});
+ await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('रिक्वेस्ट नहीं मिली।');const d=snap.data();if(d.targetUid!==u.uid||d.status!=='pending')throw new Error('यह रिक्वेस्ट अब उपलब्ध नहीं है।');tx.update(ref,{status:accept?'accepted':'rejected',respondedAt:serverTimestamp()});if(accept)tx.set(doc(db,'connections',u.uid+'_'+d.requesterUid),{ownerUid:u.uid,customerUid:d.requesterUid,customerName:d.requesterName||'Customer',status:'active',requestId:requestId,createdAt:serverTimestamp()});});
 }
 window.MilkScaleAuth={...window.MilkScaleAuth,updateProfilePhoto,addLedgerAdjustment,getMyAdjustments,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection,findDairy,sendDairyConnectionRequest,decideDairyRequest};
