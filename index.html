@@ -148,7 +148,15 @@
         .dialog-cancel{background:var(--bg);color:var(--text)}.dialog-ok{background:var(--primary);color:white}
 
 
-        .account-btn{border:0;border-radius:20px;padding:8px 11px;background:#eaf1ff;color:#2563eb;font-weight:700;font-size:12px}
+        .account-btn{border:0;border-radius:14px;padding:10px 13px;background:#eaf1ff;color:#2563eb;font-weight:700;font-size:13px;margin-left:auto}
+        .app-header{gap:12px}.header-left{flex:1;min-width:0}.auth-card{max-height:88vh;overflow-y:auto}
+        .profile-summary{display:flex;align-items:center;gap:12px;background:#eff6ff;border-radius:14px;padding:13px;margin:12px 0}
+        .profile-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#2563eb;color:white;font-size:20px;font-weight:800}
+        .profile-meta{min-width:0}.profile-meta strong{display:block;font-size:15px}.profile-meta small{display:block;color:#64748b;overflow-wrap:anywhere}
+        .request-panel{display:none}.request-panel.open{display:block}.request-row{padding:12px 0;border-bottom:1px solid var(--border)}
+        .request-row:last-child{border-bottom:0}.request-actions{display:flex;gap:8px;margin-top:8px}.request-actions button{flex:1;border:0;border-radius:9px;padding:9px;font-weight:700}
+        .request-time{font-size:11px;color:var(--text-light);margin-top:4px}.request-state{font-size:12px;font-weight:700;color:var(--primary)}
+        .request-top-btn{width:100%;border:0;border-radius:12px;background:#eff6ff;color:#1d4ed8;padding:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
         .auth-backdrop{position:fixed;inset:0;z-index:2500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55)}
         .auth-backdrop.show{display:flex}.auth-card{width:min(100%,380px);background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 60px #0f172a40}
         .auth-card h2{margin:0 0 8px;font-size:21px;color:#1e293b}.auth-card p{font-size:13px;line-height:1.5;color:#64748b}
@@ -162,12 +170,12 @@
     <header class="app-header">
         <div class="header-left">
             <h1>Milk Scale</h1>
-            <button class="account-btn" onclick="openAccount()">Account</button>
             <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
                 <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
             </button>
         </div>
+        <button class="account-btn" onclick="openAccount()"><i class="fa-solid fa-user"></i> Account</button>
     </header>
     
     <div class="main-content">
@@ -307,8 +315,10 @@
 
     <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
-        <h2>Milk Scale Account</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center"><h2>Account</h2><button class="auth-secondary" onclick="closeAccount()" aria-label="Close">✕</button></div>
+        <div id="profile-summary" class="profile-summary" style="display:none"><div class="profile-avatar" id="profile-avatar">M</div><div class="profile-meta"><strong id="profile-name">User</strong><small id="profile-email"></small><small id="profile-dairy-id"></small></div></div>
         <p id="auth-intro">ईमेल और पासवर्ड से अकाउंट बनाएँ या लॉगिन करें। लॉगिन वैकल्पिक है; आपका मौजूदा ऑफलाइन हिसाब चलता रहेगा।</p>
+        <div id="auth-name-wrap" style="display:none"><label for="auth-name">नाम</label><input id="auth-name" type="text" placeholder="आपका नाम" autocomplete="name"></div>
         <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
         <div><label for="auth-password">पासवर्ड</label><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"></div>
         <button class="auth-primary" id="auth-submit-btn" onclick="submitAccountAuth()">लॉगिन करें</button>
@@ -490,6 +500,7 @@
             const target = document.getElementById('tab-' + tabId);
             if (!target) return;
             target.classList.add('active');
+            if (tabId === 'entry') { loadEntryRequests(); }
             if (tabId === 'entry' && currentFileNumber === 0) {
                 appDialog('Please add or create a JSON file before adding entries.', false, 'File required');
                 switchTab('backup', null);
@@ -1056,6 +1067,42 @@
         }
 
 
+
+        function toggleEntryRequests(){
+          const p=document.getElementById('entry-request-panel');p.classList.toggle('open');if(p.classList.contains('open'))loadEntryRequests();
+        }
+        function formatRequestTime(ts){
+          const d=ts?.toDate?ts.toDate():(ts?.seconds?new Date(ts.seconds*1000):null);
+          return d?d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' • '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'समय उपलब्ध नहीं';
+        }
+        async function loadEntryRequests(){
+          const list=document.getElementById('entry-request-list'),form=document.getElementById('customer-request-form');
+          if(!list||!window.MilkScaleAuth)return;
+          try{
+            const user=await window.MilkScaleAuth.getCurrentUser();if(!user){list.innerHTML='<p class="request-time">Request के लिए पहले Account में Login करें।</p>';form.style.display='none';return;}
+            const profile=await window.MilkScaleAuth.getProfile();if(!profile){list.innerHTML='<p class="request-time">Account में अपनी भूमिका चुनें।</p>';form.style.display='none';return;}
+            form.style.display=profile.role==='customer'?'block':'none';
+            const rows=await window.MilkScaleAuth.getMyConnectionRequests();
+            if(!rows.length){list.innerHTML='<p class="request-time">अभी कोई Request नहीं है।</p>';return;}
+            list.innerHTML=rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).map(x=>{
+              const incoming=x.targetUid===user.uid;
+              const title=incoming?(x.requesterName||x.requesterEmail||'Customer'):(x.targetName||'Dudhiya');
+              const status=x.status==='pending'?'Pending':x.status==='accepted'?'Accepted':'Rejected';
+              const actions=incoming&&x.status==='pending'?'<div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideEntryRequest(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideEntryRequest(\''+x.id+'\',false)">Reject</button></div>':'';
+              return '<div class="request-row"><strong>'+escapeHtml(title)+'</strong><div class="request-state">'+status+'</div><div class="request-time">भेजा: '+formatRequestTime(x.createdAt)+(x.respondedAt?' • जवाब: '+formatRequestTime(x.respondedAt):'')+'</div>'+actions+'</div>';
+            }).join('');
+          }catch(e){list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request लोड नहीं हुई')+'</p>';}
+        }
+        async function sendEntryDairyRequest(){
+          const field=document.getElementById('dairy-search-id'),list=document.getElementById('entry-request-list');
+          try{const result=await window.MilkScaleAuth.sendDairyConnectionRequest(field.value);field.value='';list.innerHTML='<p class="request-time">Request '+escapeHtml(result.dairy.displayName||'Dudhiya')+' को भेज दी गई।</p>';await loadEntryRequests();}
+          catch(e){list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request नहीं भेजी जा सकी')+'</p>';}
+        }
+        async function decideEntryRequest(id,accept){
+          try{await window.MilkScaleAuth.decideDairyRequest(id,accept);await loadEntryRequests();}
+          catch(e){const list=document.getElementById('entry-request-list');list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'अपडेट नहीं हुआ')+'</p>';}
+        }
+
         // Optional Firebase email/password authentication. Local/offline app data is never gated by login.
         let accountAuthMode = 'login';
         function openAccount() {
@@ -1066,6 +1113,7 @@
         function toggleAccountAuthMode() {
             accountAuthMode = accountAuthMode === 'login' ? 'register' : 'login';
             document.getElementById('auth-submit-btn').innerText = accountAuthMode === 'login' ? 'लॉगिन करें' : 'अकाउंट बनाएँ';
+            document.getElementById('auth-name-wrap').style.display = accountAuthMode === 'register' ? 'block' : 'none';
             document.getElementById('auth-mode-btn').innerText = accountAuthMode === 'login' ? 'नया अकाउंट बनाएँ' : 'पहले से अकाउंट है? लॉगिन';
             document.getElementById('auth-password').autocomplete = accountAuthMode === 'login' ? 'current-password' : 'new-password';
             document.getElementById('auth-status').innerText = '';
@@ -1076,7 +1124,14 @@
             try {
                 const user = await window.MilkScaleAuth?.getCurrentUser();
                 if (user) {
-                    status.innerText = 'लॉगिन: ' + (user.email || 'अकाउंट सक्रिय');
+                    status.innerText = '';
+                    const summary=document.getElementById('profile-summary');summary.style.display='flex';
+                    document.getElementById('profile-name').innerText=user.displayName||user.email?.split('@')[0]||'User';
+                    document.getElementById('profile-avatar').innerText=(user.displayName||user.email||'M').charAt(0).toUpperCase();
+                    document.getElementById('profile-email').innerText=user.email||'';
+                    const profile=await window.MilkScaleAuth.getProfile();
+                    document.getElementById('profile-dairy-id').innerText=profile?.dairyId?'Dudhiya ID: '+profile.dairyId:'';
+                    status.innerText = '';
                     signout.style.display = 'inline-block';
                     document.getElementById('auth-submit-btn').style.display = 'none';
                     document.getElementById('auth-mode-btn').style.display = 'none';
@@ -1095,7 +1150,8 @@
                     }
                     await renderDairyConnections();
                 } else {
-                    status.innerText = 'अभी लॉगिन नहीं है। ऑफलाइन हिसाब सामान्य रूप से उपलब्ध है।';
+                    document.getElementById('profile-summary').style.display='none';
+                    status.innerText = 'अभी लॉगिन नहीं है।';
                     signout.style.display = 'none';
                     document.getElementById('auth-submit-btn').style.display = 'block';
                     document.getElementById('auth-mode-btn').style.display = 'inline-block';
@@ -1115,7 +1171,7 @@
             const role = document.getElementById('dairy-role').value;
             const status = document.getElementById('auth-status');
             try {
-                await window.MilkScaleAuth.ensureProfile(role);
+                await window.MilkScaleAuth.ensureProfile(role, document.getElementById('auth-name').value.trim());
                 document.getElementById('dairy-role').disabled = true;
                 showDairyRoleTools(role);
                 status.innerText = role === 'owner' ? 'Dairy Owner प्रोफाइल बन गई।' : 'Customer प्रोफाइल बन गई।';
@@ -1247,7 +1303,7 @@
             status.innerText = accountAuthMode === 'login' ? 'लॉगिन हो रहा है…' : 'अकाउंट बनाया जा रहा है…';
             try {
                 if (accountAuthMode === 'register') {
-                    const result = await window.MilkScaleAuth.createAccount(email, password);
+                    const result = await window.MilkScaleAuth.createAccount(document.getElementById('auth-name').value.trim(), email, password);
                     status.innerText = 'अकाउंट बन गया है। ' + email + ' पर Verification Link भेजा गया है। Inbox/Spam में लिंक खोलकर ईमेल सत्यापित करें, फिर लॉगिन करें। सत्यापन से पहले Dairy Cloud सुविधाएँ बंद रहेंगी।';
                     document.getElementById('auth-signout-btn').style.display = 'none';
                     document.getElementById('dairy-role-area').style.display = 'none';
