@@ -147,6 +147,14 @@
         .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.dialog-actions button{border:0;border-radius:10px;padding:10px 16px;font:600 14px inherit;cursor:pointer}
         .dialog-cancel{background:var(--bg);color:var(--text)}.dialog-ok{background:var(--primary);color:white}
 
+
+        .account-btn{border:0;border-radius:20px;padding:8px 11px;background:#eaf1ff;color:#2563eb;font-weight:700;font-size:12px}
+        .auth-backdrop{position:fixed;inset:0;z-index:2500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55)}
+        .auth-backdrop.show{display:flex}.auth-card{width:min(100%,380px);background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 60px #0f172a40}
+        .auth-card h2{margin:0 0 8px;font-size:21px;color:#1e293b}.auth-card p{font-size:13px;line-height:1.5;color:#64748b}
+        .auth-card input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;margin:8px 0 12px}
+        .auth-card button{border:0;border-radius:10px;padding:12px 15px;font-weight:700}.auth-primary{background:#2563eb;color:white;width:100%}.auth-secondary{background:#f1f5f9;color:#334155}
+        .auth-status{min-height:20px;color:#475569;font-size:12px;margin:8px 0}
     </style>
 </head>
 <body>
@@ -154,6 +162,7 @@
     <header class="app-header">
         <div class="header-left">
             <h1>Milk Scale</h1>
+            <button class="account-btn" onclick="openAccount()">Account</button>
             <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
                 <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
@@ -296,6 +305,17 @@
         <!-- Backup icon removed from here, now it's in header -->
     </nav>
 
+    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
+      <div class="auth-card">
+        <h2>Milk Scale Account</h2>
+        <p id="auth-intro">मोबाइल नंबर से लॉगिन करें। OTP सत्यापन वैकल्पिक है; आपका मौजूदा ऑफलाइन हिसाब चलता रहेगा।</p>
+        <div id="auth-phone-step"><label for="auth-phone">मोबाइल नंबर</label><input id="auth-phone" type="tel" inputmode="tel" placeholder="+91XXXXXXXXXX" autocomplete="tel"><button class="auth-primary" id="auth-send-btn" onclick="sendAccountOtp()">OTP भेजें</button></div>
+        <div id="auth-code-step" style="display:none"><label for="auth-code">6 अंकों का OTP</label><input id="auth-code" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code"><button class="auth-primary" onclick="verifyAccountOtp()">सत्यापित करें</button></div>
+        <div class="auth-status" id="auth-status" aria-live="polite"></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><button class="auth-secondary" onclick="closeAccount()">बंद करें</button><button class="auth-secondary" id="auth-signout-btn" style="display:none" onclick="signOutAccount()">लॉगआउट</button></div>
+      </div>
+    </div>
+
     <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <div class="app-dialog">
             <h3 id="dialog-title">Milk Scale</h3>
@@ -307,6 +327,7 @@
         </div>
     </div>
 
+    <script src="./vendor/firebase-auth.js"></script>
     <script>
 
         let dialogResolver = null;
@@ -957,6 +978,69 @@
                     setTimeout(() => active.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
                 }
             });
+        }
+
+
+        // Optional Firebase phone authentication. Local/offline app data is not gated by login.
+        function openAccount() {
+            document.getElementById('auth-backdrop').classList.add('show');
+            refreshAccountStatus();
+        }
+        function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); }
+        async function refreshAccountStatus() {
+            const status = document.getElementById('auth-status');
+            const signout = document.getElementById('auth-signout-btn');
+            try {
+                const user = await window.MilkScaleAuth?.getCurrentUser();
+                if (user) {
+                    status.innerText = 'लॉगिन: ' + (user.phoneNumber || 'सत्यापित मोबाइल');
+                    signout.style.display = 'inline-block';
+                } else {
+                    status.innerText = 'अभी लॉगिन नहीं है। ऑफलाइन हिसाब सामान्य रूप से उपलब्ध है।';
+                    signout.style.display = 'none';
+                }
+            } catch (error) {
+                status.innerText = 'अभी अकाउंट सेवा उपलब्ध नहीं है।';
+            }
+        }
+        async function sendAccountOtp() {
+            const phone = document.getElementById('auth-phone').value.trim().replace(/[\s()-]/g, '');
+            const status = document.getElementById('auth-status');
+            const button = document.getElementById('auth-send-btn');
+            button.disabled = true; status.innerText = 'OTP भेजा जा रहा है…';
+            try {
+                await window.MilkScaleAuth.sendCode(phone, event => {
+                    if (event.type === 'codeSent') {
+                        document.getElementById('auth-phone-step').style.display = 'none';
+                        document.getElementById('auth-code-step').style.display = 'block';
+                        status.innerText = 'OTP भेज दिया गया है। SMS में आया 6 अंकों का कोड डालें।';
+                    } else if (event.type === 'verified') {
+                        status.innerText = 'मोबाइल नंबर सत्यापित हो गया।';
+                        refreshAccountStatus();
+                    } else if (event.type === 'failed') {
+                        status.innerText = event.message;
+                    }
+                });
+            } catch (error) {
+                status.innerText = error.message || 'OTP भेजने में समस्या हुई।';
+            } finally { button.disabled = false; }
+        }
+        async function verifyAccountOtp() {
+            const status = document.getElementById('auth-status');
+            try {
+                const user = await window.MilkScaleAuth.verifyCode(document.getElementById('auth-code').value.trim());
+                status.innerText = user?.phoneNumber ? 'सत्यापन सफल: ' + user.phoneNumber : 'सत्यापन सफल।';
+                document.getElementById('auth-signout-btn').style.display = 'inline-block';
+            } catch (error) { status.innerText = error.message || 'OTP गलत है या समाप्त हो गया।'; }
+        }
+        async function signOutAccount() {
+            try {
+                await window.MilkScaleAuth.signOut();
+                document.getElementById('auth-phone-step').style.display = 'block';
+                document.getElementById('auth-code-step').style.display = 'none';
+                document.getElementById('auth-code').value = '';
+                await refreshAccountStatus();
+            } catch (error) { document.getElementById('auth-status').innerText = 'लॉगआउट नहीं हो सका।'; }
         }
 
         // Start App
