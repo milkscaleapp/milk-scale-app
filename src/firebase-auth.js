@@ -62,4 +62,19 @@ async function getMyPayments(){
  return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,500);
 }
 async function removeConnection(connectionId){throw new Error('कनेक्शन हटाने की सुविधा अगले सुरक्षा अपडेट में जोड़ी जाएगी।');}
-window.MilkScaleAuth={...window.MilkScaleAuth,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection};
+
+async function addLedgerAdjustment(customerUid,kind,delta,note='',date=new Date().toISOString().slice(0,10)){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
+ const p=await getProfile();if(!p||p.role!=='owner')throw new Error('सुधार केवल Owner दर्ज कर सकता है।');
+ if(!customerUid||!['amount','kg'].includes(kind))throw new Error('ग्राहक और सुधार का प्रकार चुनें।');
+ delta=Number(delta);if(!Number.isFinite(delta)||delta===0)throw new Error('सुधार की रकम/मात्रा शून्य नहीं हो सकती।');
+ const ref=await addDoc(collection(db,'dairyAdjustments'),{ownerUid:u.uid,customerUid,kind,delta,note:String(note||'').slice(0,250),date,createdBy:u.uid,createdAt:serverTimestamp()});
+ return ref.id;
+}
+async function getMyAdjustments(){
+ const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');const p=await getProfile();const field=p?.role==='owner'?'ownerUid':'customerUid';
+ const snap=await getDocs(query(collection(db,'dairyAdjustments'),where(field,'==',u.uid)));
+ return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,500);
+}
+
+window.MilkScaleAuth={...window.MilkScaleAuth,addLedgerAdjustment,getMyAdjustments,createConnectionRequest,respondToConnectionRequest,getMyConnectionRequests,syncMilkEntry,getMyMilkEntries,addPayment,getMyPayments,removeConnection};
