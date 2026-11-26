@@ -4,12 +4,5 @@
   "webDir": "www",
   "android": {
     "allowMixedContent": false
-  },
-  "plugins": {
-    "FirebaseAuthentication": {
-      "providers": [
-        "phone"
-      ]
-    }
   }
 }
