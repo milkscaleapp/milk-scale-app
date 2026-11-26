@@ -79,7 +79,8 @@ service cloud.firestore {
     && request.resource.data.total is number && request.resource.data.date is string
     && request.resource.data.shift in ['Morning','Evening','सुबह','शाम']
     && request.resource.data.entryId is string && request.resource.data.createdAt == request.time;
-   allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
+   allow get: if signedIn() && (!exists(/databases/$(database)/documents/dairyEntries/$(entryId)) || resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
+   allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.customerUid == request.auth.uid);
    allow update, delete: if false;
   }
   match /dairyPayments/{paymentId} {
