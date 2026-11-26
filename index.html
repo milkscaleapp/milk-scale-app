@@ -417,6 +417,7 @@
         let draggedCustomerIndex = null;
         let pointerDrag = null;
         let filePresence = {};
+        let fileWriteQueues = {};
 
         async function readManagedFileData(fileNum){
             const fs=window.Capacitor?.Plugins?.Filesystem;
@@ -488,7 +489,7 @@
  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
  const target=document.getElementById('tab-'+tabId);if(!target)return;target.classList.add('active');
  if(el)el.classList.add('active');else if(tabId==='backup')document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
- if(tabId==='backup')refreshActiveFilePresence();
+ if(tabId==='backup')refreshActiveFilePresence(false);
 }
         function saveLocal(persistFile=true){
  try{
@@ -685,14 +686,25 @@
         // --- Auto File Save Logic ---
         async function autoSaveToFile(fileNum,createIfMissing=false){
  const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}
- const fileName='MilkScale_Backup_('+fileNum+').json';
- if(!createIfMissing){
-  try{if(!fs.stat)throw new Error('stat unavailable');await fs.stat({path:fileName,directory:'DOCUMENTS'});}
-  catch(e){filePresence[String(fileNum)]=false;if(Number(currentFileNumber)===Number(fileNum)){currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);}renderFileList();return false;}
- }
- const data={customers,entries,scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value};
- try{await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});filePresence[String(fileNum)]=true;const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();renderFileList();return true;}
- catch(e){console.error('Native file save failed:',e);notify(e.message||'JSON file सेव नहीं हुई।');return false;}
+ const key=String(fileNum),fileName='MilkScale_Backup_('+fileNum+').json';
+ const data={customers:[...customers],entries:[...entries],scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value};
+ const previous=fileWriteQueues[key]||Promise.resolve();
+ const task=previous.catch(()=>{}).then(async()=>{
+  if(!createIfMissing){if(!fs.stat)throw new Error('stat unavailable');await fs.stat({path:fileName,directory:'DOCUMENTS'});}
+  await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});
+ });
+ fileWriteQueues[key]=task;
+ try{
+  await task;filePresence[key]=true;
+  const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();
+  if(Number(currentFileNumber)===Number(fileNum))showFileInHeader(fileNum);
+  renderFileList();return true;
+ }catch(e){
+  if(!createIfMissing&&Number(currentFileNumber)===Number(fileNum)){
+   filePresence[key]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);
+  }
+  console.error('Native file save failed:',e);notify(e.message||'JSON फाइल सेव नहीं हुई।');renderFileList();return false;
+ }finally{if(fileWriteQueues[key]===task)delete fileWriteQueues[key];}
 }
         async function createNewBackupFile(){
  if(currentFileNumber>0)saveActiveFileData();
@@ -708,25 +720,36 @@
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
         function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file':'Tap to fit')+' · '+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';}
-        async function refreshActiveFilePresence(){
+        async function refreshActiveFilePresence(loadCurrentData=true){
  const fs=window.Capacitor?.Plugins?.Filesystem;
  for(const n of getKnownFileNumbers()){
-  try{if(!fs?.stat)throw new Error('Native file storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;}
-  catch(e){filePresence[String(n)]=false;}
+  try{
+   const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
+   if(!fs?.stat)throw new Error('Native file storage unavailable');
+   await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;
+  }catch(e){filePresence[String(n)]=false;}
  }
- if(currentFileNumber>0&&filePresence[String(currentFileNumber)]===true){
-  try{await readManagedFileData(currentFileNumber);loadActiveFileData(currentFileNumber);renderCustomers();populateDropdowns();initScaleBoard();loadBill();}
-  catch(e){filePresence[String(currentFileNumber)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');}
- }else if(currentFileNumber>0){currentFileNumber=0;localStorage.removeItem('ms_file_num');}
+ if(currentFileNumber>0&&filePresence[String(currentFileNumber)]===true&&loadCurrentData){
+  try{
+   const pending=fileWriteQueues[String(currentFileNumber)];if(pending)await pending.catch(()=>{});
+   await readManagedFileData(currentFileNumber);loadActiveFileData(currentFileNumber);
+   renderCustomers();populateDropdowns();initScaleBoard();loadBill();
+  }catch(e){filePresence[String(currentFileNumber)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');}
+ }else if(currentFileNumber>0&&filePresence[String(currentFileNumber)]!==true){
+  currentFileNumber=0;localStorage.removeItem('ms_file_num');
+ }
  showFileInHeader(currentFileNumber);renderFileList();
 }
         async function selectManagedFile(n){
  if(!fileStore[String(n)])return;
  const fs=window.Capacitor?.Plugins?.Filesystem;
- try{if(!fs?.stat)throw new Error('File Manager storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});}
- catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}
- try{await readManagedFileData(n);}catch(e){notify(e.message||'JSON फाइल पढ़ी नहीं जा सकी।');return;}
- if(currentFileNumber>0)saveActiveFileData();
+ try{
+  const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
+  if(!fs?.stat)throw new Error('File Manager storage unavailable');
+  await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+ }catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}
+ if(currentFileNumber>0&&currentFileNumber!==n)saveActiveFileData();
+ try{await readManagedFileData(n);}catch(e){filePresence[String(n)]=false;renderFileList();notify(e.message||'JSON फाइल पढ़ी नहीं जा सकी।');return;}
  currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal(false);
  renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();
  showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));
@@ -748,7 +771,18 @@
                 notify('The JSON file has been recreated in File Manager / Documents.');
             }
         }
-        async function ensureFileSelected(){const n=Number(currentFileNumber),fs=window.Capacitor?.Plugins?.Filesystem;if(n>0&&fs?.stat){try{await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;return true;}catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}}await appDialog('नई Entry जोड़ने से पहले File Manager से मौजूद JSON फाइल फिट करें या नई JSON फाइल बनाएँ।',false,'JSON file required');switchTab('backup',null);return false;}
+        async function ensureFileSelected(){
+ const n=Number(currentFileNumber),fs=window.Capacitor?.Plugins?.Filesystem;
+ if(n>0&&fs?.stat){
+  try{
+   const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
+   await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+   filePresence[String(n)]=true;showFileInHeader(n);renderFileList();return true;
+  }catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}
+ }
+ await appDialog('नई Entry जोड़ने से पहले File Manager से मौजूद JSON फाइल फिट करें या नई JSON फाइल बनाएँ।',false,'JSON file required');
+ switchTab('backup',null);return false;
+}
         async function importBackupFile(event){
             const file=event.target.files?.[0];if(!file)return;
             const previous={number:currentFileNumber,customers,entries,store:JSON.parse(JSON.stringify(fileStore))};
