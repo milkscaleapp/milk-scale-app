@@ -300,7 +300,8 @@
             if(dialogResolver){const resolve=dialogResolver;dialogResolver=null;resolve(result);}
         }
         function notify(message){appDialog(message,false);}
-\n        // --- Variables ---
+
+        // --- Variables ---
         let customers = JSON.parse(localStorage.getItem('ms_cust')) || [];
         let entries = JSON.parse(localStorage.getItem('ms_entries')) || [];
         let currentFileNumber = parseInt(localStorage.getItem('ms_file_num')) || 0;
