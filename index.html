@@ -117,6 +117,22 @@
         .file-info p { margin: 4px 0 0; font-size: 12px; color: var(--text-light); }
         .file-location-note { display:flex; align-items:center; gap:5px; margin:8px 0 0; font-size:10px; color:#94a3b8; }
         .file-location-note button { border:0; background:transparent; color:#64748b; padding:2px 4px; font-size:12px; }
+        .file-list { display:flex; flex-direction:column; gap:9px; }
+        .managed-file { display:flex; align-items:center; gap:11px; padding:13px; border:1px solid #dbeafe; border-radius:13px; background:linear-gradient(145deg,#fff,#f1f5f9); box-shadow:0 5px 0 #dbe3ed,0 8px 15px rgba(15,23,42,.08); transform:translateY(0); transition:transform .12s,box-shadow .12s,border-color .12s; }
+        .managed-file:active { transform:translateY(4px); box-shadow:0 1px 0 #dbe3ed,0 3px 8px rgba(15,23,42,.08); }
+        .managed-file.active { border:2px solid var(--primary); }
+        .managed-file.missing { border:2px solid #ef4444; background:linear-gradient(145deg,#fff,#fff1f2); box-shadow:0 5px 0 #fecaca,0 8px 15px rgba(239,68,68,.12); }
+        .managed-file .file-info { min-width:0; cursor:pointer; }
+        .managed-file .file-info h4 { overflow-wrap:anywhere; }
+        .managed-file .file-pick { border:0; border-radius:9px; padding:9px 10px; background:var(--primary-light); color:var(--primary); font-weight:700; }
+        .new-file-bottom { margin-top:14px; }
+        .file-alert-dot { display:none; width:8px; height:8px; border-radius:50%; background:#ef4444; }
+        .file-status-btn.file-missing { border:2px solid #ef4444; background:linear-gradient(135deg,#991b1b,#ef4444); box-shadow:0 0 0 3px #fee2e2; animation:none; }
+        .entry-reorder-handle { padding:10px 12px; touch-action:none; color:#64748b; cursor:grab; }
+        .customer-row.drop-before { border-top:3px solid var(--primary); }
+        .customer-row.drop-after { border-bottom:3px solid var(--primary); }
+        .customer-row.dragging { opacity:.35; }
+        .drag-placeholder { height:46px; border:2px dashed var(--primary); border-radius:10px; background:var(--primary-light); margin:3px 0; }
         .customer-summary { display:flex; justify-content:space-between; align-items:center; margin:12px 0 4px; font-size:12px; color:var(--text-light); font-weight:700; }
         .customer-row { display:flex; align-items:center; gap:9px; padding:11px 2px; border-bottom:1px solid var(--border); touch-action:pan-y; }
         .customer-row.dragging { opacity:.45; background:var(--primary-light); }
@@ -245,20 +261,13 @@
                 <h2 style="color: var(--primary); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-file-export"></i> Files</h2>
                 
                 
-                <button class="btn btn-primary" onclick="createNewBackupFile()" style="margin-bottom: 10px;">
+                <div id="file-list" class="file-list"></div>
+                <button class="btn btn-primary new-file-bottom" onclick="createNewBackupFile()">
                     <i class="fa-solid fa-plus"></i> Create new file
                 </button>
-
-                <div id="current-backup-file" style="display: none;">
-                    <div class="file-card">
-                        <i class="fa-solid fa-file-code file-icon"></i>
-                        <div class="file-info">
-                            <h4 id="backup-filename">MilkScale_Backup.json</h4>
-                            <p id="backup-filedate">Created: now</p>
-                            <div class="file-location-note">File Manager / Documents <button type="button" aria-label="File location information" onclick="notify('This file is saved in your phone File Manager app, inside the Documents folder.')"><i class="fa-solid fa-circle-info"></i></button></div>
-                        </div>
-                    </div>
-                    
+                <div id="current-backup-file" style="display:none;">
+                    <h4 id="backup-filename" style="display:none;">MilkScale_Backup.json</h4>
+                    <p id="backup-filedate" style="display:none;">Created: now</p>
                 </div>
             </div>
 
@@ -326,6 +335,8 @@
         let fileStore = {};
         try { fileStore = JSON.parse(localStorage.getItem('ms_file_store') || '{}') || {}; } catch(e) { fileStore = {}; }
         let draggedCustomerIndex = null;
+        let pointerDrag = null;
+        let filePresence = {};
 
         function saveActiveFileData() {
             if (currentFileNumber > 0) {
@@ -374,9 +385,9 @@
             loadBill();
             
             // Show the file in the header if one exists
-            if(entries.length > 0 && currentFileNumber > 0) {
-                showFileInHeader(currentFileNumber);
-            }
+            if(currentFileNumber > 0) showFileInHeader(currentFileNumber);
+            renderFileList();
+            refreshActiveFilePresence();
         }
 
         // --- Navigation ---
@@ -386,6 +397,11 @@
             const target = document.getElementById('tab-' + tabId);
             if (!target) return;
             target.classList.add('active');
+            if (tabId === 'entry' && currentFileNumber === 0) {
+                appDialog('Please add or create a JSON file before adding entries.', false, 'File required');
+                switchTab('backup', null);
+                return;
+            }
             if (el) el.classList.add('active');
             else if (tabId === 'backup') document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
         }
@@ -413,6 +429,7 @@
             const nameSpan = document.getElementById('header-file-name');
             btn.style.display = 'flex';
             nameSpan.innerText = `(${fileNum})`;
+            btn.classList.toggle('file-missing', filePresence[String(fileNum)] === false);
             document.getElementById('current-backup-file').style.display = 'block';
             document.getElementById('backup-filename').innerText = `MilkScale_Backup_(${fileNum}).json`;
         }
@@ -426,13 +443,79 @@
                 return;
             }
             list.innerHTML = customers.map((c, i) => `
-                <div class="customer-row" draggable="true" data-customer-index="${i}" ondragstart="customerDragStart(event,${i})" ondragover="customerDragOver(event)" ondrop="customerDrop(event,${i})" ondragend="customerDragEnd()">
+                <div class="customer-row" data-customer-index="${i}">
                     <span class="customer-order">${i + 1}.</span>
-                    <i class="fa-solid fa-grip-vertical drag-handle" aria-label="Hold and move to reorder"></i>
+                    <span class="entry-reorder-handle" data-drag-index="${i}" aria-label="Hold and move customer"><i class="fa-solid fa-grip-vertical"></i></span>
                     <span class="customer-name">${escapeHtml(c)}</span>
                     <div class="delete-icon" onclick="deleteCustomer(${i})"><i class="fa-solid fa-trash"></i></div>
                 </div>
             `).join('');
+            bindCustomerPointerReorder();
+        }
+
+        function bindCustomerPointerReorder() {
+            const list = document.getElementById('cust-list');
+            list.querySelectorAll('.entry-reorder-handle').forEach(handle => {
+                handle.addEventListener('pointerdown', event => startCustomerPointerDrag(event, Number(handle.dataset.dragIndex)));
+            });
+        }
+        function startCustomerPointerDrag(event, index) {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            event.preventDefault();
+            const handle = event.currentTarget;
+            const row = handle.closest('.customer-row');
+            const list = document.getElementById('cust-list');
+            const placeholder = document.createElement('div');
+            placeholder.className = 'drag-placeholder';
+            let activated = false;
+            const startY = event.clientY;
+            let timer = setTimeout(() => {
+                activated = true;
+                pointerDrag = { index, row, placeholder, list };
+                row.classList.add('dragging');
+                row.after(placeholder);
+                try { handle.setPointerCapture(event.pointerId); } catch(e) {}
+            }, 320);
+            const move = e => {
+                if (!activated) {
+                    if (Math.abs(e.clientY - startY) > 12) { clearTimeout(timer); cleanup(); }
+                    return;
+                }
+                e.preventDefault();
+                const rows = [...list.querySelectorAll('.customer-row:not(.dragging)')];
+                let placed = false;
+                for (const candidate of rows) {
+                    const rect = candidate.getBoundingClientRect();
+                    if (e.clientY < rect.top + rect.height / 2) {
+                        candidate.before(placeholder); placed = true; break;
+                    }
+                }
+                if (!placed) list.appendChild(placeholder);
+            };
+            const end = e => {
+                clearTimeout(timer);
+                if (activated && pointerDrag) {
+                    const children = [...list.children];
+                    const newIndex = children.indexOf(placeholder);
+                    const moved = customers.splice(index, 1)[0];
+                    const adjusted = Math.max(0, Math.min(customers.length, newIndex > index ? newIndex - 1 : newIndex));
+                    customers.splice(adjusted, 0, moved);
+                    saveLocal(); renderCustomers(); populateDropdowns();
+                }
+                cleanup();
+            };
+            function cleanup() {
+                clearTimeout(timer);
+                row.classList.remove('dragging');
+                placeholder.remove();
+                handle.removeEventListener('pointermove', move);
+                handle.removeEventListener('pointerup', end);
+                handle.removeEventListener('pointercancel', end);
+                pointerDrag = null;
+            }
+            handle.addEventListener('pointermove', move);
+            handle.addEventListener('pointerup', end);
+            handle.addEventListener('pointercancel', end);
         }
 
         function customerDragStart(event, index) {
@@ -458,7 +541,10 @@
         function populateDropdowns() {
             const options = customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
             document.getElementById('customer-options').innerHTML = options;
-            document.getElementById('bill-customer').innerHTML = `<option value="">-- Select customer --</option>` + options;
+            const bill = document.getElementById('bill-customer');
+            const previous = bill.value;
+            bill.innerHTML = `<option value="">-- Select customer --</option>` + customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (customers.includes(previous)) bill.value = previous;
         }
 
         function addCustomer() {
@@ -486,6 +572,7 @@
 
         // --- Entry Logic (Entry logic) ---
         async function saveEntry() {
+            if (!(await ensureFileSelected())) return;
             const cust = document.getElementById('entry-customer').value.trim();
             if (!customers.includes(cust)) return notify('Please search and select a customer from the list.');
             const date = document.getElementById('entry-date').value;
@@ -576,38 +663,90 @@
 
         // --- Create New Backup File Manually ---
         async function createNewBackupFile() {
-            // If legacy data exists before the first numbered file, preserve it as file 1.
-            if (currentFileNumber === 0 && (customers.length > 0 || entries.length > 0)) {
-                currentFileNumber = 1;
-                fileStore['1'] = {
-                    customers: [...customers], entries: [...entries],
-                    scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
-                    rate: document.getElementById('scale-rate').value
-                };
-                localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
-                localStorage.setItem('ms_file_num', '1');
-                await autoSaveToFile(1);
-            } else {
-                saveActiveFileData();
-            }
-            currentFileNumber++;
-            customers = [];
-            entries = [];
-            localStorage.setItem('ms_file_num', currentFileNumber);
-            localStorage.setItem('ms_scale', '[]');
-            localStorage.setItem('ms_rate', '');
-            document.getElementById('scale-rate').value = '';
+            saveActiveFileData();
+            currentFileNumber = Math.max(0, ...Object.keys(fileStore).map(Number).filter(Number.isFinite)) + 1;
             fileStore[String(currentFileNumber)] = { customers: [], entries: [], scale: [], rate: '' };
-            localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
+            loadActiveFileData(currentFileNumber);
+            localStorage.setItem('ms_file_num', currentFileNumber);
             saveLocal();
-            renderCustomers();
-            populateDropdowns();
+            renderCustomers(); populateDropdowns();
             document.getElementById('entry-customer').value = '';
-            initScaleBoard();
-            loadBill();
+            initScaleBoard(); loadBill();
             await autoSaveToFile(currentFileNumber);
             showFileInHeader(currentFileNumber);
+            renderFileList();
+            refreshActiveFilePresence();
             notify('A new empty file has been created.');
+        }
+
+        function getKnownFileNumbers() {
+            return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
+        }
+        function renderFileList() {
+            const list = document.getElementById('file-list');
+            if (!list) return;
+            const nums = getKnownFileNumbers();
+            list.innerHTML = nums.length ? nums.map(n => {
+                const missing = filePresence[String(n)] === false;
+                const active = n === currentFileNumber;
+                return `<div class="managed-file ${active?'active':''} ${missing?'missing':''}" data-file-number="${n}">
+                    <i class="fa-solid fa-file-code file-icon"></i>
+                    <div class="file-info" onclick="selectManagedFile(${n})">
+                        <h4>MilkScale_Backup_(${n}).json</h4>
+                        <p>${active?'Currently selected': 'Tap to select'} · ${(fileStore[String(n)]?.entries||[]).length} entries</p>
+                    </div>
+                    ${missing ? `<button class="file-pick" onclick="recreateManagedFile(${n})">Restore</button>` : `<button class="file-pick" onclick="selectManagedFile(${n})">Select</button>`}
+                </div>`;
+            }).join('') : '<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';
+        }
+        async function refreshActiveFilePresence() {
+            const fs = window.Capacitor?.Plugins?.Filesystem;
+            for (const n of getKnownFileNumbers()) {
+                try {
+                    if (!fs?.stat) { filePresence[String(n)] = true; continue; }
+                    await fs.stat({ path: `MilkScale_Backup_(${n}).json`, directory: 'DOCUMENTS' });
+                    filePresence[String(n)] = true;
+                } catch(e) { filePresence[String(n)] = false; }
+            }
+            if (currentFileNumber > 0) showFileInHeader(currentFileNumber);
+            renderFileList();
+        }
+        async function selectManagedFile(n) {
+            if (!fileStore[String(n)]) return;
+            saveActiveFileData();
+            currentFileNumber = n;
+            loadActiveFileData(n);
+            localStorage.setItem('ms_file_num', n);
+            saveLocal();
+            renderCustomers(); populateDropdowns();
+            document.getElementById('entry-customer').value = '';
+            initScaleBoard(); loadBill();
+            showFileInHeader(n);
+            await refreshActiveFilePresence();
+            switchTab('scale', document.querySelector('.bottom-nav .nav-item'));
+        }
+        async function recreateManagedFile(n) {
+            if (!fileStore[String(n)]) return;
+            const old = currentFileNumber;
+            saveActiveFileData();
+            currentFileNumber = n;
+            loadActiveFileData(n);
+            const ok = await autoSaveToFile(n);
+            currentFileNumber = old;
+            if (old > 0) loadActiveFileData(old);
+            localStorage.setItem('ms_file_num', currentFileNumber);
+            if (ok) {
+                filePresence[String(n)] = true;
+                renderFileList();
+                if (n === old) showFileInHeader(n);
+                notify('The JSON file has been recreated in File Manager / Documents.');
+            }
+        }
+        async function ensureFileSelected() {
+            if (currentFileNumber > 0) return true;
+            await appDialog('Add a JSON file first. Choose an existing backup or create a new file before adding entries.', false, 'JSON file required');
+            switchTab('backup', null);
+            return false;
         }
 
         // --- Restore Logic ---
@@ -622,7 +761,12 @@
                     const savedData = JSON.parse(content);
 
                     if(savedData.customers && savedData.entries) {
-                        if(await appDialog('Replace the current data with this file?',true,'Restore backup')) {
+                        if(await appDialog('Add this JSON file to your file list?',true,'Add backup file')) {
+                            const match = file.name.match(/\((\d+)\)/);
+                            const fileNum = match ? parseInt(match[1]) : (Math.max(0, ...getKnownFileNumbers()) + 1);
+                            fileStore[String(fileNum)] = { customers:savedData.customers, entries:savedData.entries, scale:savedData.scale||[], rate:savedData.rate||'' };
+                            localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
+                            currentFileNumber = fileNum;
                             customers = savedData.customers;
                             entries = savedData.entries;
                             
@@ -633,11 +777,11 @@
                             
                             // Get the number from the file name
                             let match = file.name.match(/\((\d+)\)/);
-                            if(match) {
-                                currentFileNumber = parseInt(match[1]);
-                                localStorage.setItem('ms_file_num', currentFileNumber);
-                                showFileInHeader(currentFileNumber);
-                            }
+                            localStorage.setItem('ms_file_num', currentFileNumber);
+                            await autoSaveToFile(currentFileNumber);
+                            showFileInHeader(currentFileNumber);
+                            renderFileList();
+                            refreshActiveFilePresence();
 
                             renderCustomers();
                             populateDropdowns();
