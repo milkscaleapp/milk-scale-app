@@ -1,0 +1,44 @@
+name: Validate Milk Scale offline web bundle
+
+on:
+  pull_request:
+    branches: ["main", "ui-english-custom-dialogs"]
+  push:
+    branches: ["main", "ui-english-custom-dialogs", "offline-local-assets"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install
+      - name: Build local web assets
+        run: npm run build
+      - name: Check bundled assets
+        run: |
+          test -s www/index.html
+          test -s www/vendor/fontawesome/css/all.min.css
+          test -s www/vendor/capacitor-filesystem.js
+          test -d www/vendor/fontawesome/webfonts
+      - name: Check JavaScript syntax
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('www/index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)]
+            .map(match => match[1]).filter(code => code.trim());
+          if (!scripts.length) throw new Error('No inline JavaScript found');
+          scripts.forEach((code, index) => fs.writeFileSync('/tmp/milk-scale-' + index + '.js', code));
+          console.log('Extracted', scripts.length, 'inline script(s)');
+          NODE
+          for file in /tmp/milk-scale-*.js; do node --check "$file"; done
+      - name: Ensure no remote app dependencies
+        run: |
+          ! grep -E 'https?://(cdnjs.cloudflare.com|fonts.googleapis.com|fonts.gstatic.com|unpkg.com)' www/index.html
