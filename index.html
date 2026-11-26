@@ -576,7 +576,20 @@
 
         // --- Create New Backup File Manually ---
         async function createNewBackupFile() {
-            saveActiveFileData();
+            // If legacy data exists before the first numbered file, preserve it as file 1.
+            if (currentFileNumber === 0 && (customers.length > 0 || entries.length > 0)) {
+                currentFileNumber = 1;
+                fileStore['1'] = {
+                    customers: [...customers], entries: [...entries],
+                    scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
+                    rate: document.getElementById('scale-rate').value
+                };
+                localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
+                localStorage.setItem('ms_file_num', '1');
+                await autoSaveToFile(1);
+            } else {
+                saveActiveFileData();
+            }
             currentFileNumber++;
             customers = [];
             entries = [];
