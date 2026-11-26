@@ -1125,7 +1125,8 @@
                     document.getElementById('profile-name').innerText=user.displayName||user.email?.split('@')[0]||'User';
                     document.getElementById('profile-avatar').innerText=(user.displayName||user.email||'M').charAt(0).toUpperCase();
                     document.getElementById('profile-email').innerText=user.email||'';
-                    const profile=await window.MilkScaleAuth.getProfile();
+                    let profile=await window.MilkScaleAuth.getProfile();
+                    if(profile) profile=await window.MilkScaleAuth.ensureProfile(profile.role,profile.displayName||user.displayName);
                     document.getElementById('profile-dairy-id').innerText=profile?.dairyId?'ID: '+profile.dairyId+' • Username: '+(profile.username||''):'';
                     status.innerText = '';
                     signout.style.display = 'inline-block';
@@ -1133,9 +1134,7 @@
                     document.getElementById('auth-mode-btn').style.display = 'none';
                     document.getElementById('auth-reset-btn').style.display = 'none';
                     document.getElementById('dairy-role-area').style.display = 'block';
-                    let profile = await window.MilkScaleAuth.getProfile();
                     if (profile) {
-                        profile = await window.MilkScaleAuth.ensureProfile(profile.role, profile.displayName || user.displayName);
                         document.getElementById('dairy-role').value = profile.role;
                         document.getElementById('dairy-role').disabled = true;
                         showDairyRoleTools(profile.role);
