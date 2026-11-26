@@ -201,17 +201,33 @@
 .profile-edit-icon{flex:0 0 38px;width:38px;height:38px;border:0;border-radius:12px;background:#fff;color:#1d4ed8}
 .profile-switch-button{width:100%;border:0;border-radius:13px;padding:14px;background:#1d4ed8;color:#fff;font-weight:800;margin:4px 0 12px}
 #profile-settings-panel,.profile-id-card{display:none!important}
-.managed-file .file-alert-dot{position:static;flex:0 0 9px;width:9px;height:9px;box-shadow:none;border:0}.file-alert-dot[aria-label="File not found"]{background:#ef4444}    </style>
+.managed-file .file-alert-dot{position:static;flex:0 0 9px;width:9px;height:9px;box-shadow:none;border:0}.file-alert-dot[aria-label="File not found"]{background:#ef4444}
+.app-header h1{white-space:nowrap;flex:0 0 auto}.header-left{flex-wrap:nowrap;gap:10px;min-width:0}
+.file-status-btn{gap:7px;padding:7px 10px}.header-file-icon-wrap{position:relative;display:inline-grid;place-items:center;font-size:18px}
+#header-file-dot{position:absolute!important;display:none;right:-5px!important;top:50%!important;transform:translateY(-50%);width:11px!important;height:11px!important;border:2px solid #fff!important;border-radius:50%;background:#ef4444;box-shadow:0 0 0 1px rgba(15,23,42,.08)}
+.request-board{min-height:calc(100% - 24px)}.request-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.request-section-heading h3{margin:0!important}
+.refresh-icon{width:30px;height:30px;flex:0 0 30px;padding:0;border:0;border-radius:8px;background:transparent;color:#111827;font-size:14px}
+.request-help{margin:0 0 10px}.empty-state{padding:24px 12px;text-align:center;color:#64748b;font-size:14px}
+.profile-photo-button{overflow:hidden!important;border-radius:50%!important;clip-path:circle(50%)}.profile-photo-button img{display:block;width:100%;height:100%;min-width:76px;min-height:76px;object-fit:cover;object-position:center;border-radius:50%;aspect-ratio:1/1}
+.profile-photo-button>i{right:0;bottom:0;z-index:2}.profile-photo-viewer{position:fixed;inset:0;z-index:6000;display:none;flex-direction:column;background:#080d18;color:#fff;padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom)}
+.profile-photo-viewer.show{display:flex}.photo-viewer-top{height:58px;display:flex;align-items:center;gap:14px}.photo-viewer-top>span{flex:1;font-weight:700}.photo-edit-action{background:#fff;color:#111827;border:0;border-radius:10px;padding:9px 13px;font-weight:800}
+.photo-viewer-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;min-height:0}.photo-viewer-content img{width:min(82vw,440px);height:min(82vw,440px);object-fit:contain;border-radius:50%;background:#182235}.photo-viewer-content strong{font-size:25px;font-weight:900;text-align:center;overflow-wrap:anywhere}.photo-viewer-fallback{display:none;width:min(82vw,440px);height:min(82vw,440px);border-radius:50%;background:#2563eb;align-items:center;justify-content:center;font-size:100px;font-weight:900}
+.verified-check{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;background:#dcfce7;color:#15803d;font-size:38px;box-shadow:0 0 0 8px #f0fdf4}
+#app-splash{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#f8fbff;color:#1d4ed8;transition:opacity .28s ease,visibility .28s ease}
+#app-splash.hide{opacity:0;visibility:hidden;pointer-events:none}.splash-mark{width:68px;height:68px;border-radius:23px;background:linear-gradient(145deg,#2563eb,#38bdf8);display:grid;place-items:center;color:#fff;font-size:34px;box-shadow:0 12px 28px rgba(37,99,235,.22);animation:splashFloat .85s ease-in-out infinite alternate}
+.splash-wordmark{font-size:29px;font-weight:900;letter-spacing:-.8px;white-space:nowrap}.splash-loader{width:92px;height:3px;border-radius:5px;background:#dbeafe;overflow:hidden}.splash-loader span{display:block;width:38%;height:100%;border-radius:5px;background:#2563eb;animation:splashLoad .75s ease-in-out infinite}
+@keyframes splashFloat{to{transform:translateY(-7px) scale(1.04)}}@keyframes splashLoad{from{transform:translateX(-110%)}to{transform:translateX(270%)}}
+    </style>
 </head>
 <body>
-
+    <div id="app-splash" aria-label="Milk Scale loading"><div class="splash-mark"><i class="fa-solid fa-droplet"></i></div><div class="splash-wordmark">Milk Scale</div><div class="splash-loader"><span></span></div></div>
     <header class="app-header">
         <div class="header-left">
             <h1>Milk Scale</h1>
             <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" aria-label="JSON files">
-                <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">JSON</span><span class="file-alert-dot" id="header-file-dot"></span>
-            </button><button class="request-center-btn" onclick="openRequestCenter()"><i class="fa-solid fa-user-plus"></i> Requests</button>
+                <span class="header-file-icon-wrap"><i class="fa-solid fa-file-invoice"></i><span class="file-alert-dot" id="header-file-dot"></span></span><span id="header-file-name">JSON</span>
+            </button>
         </div>
         <button class="account-btn" onclick="openAccount()"><i class="fa-solid fa-user"></i> Account</button>
     </header>
@@ -258,15 +274,8 @@
         <!-- ENTRY TAB -->
         <div id="tab-entry" class="tab-content">
             <div class="card">
-                <div class="row">
-                    <div class="form-group" style="flex:2; margin-bottom:0;">
-                        <input type="text" id="new-cust-name" class="form-control" placeholder="New customer name">
-                    </div>
-                    <div class="form-group" style="flex:1; margin-bottom:0;">
-                        <button class="btn btn-primary" onclick="addCustomer()" style="padding: 12px;"><i class="fa-solid fa-plus"></i></button>
-                    </div>
-                </div>
-                <div class="customer-summary"><span>Customers</span><span id="customer-count">Total: 0</span></div>
+                <button class="btn btn-primary" type="button" onclick="openRequestCenter()"><i class="fa-solid fa-users"></i> Customer Connections / Requests</button>
+                <div class="customer-summary"><span>Connected Customers</span><span id="customer-count">Total: 0</span></div>
                 <div id="cust-list" style="max-height: 220px; overflow-y: auto; margin-top: 4px;"></div>
             </div>
 
@@ -289,6 +298,7 @@
                 <div class="form-group"><input type="number" id="entry-rate" class="form-control" placeholder="Rate (₹)" step="0.5"></div>
                 <button class="btn btn-primary" onclick="saveEntry()"><i class="fa-solid fa-check"></i> Save</button>
             </div>
+        </div>
         <!-- BILL TAB -->
         <div id="tab-bill" class="tab-content">
             <div class="card">
@@ -353,12 +363,26 @@
  <div class="customer-picker-header"><button class="back-icon" onclick="closeCustomerPicker()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2>Customer चुनें</h2></div>
  <div class="customer-picker-content"><input id="customer-picker-search" class="form-control" type="search" placeholder="Customer खोजें..." oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div></div>
 </div>
-<div class="full-page-backdrop" id="request-center" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeRequestCenter()"><i class="fa-solid fa-arrow-left"></i></button><h2>Requests</h2><button class="refresh-icon" onclick="loadRequestCenter()"><i class="fa-solid fa-rotate"></i></button></div><div class="full-page-body"><section><h3>आई हुई Requests</h3><div id="incoming-request-list"></div></section><section id="invite-customer-section"><h3>नया Customer जोड़ें</h3><input id="invite-customer-name" class="form-control" placeholder="Customer का नाम"><input id="invite-customer-phone" class="form-control" inputmode="tel" placeholder="मोबाइल नंबर"><button class="btn btn-primary" onclick="sendCustomerInvitation()">Request भेजें</button><div id="invite-result" class="auth-status"></div></section><section id="accept-invite-section"><h3>दूधिया की Request स्वीकार करें</h3><input id="invite-code-input" class="form-control" maxlength="8" placeholder="8 अक्षर का Request Code"><div class="row"><button class="btn btn-success" onclick="respondToCustomerInvite(true)">Accept</button><button class="btn auth-secondary" onclick="respondToCustomerInvite(false)">Reject</button></div></section></div></div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><input id="profile-edit-username" class="form-control" maxlength="24" placeholder="Username"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><input id="profile-edit-username" class="form-control" maxlength="24" placeholder="Username"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
+<div class="full-page-backdrop" id="request-center" role="dialog" aria-modal="true">
+ <div class="full-page-header"><button class="back-icon" onclick="closeRequestCenter()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2>Customer Connections</h2></div>
+ <div class="full-page-body request-board">
+  <section>
+   <div class="request-section-heading"><h3 id="request-list-heading">Requests</h3><button class="refresh-icon" type="button" onclick="loadRequestCenter()" aria-label="Refresh"><i class="fa-solid fa-rotate"></i></button></div>
+   <div id="incoming-request-list"><p class="empty-state">अभी कोई Request नहीं है।</p></div>
+  </section>
+  <section id="customer-dairy-request" style="display:none">
+   <h3>दूधिया से जुड़ें</h3><p class="request-help">दूधिया का Username या ID डालकर Request भेजें।</p>
+   <input id="dairy-search-id" class="form-control" autocomplete="off" placeholder="Dairy Username या ID">
+   <button class="btn btn-primary" onclick="sendEntryDairyRequest()"><i class="fa-solid fa-paper-plane"></i> Request भेजें</button>
+   <div id="customer-request-status" class="auth-status"></div>
+  </section>
+ </div>
+</div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"><section class="empty-state">अभी कोई Settings उपलब्ध नहीं हैं।</section></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><input id="profile-edit-username" class="form-control" maxlength="24" placeholder="Username (बदला नहीं जा सकता)" readonly><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
         <div class="auth-page-heading"><button class="back-icon" onclick="closeAccount()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2 id="account-page-title">Account</h2></div>
         <div id="profile-view" style="display:none">
           <div class="profile-board"><div class="profile-board-top">
-            <button class="profile-photo-button" type="button" onclick="document.getElementById('profile-photo-input').click()"><img id="profile-photo" alt="Profile photo" style="display:none"><span id="profile-avatar">M</span><i class="fa-solid fa-camera"></i></button>
+            <button class="profile-photo-button" type="button" onclick="openProfilePhotoViewer()"><img id="profile-photo" alt="Profile photo" style="display:none"><span id="profile-avatar">M</span><i class="fa-solid fa-camera"></i></button>
             <div class="profile-board-meta"><strong id="profile-name">User</strong><span id="profile-dairy-id">—</span><span id="profile-username"></span><span id="profile-role-label" class="profile-role-label"></span></div>
             <button class="profile-edit-icon" onclick="openProfileEditor()" aria-label="Edit profile"><i class="fa-solid fa-pen"></i></button>
             <input id="profile-photo-input" type="file" accept="image/*" style="display:none" onchange="saveProfilePhoto(this)">
@@ -368,14 +392,17 @@
           <div class="auth-status" id="auth-status" aria-live="polite"></div><button class="logout-danger" id="auth-signout-btn" onclick="signOutAccount()"><i class="fa-solid fa-right-from-bracket"></i> लॉगआउट</button>
         </div>
         <div id="auth-form-view"><p id="auth-intro">अपने अकाउंट में लॉगिन करें या नया अकाउंट बनाएँ।</p>
-          <div id="auth-name-wrap" style="display:none"><label for="auth-name">नाम</label><input id="auth-name" type="text" placeholder="आपका नाम" autocomplete="name"></div>
+          <div id="auth-name-wrap" style="display:none"><label for="auth-name">Full name</label><input id="auth-name" type="text" placeholder="पूरा नाम" autocomplete="name"></div>
+          <div id="auth-username-wrap" style="display:none"><label for="auth-username">Username</label><input id="auth-username" type="text" placeholder="Username (बिना space)" autocomplete="username" autocapitalize="none"></div>
           <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
           <div><label for="auth-password">पासवर्ड</label><div class="password-wrap"><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"><button type="button" class="password-eye" onclick="togglePasswordVisibility('auth-password',this)" aria-label="पासवर्ड दिखाएँ"><i class="fa-solid fa-eye"></i></button></div></div>
           <button class="auth-primary" id="auth-submit-btn" onclick="submitAccountAuth()">लॉगिन करें</button><div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap"><button class="auth-secondary" id="auth-mode-btn" onclick="toggleAccountAuthMode()">नया अकाउंट बनाएँ</button><button class="auth-secondary" id="auth-reset-btn" onclick="resetAccountPassword()">पासवर्ड भूल गए?</button></div><div class="auth-status" id="auth-form-status" aria-live="polite"></div>
+          <div id="email-verified-view" style="display:none;text-align:center;padding:28px 12px"><div class="verified-check"><i class="fa-solid fa-check"></i></div><h2 style="color:#15803d">Email Verification Successful</h2><p>आपका ईमेल सफलतापूर्वक Verify हो गया है। अब Milk Scale App खोल सकते हैं।</p><button class="auth-primary" type="button" onclick="finishEmailVerification()">Open App</button></div>
         </div>      </div>
     </div>
 
-    <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <div class="profile-photo-viewer" id="profile-photo-viewer" role="dialog" aria-modal="true"><div class="photo-viewer-top"><button class="back-icon" onclick="closeProfilePhotoViewer()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><span>Profile Photo</span><button class="photo-edit-action" onclick="document.getElementById('profile-photo-input').click()"><i class="fa-solid fa-pen"></i> Edit</button></div><div class="photo-viewer-content"><img id="profile-photo-full" alt="Profile photo preview"><div id="profile-photo-fallback" class="photo-viewer-fallback">M</div><strong id="profile-photo-full-name">User</strong></div></div>
+<div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <div class="app-dialog">
             <h3 id="dialog-title">Milk Scale</h3>
             <p id="dialog-message"></p>
@@ -479,7 +506,9 @@
             // Show the file in the header if one exists
             if(currentFileNumber > 0) showFileInHeader(currentFileNumber);
             renderFileList();
-            refreshActiveFilePresence();
+            await refreshActiveFilePresence();
+            syncConnectedCustomers();
+            setTimeout(()=>document.getElementById('app-splash')?.classList.add('hide'),420);
         }
 
         // --- Navigation ---
@@ -815,35 +844,14 @@
         }
 
         function loadBill() {
-            const cust = document.getElementById('bill-customer').value;
-            const start = document.getElementById('bill-start').value;
-            const end = document.getElementById('bill-end').value;
-            const dataDiv = document.getElementById('bill-data');
-            
-            if(!cust) { dataDiv.style.display = 'none'; return; }
-
-            let filtered = entries.filter(e => e.customer === cust && e.date >= start && e.date <= end);
-            filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-            let totalKg = 0, totalAmt = 0;
-            const listHtml = filtered.map(e => {
-                totalKg += e.kg;
-                totalAmt += e.total;
-                const d = e.date.split('-').reverse().join('/');
-                return `
-                    <div class="list-item">
-                        <div class="info">
-                            <h4>${d} <span style="font-size:10px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${e.shift}</span></h4>
-                            <p>${e.kg} Kg | Sample: ${e.sample}</p>
-                        </div>
-                        <div class="amount">₹${e.total.toFixed(0)}</div>
-                    </div>`;
-            }).join('');
-
-            document.getElementById('bill-total-kg').innerText = totalKg.toFixed(1);
-            document.getElementById('bill-total-amt').innerText = '₹' + totalAmt.toFixed(0);
-            document.getElementById('bill-list').innerHTML = listHtml || '<p style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No entries</p>';
-            dataDiv.style.display = 'block';
+            const cust=document.getElementById('bill-customer').value,start=document.getElementById('bill-start').value,end=document.getElementById('bill-end').value;
+            const dataDiv=document.getElementById('bill-data'),list=document.getElementById('bill-list');
+            if(!cust){document.getElementById('bill-total-kg').innerText='0.0';document.getElementById('bill-total-amt').innerText='₹0';list.innerHTML='<div class="empty-state">'+(customers.length?'Customer चुनें':'अभी कोई Customer जुड़ा नहीं है।')+'</div>';dataDiv.style.display='block';return;}
+            const filtered=entries.filter(e=>e.customer===cust&&e.date>=start&&e.date<=end).sort((a,b)=>new Date(b.date)-new Date(a.date));
+            let totalKg=0,totalAmt=0;
+            const html=filtered.map(e=>{totalKg+=Number(e.kg)||0;totalAmt+=Number(e.total)||0;const d=String(e.date||'').split('-').reverse().join('/');return '<div class="list-item"><div class="info"><h4>'+escapeHtml(d)+' <span style="font-size:10px;background:#e2e8f0;padding:2px 6px;border-radius:4px;">'+escapeHtml(e.shift||'')+'</span></h4><p>'+Number(e.kg||0)+' Kg | Sample: '+Number(e.sample||0)+'</p></div><div class="amount">₹'+Number(e.total||0).toFixed(0)+'</div></div>';}).join('');
+            document.getElementById('bill-total-kg').innerText=totalKg.toFixed(1);document.getElementById('bill-total-amt').innerText='₹'+totalAmt.toFixed(0);
+            list.innerHTML=html||'<div class="empty-state">इस अवधि में कोई Bill Entry नहीं है।</div>';dataDiv.style.display='block';
         }
 
         function shareWhatsApp() {
@@ -1009,14 +1017,7 @@
             refreshAccountStatus();
         }
         function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); document.body.classList.remove('auth-open'); }
-        function toggleAccountAuthMode() {
-            accountAuthMode = accountAuthMode === 'login' ? 'register' : 'login';
-            document.getElementById('auth-submit-btn').innerText = accountAuthMode === 'login' ? 'लॉगिन करें' : 'अकाउंट बनाएँ';
-            document.getElementById('auth-name-wrap').style.display = accountAuthMode === 'register' ? 'block' : 'none';
-            document.getElementById('auth-mode-btn').innerText = accountAuthMode === 'login' ? 'नया अकाउंट बनाएँ' : 'पहले से अकाउंट है? लॉगिन';
-            document.getElementById('auth-password').autocomplete = accountAuthMode === 'login' ? 'current-password' : 'new-password';
-            document.getElementById('auth-form-status').innerText = '';
-        }
+        function toggleAccountAuthMode(){accountAuthMode=accountAuthMode==='login'?'register':'login';document.getElementById('auth-submit-btn').innerText=accountAuthMode==='login'?'लॉगिन करें':'अकाउंट बनाएँ';document.getElementById('auth-name-wrap').style.display=accountAuthMode==='register'?'block':'none';document.getElementById('auth-username-wrap').style.display=accountAuthMode==='register'?'block':'none';document.getElementById('auth-mode-btn').innerText=accountAuthMode==='login'?'नया अकाउंट बनाएँ':'पहले से अकाउंट है? लॉगिन';document.getElementById('auth-password').autocomplete=accountAuthMode==='login'?'current-password':'new-password';document.getElementById('auth-form-status').innerText='';document.getElementById('email-verified-view').style.display='none';}
         async function refreshAccountStatus(){
  const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status'),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
  pv.style.display='block';fv.style.display='none';
@@ -1149,39 +1150,20 @@
             }catch(e){out.innerText=e.message||'Cloud खाता लोड नहीं हुआ।';}
         }
 
-        async function submitAccountAuth() {
-            const email = document.getElementById('auth-email').value.trim();
-            const password = document.getElementById('auth-password').value;
-            const status = document.getElementById('auth-form-status');
-            const button = document.getElementById('auth-submit-btn');
-            button.disabled = true;
-            status.innerText = accountAuthMode === 'login' ? 'लॉगिन हो रहा है…' : 'अकाउंट बनाया जा रहा है…';
-            try {
-                if (accountAuthMode === 'register') {
-                    const result = await window.MilkScaleAuth.createAccount(document.getElementById('auth-name').value.trim(), email, password);
-                    status.innerText = 'अकाउंट बन गया है। ' + email + ' पर Verification Link भेजा गया है। Inbox/Spam में लिंक खोलकर ईमेल सत्यापित करें, फिर लॉगिन करें। सत्यापन से पहले Dairy Cloud सुविधाएँ बंद रहेंगी।';
-                    document.getElementById('auth-signout-btn').style.display = 'none';
-                    document.getElementById('dairy-role-area').style.display = 'none';
-                } else {
-                    const user = await window.MilkScaleAuth.signIn(email, password);
-                    status.innerText = 'सफलतापूर्वक लॉगिन: ' + (user.email || email);
-                    await refreshAccountStatus();
-                }
-            } catch (error) {
-                const messages = {
-                    'auth/invalid-email': 'ईमेल पता सही नहीं है।',
-                    'auth/user-not-found': 'यह ईमेल अकाउंट नहीं मिला। पहले नया अकाउंट बनाएँ।',
-                    'auth/wrong-password': 'पासवर्ड गलत है।',
-                    'auth/invalid-credential': 'ईमेल या पासवर्ड सही नहीं है।',
-                    'auth/email-already-in-use': 'इस ईमेल से अकाउंट पहले से बना है। लॉगिन करें।',
-                    'auth/weak-password': 'पासवर्ड कम से कम 6 अक्षरों का रखें।',
-                    'auth/network-request-failed': 'इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।',
-                    'auth/operation-not-allowed': 'Firebase Console में Email/Password sign-in चालू करना बाकी है।',
-                    'auth/email-not-verified': error.message || 'पहले ईमेल सत्यापित करें।'
-                };
-                status.innerText = messages[error.code] || error.message || 'लॉगिन में समस्या हुई।';
-            } finally { button.disabled = false; }
-        }
+        async function submitAccountAuth(){
+ const email=document.getElementById('auth-email').value.trim(),password=document.getElementById('auth-password').value,status=document.getElementById('auth-form-status'),button=document.getElementById('auth-submit-btn');
+ button.disabled=true;status.innerText=accountAuthMode==='login'?'लॉगिन हो रहा है…':'अकाउंट बनाया जा रहा है…';
+ try{if(accountAuthMode==='register'){
+  await window.MilkScaleAuth.createAccount(document.getElementById('auth-name').value.trim(),document.getElementById('auth-username').value.trim(),email,password);
+  status.innerHTML='Verification Link '+escapeHtml(email)+' पर भेज दिया गया है। ईमेल खोलकर Verify करें, फिर नीचे बटन दबाएँ। <button class="auth-primary" type="button" style="margin-top:12px" onclick="confirmEmailVerification()">मैंने Email Verify कर लिया</button>';
+  document.getElementById('auth-username').value=document.getElementById('auth-username').value.trim().toLowerCase();
+ }else{await window.MilkScaleAuth.signIn(email,password);showEmailVerifiedScreen();}}
+ catch(error){const messages={'auth/invalid-email':'ईमेल पता सही नहीं है।','auth/user-not-found':'यह ईमेल अकाउंट नहीं मिला। पहले नया अकाउंट बनाएँ।','auth/wrong-password':'पासवर्ड गलत है।','auth/invalid-credential':'ईमेल या पासवर्ड सही नहीं है।','auth/email-already-in-use':'इस ईमेल से अकाउंट पहले से बना है। लॉगिन करें।','auth/weak-password':'पासवर्ड कम से कम 6 अक्षरों का रखें।','auth/network-request-failed':'इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।','auth/operation-not-allowed':'Firebase Console में Email/Password sign-in चालू करना बाकी है।','auth/email-not-verified':error.message||'पहले ईमेल सत्यापित करें।'};status.innerText=messages[error.code]||error.message||'लॉगिन में समस्या हुई।';}
+ finally{button.disabled=false;}
+}
+async function confirmEmailVerification(){const email=document.getElementById('auth-email').value.trim(),password=document.getElementById('auth-password').value,status=document.getElementById('auth-form-status');try{await window.MilkScaleAuth.signIn(email,password);showEmailVerifiedScreen();}catch(e){status.innerText=e.code==='auth/email-not-verified'?'ईमेल Verify नहीं हुआ है। पहले ईमेल में आया लिंक खोलें।':(e.message||'Verification जाँच नहीं हो सकी।');}}
+function showEmailVerifiedScreen(){document.getElementById('auth-intro').style.display='none';document.getElementById('auth-submit-btn').style.display='none';document.getElementById('auth-mode-btn').style.display='none';document.getElementById('auth-reset-btn').style.display='none';document.getElementById('auth-form-status').style.display='none';document.getElementById('auth-name-wrap').style.display='none';document.getElementById('auth-username-wrap').style.display='none';document.getElementById('email-verified-view').style.display='block';}
+async function finishEmailVerification(){document.getElementById('email-verified-view').style.display='none';document.getElementById('auth-intro').style.display='block';document.getElementById('auth-submit-btn').style.display='block';document.getElementById('auth-mode-btn').style.display='inline-block';document.getElementById('auth-reset-btn').style.display='inline-block';document.getElementById('auth-form-status').style.display='block';closeAccount();await refreshAccountStatus();}
         async function resetAccountPassword() {
             const email = document.getElementById('auth-email').value.trim();
             const status = document.getElementById('auth-form-status');
@@ -1212,22 +1194,29 @@ function filterCustomerPicker(){
  box.innerHTML=rows.length?rows.map(x=>'<button type="button" class="customer-picker-option" onclick="chooseEntryCustomer(\''+escapeHtml(x).replace(/'/g,"\\'")+'\')">'+escapeHtml(x)+'</button>').join(''):'<div class="customer-picker-empty">कोई Customer नहीं मिला</div>';
 }
 function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;closeCustomerPicker();}
-function openRequestCenter(){document.getElementById('request-center').classList.add('show');document.body.classList.add('auth-open');loadRequestCenter();history.pushState({page:'requests'},'','#requests');}
+function openRequestCenter(){const page=document.getElementById('request-center');page.classList.add('show');document.body.classList.add('auth-open');history.pushState({page:'requests'},'','#requests');loadRequestCenter();}
 function closeRequestCenter(){document.getElementById('request-center').classList.remove('show');document.body.classList.remove('auth-open');}
-async function loadRequestCenter(){const list=document.getElementById('incoming-request-list'),invite=document.getElementById('invite-customer-section'),accept=document.getElementById('accept-invite-section');list.innerHTML='<div class="profile-loader"><i class="fa-solid fa-circle-notch"></i></div>';try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user){list.innerHTML='<p>Requests देखने के लिए Login करें।</p>';invite.style.display='none';accept.style.display='none';return;}const p=await window.MilkScaleAuth.getProfile();invite.style.display=p?.role==='owner'?'block':'none';accept.style.display=p?.role==='customer'?'block':'none';const rows=await window.MilkScaleAuth.getMyConnectionRequests(),incoming=rows.filter(x=>x.targetUid===user.uid&&x.status==='pending');list.innerHTML=incoming.length?incoming.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.requesterName||x.requesterEmail||'Customer')+'</strong><div class="request-state">Pending</div><div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideRequestCenter(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideRequestCenter(\''+x.id+'\',false)">Reject</button></div></div>').join(''):'<p class="request-time">अभी कोई नई Request नहीं है।</p>';if(p?.role==='owner'){const sent=await window.MilkScaleAuth.getMyInvitations(),pending=sent.filter(x=>x.status==='pending');if(pending.length)list.innerHTML+='<h3>भेजी गई Requests</h3>'+pending.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.customerName)+'</strong><div class="request-state">Code: '+escapeHtml(x.code)+'</div><div class="request-time">यह Code Customer को भेजें</div></div>').join('');}}catch(e){list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Requests लोड नहीं हुईं')+'</p>';}}
-async function decideRequestCenter(id,accept){try{await window.MilkScaleAuth.decideDairyRequest(id,accept);await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
-async function sendCustomerInvitation(){
- const name=document.getElementById('invite-customer-name').value.trim(),phone=document.getElementById('invite-customer-phone').value.trim(),out=document.getElementById('invite-result');
- try{
-  const code=await window.MilkScaleAuth.createInvitation(name,phone),number=phone.replace(/\D/g,'');
-  const message='Milk Scale App पर Dairy से जुड़ने की Request मिली है। App के Requests पेज पर यह Code डालकर Accept करें: '+code;
-  const shareUrl='https://wa.me/'+number+'?text='+encodeURIComponent(message);
-  out.innerHTML='Request Code: <strong>'+escapeHtml(code)+'</strong><br><a href="'+shareUrl+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:10px 13px;border-radius:10px;background:#16a34a;color:#fff;text-decoration:none;font-weight:700"><i class="fa-brands fa-whatsapp"></i> WhatsApp पर भेजें</a>';
-  document.getElementById('invite-customer-name').value='';document.getElementById('invite-customer-phone').value='';
-  await loadRequestCenter();
- }catch(e){out.innerText=e.message||'Request नहीं भेजी जा सकी।';}
+async function syncConnectedCustomers(){
+ try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user)return;const p=await window.MilkScaleAuth.getProfile();if(p?.role!=='owner')return;
+  const rows=await window.MilkScaleAuth.getMyConnections(),links={};
+  for(const c of rows.filter(x=>x.status==='active')){const name=String(c.customerProfile?.displayName||'').trim();if(!name)continue;links[name]=c.customerUid;if(!customers.includes(name))customers.push(name);}
+  localStorage.setItem('ms_customer_links',JSON.stringify({...JSON.parse(localStorage.getItem('ms_customer_links')||'{}'),...links}));saveLocal(false);renderCustomers();populateDropdowns();if(currentFileNumber>0)await autoSaveToFile(currentFileNumber,false);
+ }catch(e){console.warn('Connected customers refresh:',e?.message||e);}
 }
-async function respondToCustomerInvite(accept){const code=document.getElementById('invite-code-input').value.trim().toUpperCase();try{await window.MilkScaleAuth.respondToInvitation(code,accept);document.getElementById('invite-code-input').value='';notify(accept?'Request स्वीकार हो गई।':'Request अस्वीकार कर दी गई।');await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
+async function loadRequestCenter(){
+ const list=document.getElementById('incoming-request-list'),form=document.getElementById('customer-dairy-request'),heading=document.getElementById('request-list-heading');list.innerHTML='<div class="profile-loader"><i class="fa-solid fa-circle-notch"></i></div>';
+ try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user){list.innerHTML='<div class="empty-state">Requests देखने के लिए पहले Account में Login करें।</div>';form.style.display='none';return;}
+  const p=await window.MilkScaleAuth.getProfile();if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';form.style.display='none';return;}
+  const rows=await window.MilkScaleAuth.getMyConnectionRequests();
+  if(p.role==='owner'){form.style.display='none';heading.innerText='आई हुई Customer Requests';const incoming=rows.filter(x=>x.targetUid===user.uid&&x.status==='pending');
+   list.innerHTML=incoming.length?incoming.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.requesterName||x.requesterEmail||'Customer')+'</strong><div class="request-state">नई Request</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div><div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideRequestCenter(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideRequestCenter(\''+x.id+'\',false)">Reject</button></div></div>').join(''):'<div class="empty-state">अभी कोई नई Customer Request नहीं है।</div>';await syncConnectedCustomers();
+  }else{form.style.display='block';heading.innerText='मेरी Dairy Requests';const sent=rows.filter(x=>x.requesterUid===user.uid).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+   list.innerHTML=sent.length?sent.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.targetName||'Dairy')+'</strong><div class="request-state">'+(x.status==='pending'?'Pending':x.status==='accepted'?'Accepted':'Rejected')+'</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div></div>').join(''):'<div class="empty-state">अभी कोई Dairy Request नहीं भेजी गई है।</div>';
+  }
+ }catch(e){list.innerHTML='<div class="empty-state">'+escapeHtml(e.message||'Requests लोड नहीं हुईं')+'</div>';}
+}
+async function sendEntryDairyRequest(){const field=document.getElementById('dairy-search-id'),out=document.getElementById('customer-request-status');try{const result=await window.MilkScaleAuth.sendDairyConnectionRequest(field.value);field.value='';out.innerText='Request '+(result.dairy.displayName||'Dairy')+' को भेज दी गई है।';await loadRequestCenter();}catch(e){out.innerText=e.message||'Request नहीं भेजी जा सकी।';}}
+async function decideRequestCenter(id,accept){try{await window.MilkScaleAuth.decideDairyRequest(id,accept);notify(accept?'Request स्वीकार हो गई।':'Request अस्वीकार कर दी गई।');await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
 function openSettingsPage(){document.getElementById('settings-page').classList.add('show');history.pushState({page:'settings'},'','#settings');}
 function closeSettingsPage(){document.getElementById('settings-page').classList.remove('show');}
 function handleAppBack(){
@@ -1245,24 +1234,27 @@ function handleAppBack(){
         window.addEventListener('popstate',handleAppBack);
         document.addEventListener('backbutton',e=>{e.preventDefault?.();handleAppBack();},false);
         function openProfileEditor(){document.getElementById('profile-edit-status').innerText='';document.getElementById('profile-edit-name').value=document.getElementById('profile-name').innerText;document.getElementById('profile-edit-username').value=(document.getElementById('profile-username').innerText||'').replace(/^@/,'');document.getElementById('edit-profile-modal').classList.add('show');}
+        function openProfilePhotoViewer(){const img=document.getElementById('profile-photo'),full=document.getElementById('profile-photo-full'),fallback=document.getElementById('profile-photo-fallback'),name=document.getElementById('profile-name').innerText;document.getElementById('profile-photo-full-name').innerText=name;fallback.innerText=(name||'M').charAt(0).toUpperCase();if(img?.src&&img.style.display!=='none'){full.src=img.src;full.style.display='block';fallback.style.display='none';}else{full.style.display='none';fallback.style.display='flex';}document.getElementById('profile-photo-viewer').classList.add('show');}
+        function closeProfilePhotoViewer(){document.getElementById('profile-photo-viewer').classList.remove('show');}
         function closeProfileEditor(){document.getElementById('edit-profile-modal').classList.remove('show');}
         async function switchProfileRole(){const roleEl=document.getElementById('profile-role-label'),current=roleEl.dataset.role||'customer',next=current==='owner'?'customer':'owner';try{const username=(document.getElementById('profile-username').innerText||'').replace(/^@/,'');await window.MilkScaleAuth.updateProfileDetails(document.getElementById('profile-name').innerText,next,username);await refreshAccountStatus();notify('Account type बदल गया।');}catch(e){notify(e.message||'Account type नहीं बदल सका।');}}
         function setupAuthKeyboardNavigation(){
-            const name=document.getElementById('auth-name'),email=document.getElementById('auth-email'),password=document.getElementById('auth-password');
+            const name=document.getElementById('auth-name'),username=document.getElementById('auth-username'),email=document.getElementById('auth-email'),password=document.getElementById('auth-password');
             if(!email||!password)return;
-            [name,email,password].filter(Boolean).forEach((input,index,items)=>{
+            [name,username,email,password].filter(Boolean).forEach((input,index,items)=>{
                 input.setAttribute('enterkeyhint',index===items.length-1?'go':'next');
                 input.addEventListener('keydown',event=>{
                     if(event.key!=='Enter')return;
                     event.preventDefault();
                     if(input===password){submitAccountAuth();return;}
-                    const next=input===name?email:password;
+                    const next=input===name?username:input===username?email:password;
                     if(next){next.focus();if(next.select)next.select();}
                 });
             });
         }
         window.onload = () => {
             setupAuthKeyboardNavigation();
+            setTimeout(()=>document.getElementById('app-splash')?.classList.add('hide'),1800);
             init();
         };
     </script>
