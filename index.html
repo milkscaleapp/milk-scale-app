@@ -1135,6 +1135,7 @@
                 ]);
                 const lines = [];
                 lines.push('सक्रिय कनेक्शन: ' + connections.length);
+                connections.forEach(c => lines.push((profile.role === 'owner' ? 'Customer UID: ' + c.customerUid : 'Owner UID: ' + c.ownerUid) + ' — कनेक्शन सक्रिय'));
                 if (profile.role === 'owner') {
                     invitations.forEach(item => lines.push(item.customerName + ' (' + item.customerPhone + '): ' + item.status + ' — ' + item.code));
                 }
