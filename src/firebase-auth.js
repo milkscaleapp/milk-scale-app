@@ -1,22 +1,48 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, getIdToken, signOut as firebaseSignOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, runTransaction, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, runTransaction, orderBy, limit, deleteField } from 'firebase/firestore';
 const firebaseConfig = { apiKey:'AIzaSyC0ppOgik5r-4dO66DH1VOn-748iErjxS8', authDomain:'milk-scale-b4ec4.firebaseapp.com', projectId:'milk-scale-b4ec4', storageBucket:'milk-scale-b4ec4.firebasestorage.app', messagingSenderId:'919647485111', appId:'1:919647485111:web:74dceafb3d44d5bb536132' };
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 setPersistence(auth,browserLocalPersistence).catch(e=>console.warn('Auth persistence:',e?.code||e));
 async function getCurrentUser(){let u=auth.currentUser;if(!u)u=await new Promise(resolve=>{const unsub=onAuthStateChanged(auth,user=>{unsub();resolve(user||null)},()=>{unsub();resolve(null)})});if(!u)return null;try{await u.reload();u=auth.currentUser||u;if(u.emailVerified)await getIdToken(u,true);}catch(e){console.warn('Auth refresh:',e?.code||e)}return u.emailVerified?u:null}
 function validateCredentials(email,password){if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('सही ईमेल पता दर्ज करें।');if(typeof password!=='string'||password.length<6)throw new Error('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।')}
-async function createAccount(displayName,username,email,password){
- displayName=String(displayName||'').trim().slice(0,60);username=String(username||'').trim().toLowerCase();email=String(email||'').trim();validateCredentials(email,password);
+function generateSixLetterId(){const bytes=new Uint8Array(6);crypto.getRandomValues(bytes);return Array.from(bytes,b=>String.fromCharCode(97+(b%26))).join('');}
+async function createProfileWithUniqueId(uid,profileData){
+ const profileRef=doc(db,'profiles',uid);
+ for(let attempt=0;attempt<40;attempt++){
+  const dairyId=generateSixLetterId(),idRef=doc(db,'userIds',dairyId);
+  const created=await runTransaction(db,async tx=>{
+   const existing=await tx.get(idRef);if(existing.exists())return false;
+   tx.set(idRef,{uid,createdAt:serverTimestamp()});
+   tx.set(profileRef,{...profileData,dairyId});
+   return true;
+  });
+  if(created)return dairyId;
+ }
+ throw new Error('अभी Unique ID नहीं बन पाई। कृपया दोबारा प्रयास करें।');
+}
+async function assignUniqueIdToExistingProfile(uid,profileRef,displayName){
+ for(let attempt=0;attempt<40;attempt++){
+  const dairyId=generateSixLetterId(),idRef=doc(db,'userIds',dairyId);
+  const assigned=await runTransaction(db,async tx=>{
+   const existing=await tx.get(idRef);if(existing.exists())return false;
+   tx.set(idRef,{uid,createdAt:serverTimestamp()});
+   tx.update(profileRef,{dairyId,displayName,username:deleteField()});
+   return true;
+  });
+  if(assigned)return dairyId;
+ }
+ throw new Error('अभी Unique ID नहीं बन पाई। कृपया दोबारा प्रयास करें।');
+}
+async function createAccount(displayName,email,password){
+ displayName=String(displayName||'').trim().slice(0,60);email=String(email||'').trim();validateCredentials(email,password);
  if(displayName.length<2)throw new Error('पूरा नाम दर्ज करें।');
- if(!/^[a-z0-9._]{3,24}$/.test(username))throw new Error('Username 3–24 अक्षरों का हो और बिना Space के लिखें। केवल a-z, 0-9, dot और underscore मान्य हैं।');
  const credential=await createUserWithEmailAndPassword(auth,email,password),u=credential.user;
  await updateProfile(u,{displayName});
- const dairyId='MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase();
- await setDoc(doc(db,'profiles',u.uid),{uid:u.uid,email:u.email||email,displayName,username,dairyId,role:'customer',createdAt:serverTimestamp(),avatarData:''});
+ const dairyId=await createProfileWithUniqueId(u.uid,{uid:u.uid,email:u.email||email,displayName,role:'customer',createdAt:serverTimestamp(),avatarData:''});
  await sendEmailVerification(u);
  await firebaseSignOut(auth);
- return {email:u.email,displayName,username,dairyId,verificationSent:true};
+ return {email:u.email,displayName,dairyId,verificationSent:true};
 }
 async function signIn(email,password){email=String(email||'').trim();validateCredentials(email,password);const credential=await signInWithEmailAndPassword(auth,email,password);await credential.user.reload();if(!credential.user.emailVerified){await sendEmailVerification(credential.user);await firebaseSignOut(auth);const e=new Error('ईमेल अभी सत्यापित नहीं है। आपके ईमेल पर नया Verification Link भेजा गया है। Inbox/Spam में लिंक खोलकर फिर लॉगिन करें।');e.code='auth/email-not-verified';throw e;}return credential.user}
 async function sendPasswordReset(email){email=String(email||'').trim();if(!email||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('सही ईमेल पता दर्ज करें।');return sendPasswordResetEmail(auth,email)}
@@ -25,47 +51,59 @@ async function getProfile(){const u=await getCurrentUser();if(!u)return null;con
 async function ensureProfile(role,displayName=''){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
  if(!['owner','customer'].includes(role))throw new Error('भूमिका सही नहीं है।');
- const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);
+ const ref=doc(db,'profiles',u.uid);
+ let snap=await getDoc(ref);
  const name=String(displayName||u.displayName||u.email?.split('@')[0]||'Milk Scale User').trim().slice(0,60);
- const dairyId=snap.exists()?(snap.data().dairyId||'MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase()):'MS'+u.uid.replace(/[^a-z0-9]/gi,'').slice(-8).toUpperCase();
- const username=snap.exists()?(snap.data().username||((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase())):((name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,14)||'dairy')+dairyId.slice(-4).toLowerCase());
  if(snap.exists()&&snap.data().role!==role)throw new Error('इस अकाउंट की भूमिका पहले से तय है।');
- const profile={uid:u.uid,email:u.email||'',displayName:name,username,dairyId,role,createdAt:snap.exists()?snap.data().createdAt:serverTimestamp(),avatarData:snap.exists()?(snap.data().avatarData||''):''};
- if(snap.exists()){if(!snap.data().dairyId||!snap.data().username)await updateDoc(ref,{displayName:name,username,dairyId});}
- else await setDoc(ref,profile);
+ if(!snap.exists()){
+  await createProfileWithUniqueId(u.uid,{uid:u.uid,email:u.email||'',displayName:name,role,createdAt:serverTimestamp(),avatarData:''});
+  snap=await getDoc(ref);
+ }else{
+  const old=snap.data();
+  if(!old.dairyId)await assignUniqueIdToExistingProfile(u.uid,ref,name);
+  else{
+   const changes={};
+   if(old.displayName!==name)changes.displayName=name;
+   if(Object.prototype.hasOwnProperty.call(old,'username'))changes.username=deleteField();
+   if(Object.keys(changes).length)await updateDoc(ref,changes);
+  }
+  snap=await getDoc(ref);
+ }
+ const profile=snap.data(),dairyId=profile.dairyId;
  if(role==='owner'){
-  const directoryRef=doc(db,'dairyDirectory',dairyId);
-  const directorySnap=await getDoc(directoryRef);
+  const directoryRef=doc(db,'dairyDirectory',dairyId),directorySnap=await getDoc(directoryRef);
   if(!directorySnap.exists()){
-   await setDoc(directoryRef,{ownerUid:u.uid,displayName:name,username,dairyId,avatarData:snap.exists()?(snap.data().avatarData||''):'',active:true,createdAt:serverTimestamp()});
+   await setDoc(directoryRef,{ownerUid:u.uid,displayName:name,dairyId,avatarData:profile.avatarData||'',active:true,createdAt:profile.createdAt||serverTimestamp()});
   }else if(directorySnap.data().ownerUid!==u.uid){
    throw new Error('इस Dairy ID का रिकॉर्ड किसी दूसरे Owner से जुड़ा है। सहायता के बिना इसे न बदलें।');
   }else{
-   await updateDoc(directoryRef,{displayName:name,active:true,avatarData:snap.exists()?(snap.data().avatarData||''):''});
+   const directoryChanges={displayName:name,active:true,avatarData:profile.avatarData||''};
+   if(Object.prototype.hasOwnProperty.call(directorySnap.data(),'username'))directoryChanges.username=deleteField();
+   await updateDoc(directoryRef,directoryChanges);
   }
  }
  return profile;
 }
-async function updateProfileDetails(displayName,role,username){
+async function updateProfileDetails(displayName,role){
  const u=await getCurrentUser();if(!u)throw new Error('पहले लॉगिन करें।');
  displayName=String(displayName||'').trim().slice(0,60);if(displayName.length<2)throw new Error('नाम कम से कम 2 अक्षर का लिखें।');
  if(!['owner','customer'].includes(role))throw new Error('अकाउंट का प्रकार चुनें।');
  const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(!snap.exists())throw new Error('प्रोफाइल उपलब्ध नहीं है।');
  const old=snap.data();if(!old.dairyId)throw new Error('Account ID उपलब्ध नहीं है। सहायता से संपर्क करें।');
- username=String(username||old.username||'').trim().toLowerCase().replace(/^@/,'');
- if(!/^[a-z0-9._]{3,24}$/.test(username))throw new Error('Username 3–24 अक्षरों का हो और बिना Space के लिखें।');
- if(role==='owner'){
-  const matches=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',username),limit(2)));
-  if(matches.docs.some(d=>d.data().ownerUid!==u.uid))throw new Error('यह Username पहले से किसी दूसरे दूधिया ने लिया हुआ है।');
- }
  if(old.role!==role){const connections=await getMyConnections();if(connections.length)throw new Error('Role बदलने से पहले सक्रिय Dairy कनेक्शन हटाने होंगे।');}
- await updateDoc(ref,{displayName,role,username});
+ const changes={displayName,role};if(Object.prototype.hasOwnProperty.call(old,'username'))changes.username=deleteField();
+ await updateDoc(ref,changes);
  if(old.dairyId){
   const directoryRef=doc(db,'dairyDirectory',old.dairyId),directorySnap=await getDoc(directoryRef);
   if(role==='owner'){
-   if(directorySnap.exists())await updateDoc(directoryRef,{displayName,username,active:true});
-   else await setDoc(directoryRef,{ownerUid:u.uid,displayName,username,dairyId:old.dairyId,avatarData:old.avatarData||'',active:true,createdAt:old.createdAt||serverTimestamp()});
-  }else if(old.role==='owner'&&directorySnap.exists())await updateDoc(directoryRef,{displayName,username,active:false});
+   if(directorySnap.exists()){
+    const d={displayName,active:true};if(Object.prototype.hasOwnProperty.call(directorySnap.data(),'username'))d.username=deleteField();
+    await updateDoc(directoryRef,d);
+   }else await setDoc(directoryRef,{ownerUid:u.uid,displayName,dairyId:old.dairyId,avatarData:old.avatarData||'',active:true,createdAt:old.createdAt||serverTimestamp()});
+  }else if(old.role==='owner'&&directorySnap.exists()){
+   const d={displayName,active:false};if(Object.prototype.hasOwnProperty.call(directorySnap.data(),'username'))d.username=deleteField();
+   await updateDoc(directoryRef,d);
+  }
  }
  return true;
 }
@@ -132,9 +170,11 @@ async function getMyAdjustments(){
 
 async function findDairy(identifier){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
- const key=String(identifier||'').trim();if(!key)throw new Error('दूधिया की ID या Username लिखें।');
- let snap=await getDoc(doc(db,'dairyDirectory',key.toUpperCase()));
- if(!snap.exists()) {const q=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',key.toLowerCase())));const found=q.docs.find(d=>d.data().active!==false);if(!found)throw new Error('इस ID या Username का दूधिया नहीं मिला या वह सक्रिय नहीं है।');snap=found;}
+ const key=String(identifier||'').trim().toLowerCase();if(!key)throw new Error('दूधिया की ID लिखें।');
+ let snap=await getDoc(doc(db,'dairyDirectory',key));
+ // पुराने अकाउंट की पहले से बनी ID को भी चलने दें; नई ID हमेशा 6 छोटे अक्षर होगी।
+ if(!snap.exists()&&/^ms[a-z0-9]{8}$/i.test(key))snap=await getDoc(doc(db,'dairyDirectory',key.toUpperCase()));
+ if(!snap.exists())throw new Error('इस ID का दूधिया नहीं मिला। 6 अक्षरों वाली ID जाँचें।');
  const dairy={id:snap.id,...snap.data()};if(dairy.active===false)throw new Error('यह Dairy ID अभी सक्रिय नहीं है।');
  if(!dairy.ownerUid||!dairy.dairyId)throw new Error('यह Dairy अकाउंट अब सक्रिय नहीं है।');
  return dairy;
