@@ -6,16 +6,19 @@ service cloud.firestore {
   match /profiles/{uid} {
    allow read: if signedIn() && request.auth.uid == uid;
    allow create: if signedIn() && request.auth.uid == uid
-    && request.resource.data.keys().hasOnly(['uid','email','displayName','username','dairyId','role','createdAt'])
+    && request.resource.data.keys().hasOnly(['uid','email','displayName','username','dairyId','role','createdAt','avatarData'])
     && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
     && request.resource.data.role in ['owner','customer'] && request.resource.data.displayName is string && request.resource.data.username is string && request.resource.data.dairyId is string && request.resource.data.createdAt == request.time;
    allow update: if signedIn() && request.auth.uid == uid
-    && !('dairyId' in resource.data)
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username','dairyId'])
     && request.resource.data.uid == resource.data.uid
     && request.resource.data.email == resource.data.email
     && request.resource.data.role == resource.data.role
-    && request.resource.data.dairyId is string && request.resource.data.username is string;
+    && (( !('dairyId' in resource.data)
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','username','dairyId'])
+      && request.resource.data.dairyId is string && request.resource.data.username is string)
+      || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData'])
+      && request.resource.data.avatarData is string
+      && request.resource.data.avatarData.size() < 450000));
    allow delete: if false;
   }
   match /dairyDirectory/{dairyId} {
@@ -24,8 +27,11 @@ service cloud.firestore {
    allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
     && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'owner'
     && request.resource.data.dairyId == dairyId
-    && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt']);
-   allow update, delete: if false;
+    && request.resource.data.keys().hasOnly(['ownerUid','displayName','username','dairyId','createdAt','avatarData']);
+   allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatarData'])
+    && request.resource.data.avatarData is string && request.resource.data.avatarData.size() < 450000;
+   allow delete: if false;
   }
   match /invitations/{code} {
    allow create: if ownerProfile()
