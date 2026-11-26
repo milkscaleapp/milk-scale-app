@@ -197,11 +197,14 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease bundleRelease
+          cd ..
+          cp android/app/build/outputs/apk/release/*.apk Milk-Scale.apk
+          cp android/app/build/outputs/bundle/release/*.aab Milk-Scale.aab
 
       - uses: actions/upload-artifact@v4
         with:
           name: Milk-Scale-production-release
           path: |
-            android/app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/bundle/release/*.aab
+            Milk-Scale.apk
+            Milk-Scale.aab
           if-no-files-found: error
