@@ -671,8 +671,8 @@
         }
 
         // --- Auto File Save Logic ---
-        async async function autoSaveToFile(fileNum){const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}const data={customers,entries,scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value},fileName='MilkScale_Backup_('+fileNum+').json';try{await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});filePresence[String(fileNum)]=true;const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();return true;}catch(e){console.error('Native file save failed:',e);notify(e.message||'JSON file सेव नहीं हुई।');return false;}}
-        async async function createNewBackupFile(){
+        async function autoSaveToFile(fileNum){const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}const data={customers,entries,scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value},fileName='MilkScale_Backup_('+fileNum+').json';try{await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});filePresence[String(fileNum)]=true;const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();return true;}catch(e){console.error('Native file save failed:',e);notify(e.message||'JSON file सेव नहीं हुई।');return false;}}
+        async function createNewBackupFile(){
  if(currentFileNumber>0)saveActiveFileData();
  const previous=currentFileNumber,oldCustomers=customers,oldEntries=entries;
  const n=Math.max(0,...Object.keys(fileStore).map(Number).filter(Number.isFinite))+1;
@@ -686,8 +686,8 @@
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
         function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file':'Tap to fit')+' · '+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';}
-        async async function refreshActiveFilePresence(){const fs=window.Capacitor?.Plugins?.Filesystem;for(const n of getKnownFileNumbers()){try{if(!fs?.stat)throw new Error('Native file storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;}catch(e){filePresence[String(n)]=false;}}if(currentFileNumber>0&&filePresence[String(currentFileNumber)]!==true){currentFileNumber=0;localStorage.removeItem('ms_file_num');}showFileInHeader(currentFileNumber);renderFileList();}
-        async async function selectManagedFile(n){if(!fileStore[String(n)])return;const fs=window.Capacitor?.Plugins?.Filesystem;try{if(!fs?.stat)throw new Error('File Manager storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});}catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}if(currentFileNumber>0)saveActiveFileData();currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal();renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));}
+        async function refreshActiveFilePresence(){const fs=window.Capacitor?.Plugins?.Filesystem;for(const n of getKnownFileNumbers()){try{if(!fs?.stat)throw new Error('Native file storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;}catch(e){filePresence[String(n)]=false;}}if(currentFileNumber>0&&filePresence[String(currentFileNumber)]!==true){currentFileNumber=0;localStorage.removeItem('ms_file_num');}showFileInHeader(currentFileNumber);renderFileList();}
+        async function selectManagedFile(n){if(!fileStore[String(n)])return;const fs=window.Capacitor?.Plugins?.Filesystem;try{if(!fs?.stat)throw new Error('File Manager storage unavailable');await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});}catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}if(currentFileNumber>0)saveActiveFileData();currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal();renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));}
         async function recreateManagedFile(n) {
             if (!fileStore[String(n)]) return;
             const old = currentFileNumber;
@@ -705,7 +705,7 @@
                 notify('The JSON file has been recreated in File Manager / Documents.');
             }
         }
-        async async function ensureFileSelected(){const n=Number(currentFileNumber),fs=window.Capacitor?.Plugins?.Filesystem;if(n>0&&fs?.stat){try{await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;return true;}catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}}await appDialog('नई Entry जोड़ने से पहले File Manager से मौजूद JSON फाइल फिट करें या नई JSON फाइल बनाएँ।',false,'JSON file required');switchTab('backup',null);return false;}
+        async function ensureFileSelected(){const n=Number(currentFileNumber),fs=window.Capacitor?.Plugins?.Filesystem;if(n>0&&fs?.stat){try{await fs.stat({path:'MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});filePresence[String(n)]=true;return true;}catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}}await appDialog('नई Entry जोड़ने से पहले File Manager से मौजूद JSON फाइल फिट करें या नई JSON फाइल बनाएँ।',false,'JSON file required');switchTab('backup',null);return false;}
         async function importBackupFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -970,7 +970,7 @@
             document.getElementById('auth-password').autocomplete = accountAuthMode === 'login' ? 'current-password' : 'new-password';
             document.getElementById('auth-form-status').innerText = '';
         }
-        async async function refreshAccountStatus(){
+        async function refreshAccountStatus(){
  const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status'),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
  status.innerHTML='<span class="profile-loader"><i class="fa-solid fa-circle-notch"></i></span>';
  try{
@@ -993,12 +993,12 @@
 }
         function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input||!button)return;const isHidden=input.type==='password';input.type=isHidden?'text':'password';const isVisible=input.type==='text';button.innerHTML=isVisible?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',isVisible?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');button.setAttribute('aria-pressed',String(isVisible));}
         function toggleProfileSettings(){const p=document.getElementById('profile-settings-panel');p.style.display=p.style.display==='none'?'block':'none';}
-        async async function saveProfileSettings(){
+        async function saveProfileSettings(){
  const name=document.getElementById('profile-edit-name').value.trim(),username=document.getElementById('profile-edit-username').value.trim(),status=document.getElementById('profile-edit-status');
  try{const role=document.getElementById('profile-role-label').dataset.role||'customer';await window.MilkScaleAuth.updateProfileDetails(name,role,username);document.getElementById('edit-profile-modal').classList.remove('show');await refreshAccountStatus();notify('प्रोफाइल अपडेट हो गई।');}
  catch(e){status.innerText=e.message||'बदलाव सेव नहीं हुए।';}
 }
-        async async function saveProfilePhoto(input){
+        async function saveProfilePhoto(input){
  const file=input.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){notify('कृपया फोटो फ़ाइल चुनें।');input.value='';return;}
  try{const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('फोटो पढ़ी नहीं जा सकी।'));r.readAsDataURL(file);});
   const im=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो खुल नहीं सकी।'));x.src=data;});
