@@ -41,8 +41,10 @@ async function updateProfileDetails(displayName,role,username){
  if(!/^[a-z0-9._]{3,24}$/.test(username))throw new Error('Username 3–24 अक्षरों का हो; केवल a-z, 0-9, dot और underscore इस्तेमाल करें।');
  const ref=doc(db,'profiles',u.uid),snap=await getDoc(ref);if(!snap.exists())throw new Error('प्रोफाइल उपलब्ध नहीं है।');
  const old=snap.data();
- const matches=await getDocs(query(collection(db,'profiles'),where('username','==',username),limit(2)));
- if(matches.docs.some(d=>d.id!==u.uid))throw new Error('यह Username पहले से इस्तेमाल हो रहा है।');
+ if(role==='owner'){
+  const matches=await getDocs(query(collection(db,'dairyDirectory'),where('username','==',username),limit(2)));
+  if(matches.docs.some(d=>d.data().ownerUid!==u.uid))throw new Error('यह Username पहले से इस्तेमाल हो रहा है।');
+ }
  if(old.role!==role){const connections=await getMyConnections();if(connections.length)throw new Error('Role बदलने से पहले सक्रिय Dairy कनेक्शन हटाने होंगे।');}
  await updateDoc(ref,{displayName,username,role});
  if(old.role==='owner'&&old.dairyId){
