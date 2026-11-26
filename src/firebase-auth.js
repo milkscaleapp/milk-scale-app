@@ -49,11 +49,6 @@ async function respondToConnectionRequest(code,accept){
  code=String(code||'').trim().toUpperCase(); const ref=doc(db,'connectionRequests',code);
  await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())throw new Error('रिक्वेस्ट कोड नहीं मिला।');const d=snap.data();if(d.status!=='pending'||d.expiresAt.toMillis()<Date.now())throw new Error('रिक्वेस्ट समाप्त या पहले इस्तेमाल हो चुकी है।');if(d.requesterUid===u.uid)throw new Error('अपनी ही रिक्वेस्ट स्वीकार नहीं कर सकते।');if(d.requesterRole===p.role)throw new Error('Owner और Customer की अलग-अलग भूमिकाएँ होनी चाहिए।');tx.update(ref,{status:accept?'accepted':'rejected',targetUid:u.uid,targetEmail:u.email||'',targetRole:p.role,respondedAt:serverTimestamp()});if(accept){const ownerUid=p.role==='owner'?u.uid:d.requesterUid;const customerUid=p.role==='customer'?u.uid:d.requesterUid;tx.set(doc(db,'connections',ownerUid+'_'+customerUid),{ownerUid,customerUid,status:'active',requestCode:code,createdAt:serverTimestamp()});}});
 }
-async function getMyConnectionRequests(){
- const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
- const [a,b]=await Promise.all([getDocs(query(collection(db,'connectionRequests'),where('requesterUid','==',u.uid))),getDocs(query(collection(db,'connectionRequests'),where('targetUid','==',u.uid)))]);
- return [...a.docs,...b.docs].map(d=>({code:d.id,...d.data()}));
-}
 async function syncMilkEntry(entry,customerUid){
  const u=await getCurrentUser();if(!u)throw new Error('लॉगिन आवश्यक है।');
  const p=await getProfile();if(!p||p.role!=='owner')throw new Error('केवल Owner दूध की एंट्री भेज सकता है।');
