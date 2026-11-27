@@ -1109,7 +1109,7 @@ async function refreshAccountStatus(){
  try{pendingProfilePhotoData=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('फोटो पढ़ी नहीं जा सकी।'));r.readAsDataURL(file);});
   const im=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो खुल नहीं सकी।'));x.src=pendingProfilePhotoData;});
   const stage=document.getElementById('photo-crop-stage'),img=document.getElementById('photo-crop-image'),frame=Math.min(window.innerWidth*.86,420,window.innerHeight*.65),scale=Math.max(frame/im.width,frame/im.height);
-  img.src=pendingProfilePhotoData;img.style.width=(im.width*scale)+'px';img.style.height=(im.height*scale)+'px';img.dataset.scale=String(scale);img.dataset.sourceWidth=String(im.width);img.dataset.sourceHeight=String(im.height);img.style.left=((stage.clientWidth-im.width*scale)/2)+'px';img.style.top=((stage.clientHeight-im.height*scale)/2)+'px';document.getElementById('photo-crop-modal').classList.add('show');
+  img.src=pendingProfilePhotoData;img.style.width=(im.width*scale)+'px';img.style.height=(im.height*scale)+'px';img.dataset.scale=String(scale);img.dataset.sourceWidth=String(im.width);img.dataset.sourceHeight=String(im.height);document.getElementById('photo-crop-modal').classList.add('show');requestAnimationFrame(()=>{img.style.left=((stage.clientWidth-im.width*scale)/2)+'px';img.style.top=((stage.clientHeight-im.height*scale)/2)+'px';});
  }catch(e){notify(e.message||'फोटो पढ़ी नहीं जा सकी।');input.value='';}
 }
 function cancelProfilePhotoCrop(){document.getElementById('photo-crop-modal').classList.remove('show');pendingProfilePhotoData=null;document.getElementById('profile-photo-input').value='';}
