@@ -1,13 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
- <linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#061b55"/><stop offset=".48" stop-color="#1267c9"/><stop offset="1" stop-color="#57b8f5"/></linearGradient>
- <linearGradient id="wave1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#063a91"/><stop offset="1" stop-color="#258ce4"/></linearGradient>
- <linearGradient id="wave2" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#8bdcff"/><stop offset="1" stop-color="#287be0"/></linearGradient>
+  <linearGradient id="scene" x1="0" y1="0" x2="0.92" y2="1"><stop offset="0" stop-color="#087cff"/><stop offset=".34" stop-color="#0752cf"/><stop offset=".72" stop-color="#061b68"/><stop offset="1" stop-color="#020725"/></linearGradient>
+  <radialGradient id="light" cx="0.08" cy="0.04" r=".78"><stop offset="0" stop-color="#19a4ff" stop-opacity=".95"/><stop offset=".38" stop-color="#087bff" stop-opacity=".38"/><stop offset="1" stop-color="#00113f" stop-opacity="0"/></radialGradient>
+  <linearGradient id="body" x1="0" y1="0" x2=".2" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f7fbff"/></linearGradient>
+  <linearGradient id="display" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#061b4b"/><stop offset="1" stop-color="#001033"/></linearGradient>
+  <filter id="shadow" x="-35%" y="-25%" width="180%" height="190%"><feGaussianBlur stdDeviation="23"/></filter>
 </defs>
-<rect width="1024" height="1024" fill="url(#base)"/>
-<path d="M0 120 C190 40 330 220 520 160 S850 50 1024 150 V0 H0Z" fill="#0a2d73" opacity=".8"/>
-<path d="M0 520 C170 390 320 610 510 500 S820 370 1024 500 V1024 H0Z" fill="url(#wave1)" opacity=".9"/>
-<path d="M0 760 C210 630 340 830 560 720 S850 630 1024 730 V1024 H0Z" fill="url(#wave2)" opacity=".58"/>
-<path d="M0 900 C190 810 370 960 560 870 S850 790 1024 880 V1024 H0Z" fill="#061b55" opacity=".45"/>
-<path d="M-40 340 C180 240 300 390 470 320 S810 220 1060 320" fill="none" stroke="#9de7ff" stroke-width="24" opacity=".18"/>
+<rect width="1024" height="1024" fill="url(#scene)"/><rect width="1024" height="1024" fill="url(#light)"/>
+<rect x="273" y="244" width="478" height="535" rx="86" fill="#000319" opacity=".78" filter="url(#shadow)" transform="translate(30 42)"/>
+<rect x="273" y="244" width="478" height="535" rx="86" fill="url(#body)"/>
+<rect x="273" y="244" width="478" height="535" rx="86" fill="none" stroke="#0750ae" stroke-width="3" opacity=".52"/>
+<rect x="308" y="285" width="408" height="171" rx="49" fill="url(#display)"/>
+<text x="512" y="414" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="124" font-weight="700" font-style="italic" letter-spacing="-5" fill="#fff">Milk</text>
+<g fill="#06265f">
+<rect x="315" y="485" width="116" height="70" rx="25"/><rect x="454" y="485" width="116" height="70" rx="25"/><rect x="593" y="485" width="116" height="70" rx="25"/>
+<rect x="315" y="575" width="116" height="70" rx="25"/><rect x="454" y="575" width="116" height="70" rx="25"/><rect x="593" y="575" width="116" height="160" rx="25"/>
+<rect x="315" y="665" width="116" height="70" rx="25"/><rect x="454" y="665" width="116" height="70" rx="25"/>
+</g>
+<g fill="#fff"><rect x="619" y="630" width="64" height="12" rx="5"/><rect x="619" y="653" width="64" height="12" rx="5"/></g>
 </svg>
