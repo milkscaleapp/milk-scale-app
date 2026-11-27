@@ -15,7 +15,7 @@ on:
       - "google-services.json"
       - ".github/workflows/build-apk.yml"
   push:
-    branches: ["main"]
+    branches: ["main", "feature/full-dairy-management"]
     paths:
       - "index.html"
       - "src/**"
