@@ -274,7 +274,7 @@
         <div class="header-left">
             
             <!-- File status button -->
-            <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" aria-label="JSON files">
+            <button class="file-status-btn" id="header-file-btn" onclick="openBackupFiles()" aria-label="JSON files">
                 <span class="header-file-icon-wrap"><i class="fa-solid fa-file-invoice"></i><span class="file-alert-dot" id="header-file-dot"></span></span><span id="header-file-name">JSON</span>
             </button>
         </div>
@@ -486,7 +486,7 @@
 function isNetworkError(error){const s=String(error?.code||'')+' '+String(error?.message||error||'');return !navigator.onLine||/offline|network|unavailable|failed to get document because the client is offline|unreachable/i.test(s);}
 function showNoInternet(){const title=document.getElementById('dialog-title'),message=document.getElementById('dialog-message'),cancel=document.getElementById('dialog-cancel'),ok=document.getElementById('dialog-ok');title.innerText='No Internet Connection';message.classList.add('offline-message');message.innerHTML='<span class="no-internet-icon"><i class="fa-solid fa-wifi"></i></span><span>कृपया इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।</span>';cancel.style.display='none';ok.innerText='OK';document.getElementById('app-dialog').classList.add('show');dialogResolver=null;}
 function markRequestsSeen(){const dot=document.getElementById('new-request-dot');if(dot)dot.style.display='none';const ids=JSON.parse(localStorage.getItem('ms_seen_request_ids')||'[]');localStorage.setItem('ms_seen_request_ids',JSON.stringify([...new Set([...ids,...(window.__msPendingRequestIds||[])])]));}
-function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage.getItem('ms_seen_request_ids')||'[]'));const ids=pending.map(x=>x.id);window.__msPendingRequestIds=ids;const dot=document.getElementById('new-request-dot');if(dot)dot.style.display=ids.some(id=>!seen.has(id))?'block':'none';}
+function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage.getItem('ms_seen_request_ids')||'[]'));const ids=pending.map(x=>x.id);window.__msPendingRequestIds=ids;if(customerCenterView==='new'){ids.forEach(id=>seen.add(id));localStorage.setItem('ms_seen_request_ids',JSON.stringify([...seen]));}const dot=document.getElementById('new-request-dot');if(dot)dot.style.display=customerCenterView==='new'?'none':(ids.some(id=>!seen.has(id))?'block':'none');}
         let backupToastTimer=null;
         function showBackupToast(message){const toast=document.getElementById('backup-success-toast');if(!toast)return;toast.querySelector('span').textContent=message;toast.classList.add('show');clearTimeout(backupToastTimer);backupToastTimer=setTimeout(()=>toast.classList.remove('show'),1900);}
 
@@ -574,6 +574,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         }
 
         // --- Navigation ---
+        function openBackupFiles(){localStorage.setItem('ms_file_dot_seen','1');const dot=document.getElementById('header-file-dot');if(dot)dot.style.display='none';switchTab('backup',null);}
         function switchTab(tabId,el,fromBack=false){
  const previous=document.querySelector('.tab-content.active')?.id?.replace('tab-','');
  if(previous&&previous!==tabId&&!fromBack){window.__msTabStack=window.__msTabStack||[];window.__msTabStack.push(previous);history.pushState({tab:tabId},'','#'+tabId);}
@@ -597,7 +598,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         }
 
         // --- Header File Display Logic ---
-        function showFileInHeader(fileNum){const btn=document.getElementById('header-file-btn'),name=document.getElementById('header-file-name'),dot=document.getElementById('header-file-dot');if(btn)btn.style.display='flex';const fitted=Number(fileNum)>0&&filePresence[String(fileNum)]===true;if(name)name.innerText=fitted?'('+fileNum+')':'JSON';if(dot)dot.style.display=fitted?'none':'inline-block';const info=document.getElementById('current-backup-file');if(info)info.style.display=fitted?'block':'none';const title=document.getElementById('backup-filename');if(title&&fitted)title.innerText='MilkScale_Backup_('+fileNum+').json';}
+        function showFileInHeader(fileNum){const btn=document.getElementById('header-file-btn'),name=document.getElementById('header-file-name'),dot=document.getElementById('header-file-dot');if(btn)btn.style.display='flex';const fitted=Number(fileNum)>0&&filePresence[String(fileNum)]===true;if(name)name.innerText=fitted?'('+fileNum+')':'JSON';if(dot)dot.style.display=fitted||localStorage.getItem('ms_file_dot_seen')==='1'?'none':'inline-block';const info=document.getElementById('current-backup-file');if(info)info.style.display=fitted?'block':'none';const title=document.getElementById('backup-filename');if(title&&fitted)title.innerText='MilkScale_Backup_('+fileNum+').json';}
         function renderCustomers() {
             const list = document.getElementById('cust-list');
             document.getElementById('customer-count').innerText = 'Total: ' + customers.length;
@@ -820,7 +821,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
  showFileInHeader(currentFileNumber);renderFileList();
 }
         async function selectManagedFile(n){
- if(Number(n)===Number(currentFileNumber)&&filePresence[String(n)]===true)return;
+ if(Number(n)===Number(currentFileNumber)&&filePresence[String(n)]===true){localStorage.setItem('ms_file_dot_seen','1');const d=document.getElementById('header-file-dot');if(d)d.style.display='none';return;}
  if(!(await appDialog('इस JSON टिकट को फिट करने पर वर्तमान फाइल बदल जाएगी। क्या आगे बढ़ें?',true,'Choose JSON file')))return;
  if(!fileStore[String(n)])return;
  const fs=window.Capacitor?.Plugins?.Filesystem;
@@ -1078,15 +1079,16 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         }
         function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); document.body.classList.remove('auth-open'); }
         function toggleAccountAuthMode(){accountAuthMode=accountAuthMode==='login'?'register':'login';document.getElementById('auth-submit-btn').innerText=accountAuthMode==='login'?'लॉगिन करें':'अकाउंट बनाएँ';document.getElementById('auth-name-wrap').style.display=accountAuthMode==='register'?'block':'none';document.getElementById('auth-mode-btn').innerText=accountAuthMode==='login'?'नया अकाउंट बनाएँ':'पहले से अकाउंट है? लॉगिन';document.getElementById('auth-password').autocomplete=accountAuthMode==='login'?'current-password':'new-password';document.getElementById('auth-form-status').innerText='';document.getElementById('email-verified-view').style.display='none';}
-        async function refreshAccountStatus(){
+        function withNetworkTimeout(promise){let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('network timeout')),5000);})]).finally(()=>clearTimeout(timer));}
+async function refreshAccountStatus(){
  const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status'),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
  pv.style.display='block';fv.style.display='none';
  if(!navigator.onLine){pv.style.display='none';fv.style.display='block';status.innerText='';formStatus.innerText='';showNoInternet();return;} status.innerHTML='<div class="loading-skeleton auth-skeleton"></div>';
  try{
-  const user=await window.MilkScaleAuth?.getCurrentUser();
+  const user=await withNetworkTimeout(window.MilkScaleAuth?.getCurrentUser());
   if(!user){pv.style.display='none';fv.style.display='block';formStatus.innerText='';status.innerText='';return;}
   pv.style.display='block';fv.style.display='none';formStatus.innerText='';
-  let p=await window.MilkScaleAuth.getProfile();if(!p)p=await window.MilkScaleAuth.ensureProfile('customer',user.displayName);else if(p.role)p=await window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName);
+  let p=await withNetworkTimeout(window.MilkScaleAuth.getProfile());if(!p)p=await withNetworkTimeout(window.MilkScaleAuth.ensureProfile('customer',user.displayName));else if(p.role)p=await withNetworkTimeout(window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName));
   const name=p?.displayName||user.displayName||user.email?.split('@')[0]||'User';
   document.getElementById('profile-name').innerText=name;document.getElementById('profile-avatar').innerText=name.charAt(0).toUpperCase();
   document.getElementById('profile-dairy-id').innerText='ID: '+(p?.dairyId||'—');
@@ -1255,7 +1257,7 @@ function filterCustomerPicker(){
 }
 function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;closeCustomerPicker();}
 let customerCenterView='all';
-function setCustomerCenterView(view){customerCenterView=view==='new'?'new':'all';document.getElementById('customer-tab-all')?.classList.toggle('active',customerCenterView==='all');document.getElementById('customer-tab-new')?.classList.toggle('active',customerCenterView==='new');if(customerCenterView==='new')markRequestsSeen();loadRequestCenter();}
+function setCustomerCenterView(view){customerCenterView=view==='new'?'new':'all';document.getElementById('customer-tab-all')?.classList.toggle('active',customerCenterView==='all');document.getElementById('customer-tab-new')?.classList.toggle('active',customerCenterView==='new');document.getElementById('request-list-heading').innerText=customerCenterView==='new'?'New Request':'All Customers';if(customerCenterView==='new')markRequestsSeen();loadRequestCenter();}
 function openRequestCenter(){const page=document.getElementById('request-center');customerCenterView='all';document.getElementById('customer-tab-all')?.classList.add('active');document.getElementById('customer-tab-new')?.classList.remove('active');page.classList.add('show');document.body.classList.add('auth-open');history.pushState({page:'requests'},'','#requests');loadRequestCenter();}
 function closeRequestCenter(){document.getElementById('request-center').classList.remove('show');document.body.classList.remove('auth-open');}
 async function syncConnectedCustomers(){
@@ -1273,7 +1275,7 @@ async function loadRequestCenter(){
   const user=await window.MilkScaleAuth?.getCurrentUser();
   if(!user){heading.innerText=customerCenterView==='all'?'All Customers':'New Request';list.innerHTML='<div class="empty-state">Customers देखने के लिए पहले Account में Login करें।</div>';return;}
   const p=await window.MilkScaleAuth.getProfile();if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';return;}
-  const [connections,requests]=await Promise.all([window.MilkScaleAuth.getMyConnections(),window.MilkScaleAuth.getMyConnectionRequests()]);updateRequestUnread(requests.filter(x=>x.targetUid===user.uid&&x.status==='pending'));
+  const [connections,requests]=await withNetworkTimeout(Promise.all([window.MilkScaleAuth.getMyConnections(),window.MilkScaleAuth.getMyConnectionRequests()]));updateRequestUnread(requests.filter(x=>x.targetUid===user.uid&&x.status==='pending'));
   if(customerCenterView==='all'){
    heading.innerText='All Customers';const active=connections.filter(x=>x.status==='active');
    if(p.role==='owner')list.innerHTML=active.length?active.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.customerProfile?.displayName||x.customerName||'Customer')+'</strong><div class="request-state">Connected Customer</div><div class="request-time">Connected</div></div>').join(''):'<div class="empty-state">अभी कोई Customer कनेक्ट नहीं है।</div>';
