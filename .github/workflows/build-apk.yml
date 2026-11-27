@@ -2,7 +2,7 @@ name: Build Milk Scale signed releases
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "feature/**"]
     paths:
       - "index.html"
       - "package.json"
