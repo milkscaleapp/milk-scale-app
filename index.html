@@ -245,16 +245,23 @@
 .backup-success-toast.show{opacity:1;transform:translate(-50%,0)}
 
 /* Refined offline loading, ticket-style fitted backup and compact controls */
-.app-brand-mark,.header-left h1{display:none!important}
-.customer-search-wrap{display:flex;align-items:stretch;gap:6px}.customer-search-wrap input{flex:1;min-width:0}
-.customer-picker-trigger{width:44px;flex:0 0 44px;border:1px solid #dbeafe;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:15px}
-.choose-json-label{display:block;margin:3px 0 13px;text-align:center;font-size:16px;font-weight:900;color:#1e293b;cursor:pointer}
-.managed-file{box-shadow:none!important;transform:none!important;border:1px solid #d1d5db!important;background:#f1f5f9!important}
-.managed-file:active{transform:none!important;box-shadow:none!important}
-.managed-file.active{order:-1!important;margin:5px 2px 10px!important;padding:14px!important;border:2px dashed #64748b!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important;transform:none!important}
-.managed-file.active:before,.managed-file.active:after{display:none!important;content:none!important}
-.managed-file.active .file-icon{filter:none!important;color:#2563eb}
-.managed-file.active .file-info p{color:#64748b!important;font-weight:500!important}
+.app-header{display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:center!important;gap:8px!important;padding:10px 14px!important}.header-left{display:contents!important}
+.header-left:before{content:'Milk Scale';grid-column:1;grid-row:1;font-size:19px;font-weight:900;letter-spacing:-.5px;color:#1d4ed8;justify-self:start}
+#header-file-btn{grid-column:2;grid-row:1;justify-self:center;width:42px;height:42px;padding:0!important;border:0!important;border-radius:13px!important;background:#ecfdf5!important;color:#059669!important;display:grid!important;place-items:center!important}
+#header-file-name{display:none!important}.header-file-icon-wrap{font-size:22px!important}.account-btn{grid-column:3;grid-row:1;justify-self:end;width:34px;height:34px;padding:0!important;margin:0!important;border-radius:50%!important;font-size:0!important;display:grid!important;place-items:center!important}.account-btn i{font-size:15px!important}
+.customer-search-wrap{display:flex;align-items:stretch;gap:5px}.customer-search-wrap input{flex:1;min-width:0}.customer-picker-trigger{width:34px;flex:0 0 34px;border:0;border-radius:9px;background:#eff6ff;color:#1d4ed8;font-size:13px}
+.entry-customers-mini{width:34px;height:34px;flex:0 0 34px;border:0;border-radius:9px;background:#eff6ff;color:#1d4ed8;font-size:16px}.entry-customer-toolbar{display:flex;align-items:center;gap:6px;margin:0 0 9px}
+.managed-file{box-shadow:none!important;transform:none!important;border:1px solid #d1d5db!important;background:#f1f5f9!important}.managed-file:active{transform:none!important;box-shadow:none!important}
+.managed-file.active{order:-1!important;margin:5px 2px 10px!important;padding:17px 16px!important;min-height:82px;border:1px dashed #64748b!important;border-radius:11px!important;background:linear-gradient(135deg,#e8f2ff,#dceaff)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;transform:none!important}
+.managed-file.active:before,.managed-file.active:after{display:none!important;content:none!important}.managed-file.active .file-icon{filter:none!important;color:#059669!important;font-size:34px!important}.managed-file.active .file-info h4{font-size:14px;font-weight:800;color:#1e293b}
+.managed-file.active .file-info p{color:#1e293b!important;font-weight:800!important;font-size:12px!important;line-height:1.55}.managed-file .file-info p{font-size:11px;color:#94a3b8;font-weight:400}.managed-file.active .file-info p .file-meta-muted{color:#64748b;font-weight:400}
+.profile-photo-button{width:76px!important;height:76px!important;flex:0 0 76px!important;border-radius:50%!important;clip-path:circle(50%)!important;overflow:hidden!important}.profile-photo-button img{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;object-fit:cover!important;border-radius:50%!important;aspect-ratio:1/1!important}
+.photo-viewer-content img{width:auto!important;height:auto!important;max-width:94vw!important;max-height:76vh!important;object-fit:contain!important;border-radius:50%!important;background:transparent!important;image-rendering:auto}
+.profile-switch-button{display:flex!important;justify-content:space-between!important;align-items:center!important;text-align:left!important;padding:13px 15px!important}.profile-switch-button .switch-label{margin-right:auto}.profile-switch-button .switch-icon{margin-left:auto;font-size:20px}.profile-settings .fa-arrow-right{display:none!important}.profile-settings{justify-content:flex-start!important}
+.profile-placeholder-line{display:block;width:100%;height:13px;border-radius:6px;background:#e8edf4;position:relative;overflow:hidden}.profile-placeholder-line:after{content:'';position:absolute;inset:-50%;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.85) 50%,transparent 62%);animation:skeletonSweep 1.15s ease-in-out infinite}
+.profile-board-meta .profile-placeholder-line:nth-child(1){width:76%;height:17px}.profile-board-meta .profile-placeholder-line:nth-child(2){width:55%}.profile-board-meta .profile-placeholder-line:nth-child(3){width:66%}.settings-empty{padding:12px!important;min-height:0!important}
+.photo-crop-modal{position:fixed;inset:0;z-index:6500;background:#080d18;color:#fff;display:none;flex-direction:column;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}.photo-crop-modal.show{display:flex}.photo-crop-top{height:58px;display:flex;align-items:center;gap:14px}.photo-crop-top strong{flex:1}.photo-crop-save{border:0;border-radius:10px;padding:10px 16px;background:#2563eb;color:#fff;font-weight:800}
+.photo-crop-stage{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;display:flex;align-items:center;justify-content:center}.photo-crop-stage:after{content:'';position:absolute;width:min(86vw,420px);height:min(86vw,420px);max-height:65vh;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none}.photo-crop-stage img{position:absolute;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;touch-action:none}.photo-crop-hint{text-align:center;color:#cbd5e1;font-size:13px;padding:8px 0 16px}
 .request-tab-with-dot{position:relative}.request-unread-dot{display:none;position:absolute;right:7px;top:5px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff}
 .loading-skeleton{position:relative;overflow:hidden;border-radius:13px;background:#e8edf4}
 .loading-skeleton:after{content:'';position:absolute;inset:-40% -60%;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.8) 50%,transparent 62%);transform:translateX(-65%);animation:skeletonSweep 1.15s ease-in-out infinite}
@@ -270,16 +277,7 @@
 </head>
 <body>
     <div id="app-splash" aria-label="Milk Scale loading"><div class="splash-mark"><i class="fa-solid fa-droplet"></i></div><div class="splash-wordmark">Milk Scale</div><div class="splash-loader"><span></span></div></div>
-    <header class="app-header">
-        <div class="header-left">
-            
-            <!-- File status button -->
-            <button class="file-status-btn" id="header-file-btn" onclick="openBackupFiles()" aria-label="JSON files">
-                <span class="header-file-icon-wrap"><i class="fa-solid fa-file-invoice"></i><span class="file-alert-dot" id="header-file-dot"></span></span><span id="header-file-name">JSON</span>
-            </button>
-        </div>
-        <button class="account-btn" onclick="openAccount()"><i class="fa-solid fa-user"></i> Account</button>
-    </header>
+    <header class="app-header"><div class="header-left"><button class="file-status-btn" id="header-file-btn" onclick="openBackupFiles()" aria-label="JSON files"><span class="header-file-icon-wrap"><i class="fa-solid fa-file-code"></i><span class="file-alert-dot" id="header-file-dot"></span></span><span id="header-file-name">JSON</span></button></div><button class="account-btn" onclick="openAccount()" aria-label="Account"><i class="fa-solid fa-user"></i></button></header>
     
     <div class="main-content">
         
@@ -321,16 +319,7 @@
         </div>
 
         <!-- ENTRY TAB -->
-        <div id="tab-entry" class="tab-content">
-            <div class="card">
-                <button class="btn btn-primary" type="button" onclick="openRequestCenter()"><i class="fa-solid fa-users"></i> Customers</button>
-                <div class="customer-summary"><span>Connected Customers</span><span id="customer-count">Total: 0</span></div>
-                <div id="cust-list" style="max-height: 220px; overflow-y: auto; margin-top: 4px;"></div>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
-                <div class="form-group"><div class="customer-search-wrap"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" readonly onclick="openCustomerPicker()"><button type="button" class="customer-picker-trigger" onclick="openCustomerPicker()" aria-label="Show all customers"><i class="fa-solid fa-chevron-down"></i></button></div><datalist id="customer-options"></datalist></div>
+        <div id="tab-entry" class="tab-content"><div class="entry-customer-toolbar"><div class="customer-search-wrap" style="flex:1;min-width:0"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" readonly onclick="openCustomerPicker()"><button type="button" class="customer-picker-trigger" onclick="openCustomerPicker()" aria-label="Show all customers"><i class="fa-solid fa-chevron-down"></i></button></div><button type="button" class="entry-customers-mini" onclick="openRequestCenter()" aria-label="Customers"><i class="fa-solid fa-users"></i></button><datalist id="customer-options"></datalist></div><div class="card"><h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -383,7 +372,6 @@
                 </div>
             </div>
 
-            <label class="choose-json-label" for="fileInput">Choose JSON</label>
             <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importBackupFile(event)">
         </div>
 
@@ -436,8 +424,8 @@
             <button class="profile-edit-icon" onclick="openProfileEditor()" aria-label="Edit profile"><i class="fa-solid fa-pen"></i></button>
             <input id="profile-photo-input" type="file" accept="image/*" style="display:none" onchange="saveProfilePhoto(this)">
           </div></div>
-          <button class="profile-switch-button" id="profile-switch-button" onclick="switchProfileRole()">Switch to Customer</button>
-          <button class="profile-settings" type="button" onclick="openSettingsPage()"><span><i class="fa-solid fa-gear"></i> Settings</span><i class="fa-solid fa-arrow-right"></i></button>
+          <button class="profile-switch-button" id="profile-switch-button" onclick="switchProfileRole()"><span class="switch-label">Switch to Customer</span><i class="fa-solid fa-toggle-on switch-icon" aria-hidden="true"></i></button>
+          <button class="profile-settings" type="button" onclick="openSettingsPage()"><span><i class="fa-solid fa-gear"></i> Settings</span></button>
           <div class="auth-status" id="auth-status" aria-live="polite"></div><button class="logout-danger" id="auth-signout-btn" onclick="signOutAccount()"><i class="fa-solid fa-right-from-bracket"></i> लॉगआउट</button>
         </div>
         <div id="auth-form-view"><p id="auth-intro">अपने अकाउंट में लॉगिन करें या नया अकाउंट बनाएँ।</p>
@@ -449,7 +437,7 @@
         </div>      </div>
     </div>
 
-    <div class="profile-photo-viewer" id="profile-photo-viewer" role="dialog" aria-modal="true"><div class="photo-viewer-top"><button class="back-icon" onclick="closeProfilePhotoViewer()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><span>Profile Photo</span><button class="photo-edit-action" onclick="document.getElementById('profile-photo-input').click()"><i class="fa-solid fa-pen"></i> Edit</button></div><div class="photo-viewer-content"><img id="profile-photo-full" alt="Profile photo preview"><div id="profile-photo-fallback" class="photo-viewer-fallback">M</div><strong id="profile-photo-full-name">User</strong></div></div>
+    <div class="profile-photo-viewer" id="profile-photo-viewer" role="dialog" aria-modal="true"><div class="photo-viewer-top"><button class="back-icon" onclick="closeProfilePhotoViewer()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><span>Profile Photo</span><button class="photo-edit-action" onclick="document.getElementById('profile-photo-input').click()"><i class="fa-solid fa-pen"></i> Edit</button></div><div class="photo-viewer-content"><img id="profile-photo-full" alt="Profile photo preview"><div id="profile-photo-fallback" class="photo-viewer-fallback">M</div><strong id="profile-photo-full-name">User</strong></div></div><div class="photo-crop-modal" id="photo-crop-modal" role="dialog" aria-modal="true"><div class="photo-crop-top"><button type="button" class="back-icon" onclick="cancelProfilePhotoCrop()"><i class="fa-solid fa-xmark"></i></button><strong>फोटो सेट करें</strong><button type="button" class="photo-crop-save" onclick="saveCroppedProfilePhoto()">Save</button></div><div class="photo-crop-stage" id="photo-crop-stage"><img id="photo-crop-image" alt="Crop photo"></div><p class="photo-crop-hint">फोटो को एक उंगली से खिसकाकर चेहरा गोल फ्रेम में सेट करें</p></div>
 <div id="backup-success-toast" class="backup-success-toast" role="status" aria-live="polite"><i class="fa-solid fa-circle-check"></i><span>File created successfully</span></div>
 <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <div class="app-dialog">
@@ -500,6 +488,9 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         let pointerDrag = null;
         let filePresence = {};
         let fileWriteQueues = {};
+        let fileStats = {};
+        let pendingProfilePhotoData = null;
+        let cropDrag = null;
 
         const BACKUP_FOLDER='MilkScale Backup json';
         async function ensureBackupFolder(){
@@ -514,7 +505,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
             const result=await fs.readFile({path:BACKUP_FOLDER+'/MilkScale_Backup_('+fileNum+').json',directory:'DOCUMENTS',encoding:'utf8'});
             const parsed=JSON.parse(result.data);
             if(!parsed||!Array.isArray(parsed.customers)||!Array.isArray(parsed.entries))throw new Error('यह वैध Milk Scale JSON फाइल नहीं है।');
-            fileStore[String(fileNum)]={customers:parsed.customers,entries:parsed.entries,scale:Array.isArray(parsed.scale)?parsed.scale:[],rate:parsed.rate==null?'':String(parsed.rate)};
+            fileStore[String(fileNum)]={customers:parsed.customers,entries:parsed.entries,scale:Array.isArray(parsed.scale)?parsed.scale:[],rate:parsed.rate==null?'':String(parsed.rate),createdAt:parsed._milkScaleMeta?.createdAt||fileStore[String(fileNum)]?.createdAt||null};
             localStorage.setItem('ms_file_store',JSON.stringify(fileStore));
             return fileStore[String(fileNum)];
         }
@@ -744,7 +735,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         async function autoSaveToFile(fileNum,createIfMissing=false){
  const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}
  const key=String(fileNum),fileName=BACKUP_FOLDER+'/MilkScale_Backup_('+fileNum+').json';
- const data={customers:[...customers],entries:[...entries],scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value};
+ const createdAt=fileStore[key]?.createdAt||new Date().toISOString();fileStore[key]={...(fileStore[key]||{}),customers:[...customers],entries:[...entries],scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value,createdAt};const data={customers:[...customers],entries:[...entries],scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value,_milkScaleMeta:{createdAt}};
  const previous=fileWriteQueues[key]||Promise.resolve();
  const task=previous.catch(()=>{}).then(async()=>{
   await ensureBackupFolder();
@@ -769,7 +760,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
  if(currentFileNumber>0)saveActiveFileData();
  const previous=currentFileNumber,oldCustomers=customers,oldEntries=entries;
  const n=Math.max(0,...Object.keys(fileStore).map(Number).filter(Number.isFinite))+1;
- fileStore[String(n)]={customers:[],entries:[],scale:[],rate:''};currentFileNumber=n;customers=[];entries=[];
+ fileStore[String(n)]={customers:[],entries:[],scale:[],rate:'',createdAt:new Date().toISOString()};currentFileNumber=n;customers=[];entries=[];
  const ok=await autoSaveToFile(n,true);
  if(!ok){delete fileStore[String(n)];currentFileNumber=previous;customers=oldCustomers;entries=oldEntries;if(previous>0)loadActiveFileData(previous);localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',previous);return;}
  localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',n);saveLocal();
@@ -779,7 +770,9 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         function getKnownFileNumbers() {
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
-        function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().filter(n=>filePresence[String(n)]===true).sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p class="empty-state">अभी कोई JSON फाइल उपलब्ध नहीं है।</p>';}
+        function formatFileSize(bytes){const n=Number(bytes)||0;if(n>=1073741824)return (n/1073741824).toFixed(2)+' GB';if(n>=1048576)return (n/1048576).toFixed(1)+' MB';if(n>=1024)return (n/1024).toFixed(1)+' KB';return n+' B';}
+function formatFileCreated(n){const d=fileStore[String(n)]?.createdAt||fileStats[String(n)]?.ctime||fileStats[String(n)]?.mtime;const date=d?new Date(d):null;return date&&!isNaN(date)?date.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' • '+date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'तारीख उपलब्ध नहीं';}
+function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().filter(n=>filePresence[String(n)]===true).sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);nums.forEach(n=>{if(!fileStats[String(n)]){const fs=window.Capacitor?.Plugins?.Filesystem;fs?.stat?.({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'}).then(v=>{fileStats[String(n)]=v;renderFileList();}).catch(()=>{});}});list.innerHTML=nums.length?nums.map(n=>{const active=n===currentFileNumber,stat=fileStats[String(n)]||{};return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p><strong>'+formatFileSize(stat.size)+'</strong> <span class="file-meta-muted"> • '+formatFileCreated(n)+' • '+((fileStore[String(n)]?.entries||[]).length)+' entries</span></p></div></div>';}).join(''):'<p class="empty-state">अभी कोई JSON फाइल उपलब्ध नहीं है।</p>';}
         async function refreshActiveFilePresence(loadCurrentData=true){
  const fs=window.Capacitor?.Plugins?.Filesystem,unreadable=new Set();
  if(fs?.readdir){
@@ -805,7 +798,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
    const pending=fileWriteQueues[key];if(pending)await pending.catch(()=>{});
    if(!fs?.stat)throw new Error('Native file storage unavailable');
    await ensureBackupFolder();
-   await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+   fileStats[key]=await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
    filePresence[key]=unreadable.has(key)?false:true;
   }catch(e){filePresence[key]=false;}
  }
@@ -876,7 +869,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
                 if(!savedData||!Array.isArray(savedData.customers)||!Array.isArray(savedData.entries))throw new Error('यह वैध Milk Scale JSON फाइल नहीं है।');
                 if(!(await appDialog('इस JSON फाइल को Milk Scale में जोड़ें?',true,'Add backup file')))return;
                 const match=file.name.match(/\((\d+)\)/),fileNum=match?parseInt(match[1],10):(Math.max(0,...getKnownFileNumbers())+1);
-                fileStore[String(fileNum)]={customers:savedData.customers,entries:savedData.entries,scale:Array.isArray(savedData.scale)?savedData.scale:[],rate:savedData.rate==null?'':String(savedData.rate)};
+                fileStore[String(fileNum)]={customers:savedData.customers,entries:savedData.entries,scale:Array.isArray(savedData.scale)?savedData.scale:[],rate:savedData.rate==null?'':String(savedData.rate),createdAt:savedData._milkScaleMeta?.createdAt||new Date().toISOString()};
                 currentFileNumber=fileNum;customers=savedData.customers;entries=savedData.entries;
                 localStorage.setItem('ms_scale',JSON.stringify(fileStore[String(fileNum)].scale));
                 document.getElementById('scale-rate').value=fileStore[String(fileNum)].rate;
@@ -1074,6 +1067,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         let accountAuthMode = 'login';
         function openAccount() {
             document.getElementById('auth-backdrop').classList.add('show');
+            document.getElementById('profile-name').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-dairy-id').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-role-label').innerHTML='<span class="profile-placeholder-line"></span>';
             document.body.classList.add('auth-open');
             history.pushState({page:'account'},'','#account');
             if(!navigator.onLine){document.getElementById('profile-view').style.display='none';document.getElementById('auth-form-view').style.display='block';document.getElementById('auth-status').innerText='';document.getElementById('auth-form-status').innerText='';showNoInternet();return;}
@@ -1084,6 +1078,7 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         function withNetworkTimeout(promise){let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('network timeout')),5000);})]).finally(()=>clearTimeout(timer));}
 async function refreshAccountStatus(){
  const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status'),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
+ document.getElementById('profile-name').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-dairy-id').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-role-label').innerHTML='<span class="profile-placeholder-line"></span>';
  pv.style.display='block';fv.style.display='none';
  if(!navigator.onLine){pv.style.display='none';fv.style.display='block';status.innerText='';formStatus.innerText='';showNoInternet();return;} status.innerHTML='<div class="loading-skeleton auth-skeleton"></div>';
  try{
@@ -1096,7 +1091,7 @@ async function refreshAccountStatus(){
   document.getElementById('profile-dairy-id').innerText='ID: '+(p?.dairyId||'—');
   const role=p?.role==='owner'?'दूधिया / Milkman':'ग्राहक / Customer',roleEl=document.getElementById('profile-role-label');
   roleEl.innerText=role;roleEl.dataset.role=p?.role||'customer';
-  document.getElementById('profile-switch-button').innerText=p?.role==='owner'?'Switch to Customer':'Switch to Milkman';
+  document.querySelector('#profile-switch-button .switch-label').innerText=p?.role==='owner'?'Switch to Customer':'Switch to Milkman';
   const img=document.getElementById('profile-photo'),avatar=document.getElementById('profile-avatar');
   img.onload=()=>{img.style.display='block';avatar.style.display='none';};img.onerror=()=>{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';};
   if(p?.avatarData){img.style.display='block';img.src=p.avatarData;}else{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';}
@@ -1112,14 +1107,20 @@ async function refreshAccountStatus(){
 }
         async function saveProfilePhoto(input){
  const file=input.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){notify('कृपया फोटो फ़ाइल चुनें।');input.value='';return;}
- try{const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('फोटो पढ़ी नहीं जा सकी।'));r.readAsDataURL(file);});
-  const im=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो खुल नहीं सकी।'));x.src=data;});
-  const c=document.createElement('canvas'),scale=Math.min(1,320/Math.max(im.width,im.height));c.width=Math.max(1,Math.round(im.width*scale));c.height=Math.max(1,Math.round(im.height*scale));c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-  const compressed=c.toDataURL('image/jpeg',0.62);await window.MilkScaleAuth.updateProfilePhoto(compressed);await refreshAccountStatus();
-  const full=document.getElementById('profile-photo-full');if(full){full.src=compressed;full.style.display='block';document.getElementById('profile-photo-fallback').style.display='none';}
-  notify('प्रोफाइल फोटो सेव हो गई।');
- }catch(e){notify(e.message||'फोटो सेव नहीं हो सकी।');}finally{input.value='';}
+ try{pendingProfilePhotoData=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('फोटो पढ़ी नहीं जा सकी।'));r.readAsDataURL(file);});
+  const im=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो खुल नहीं सकी।'));x.src=pendingProfilePhotoData;});
+  const stage=document.getElementById('photo-crop-stage'),img=document.getElementById('photo-crop-image'),frame=Math.min(window.innerWidth*.86,420,window.innerHeight*.65),scale=Math.max(frame/im.width,frame/im.height);
+  img.src=pendingProfilePhotoData;img.style.width=(im.width*scale)+'px';img.style.height=(im.height*scale)+'px';img.dataset.scale=String(scale);img.dataset.sourceWidth=String(im.width);img.dataset.sourceHeight=String(im.height);img.style.left=((stage.clientWidth-im.width*scale)/2)+'px';img.style.top=((stage.clientHeight-im.height*scale)/2)+'px';document.getElementById('photo-crop-modal').classList.add('show');
+ }catch(e){notify(e.message||'फोटो पढ़ी नहीं जा सकी।');input.value='';}
 }
+function cancelProfilePhotoCrop(){document.getElementById('photo-crop-modal').classList.remove('show');pendingProfilePhotoData=null;document.getElementById('profile-photo-input').value='';}
+async function saveCroppedProfilePhoto(){
+ try{const stage=document.getElementById('photo-crop-stage'),img=document.getElementById('photo-crop-image'),rect=stage.getBoundingClientRect(),frame=Math.min(rect.width*.86,420,rect.height*.65),cx=rect.width/2,cy=rect.height/2,left=parseFloat(img.style.left)||0,top=parseFloat(img.style.top)||0,scale=Number(img.dataset.scale),sw=Number(img.dataset.sourceWidth),sh=Number(img.dataset.sourceHeight),sx=Math.max(0,(cx-frame/2-left)/scale),sy=Math.max(0,(cy-frame/2-top)/scale),sourceSize=frame/scale,out=document.createElement('canvas'),target=Math.min(1200,Math.max(640,Math.round(frame/scale)));
+  out.width=target;out.height=target;const ctx=out.getContext('2d'),photo=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो तैयार नहीं हुई।'));x.src=pendingProfilePhotoData;});ctx.drawImage(photo,sx,sy,Math.min(sourceSize,sw-sx),Math.min(sourceSize,sh-sy),0,0,target,target);
+  const cropped=out.toDataURL('image/jpeg',.9);await window.MilkScaleAuth.updateProfilePhoto(cropped);document.getElementById('photo-crop-modal').classList.remove('show');pendingProfilePhotoData=null;await refreshAccountStatus();const full=document.getElementById('profile-photo-full');if(full){full.src=cropped;full.style.display='block';document.getElementById('profile-photo-fallback').style.display='none';}notify('प्रोफाइल फोटो सेव हो गई।');
+ }catch(e){notify(e.message||'फोटो सेव नहीं हो सकी।');}finally{document.getElementById('profile-photo-input').value='';}
+}
+(function(){const stage=document.getElementById('photo-crop-stage');if(!stage)return;stage.addEventListener('pointerdown',e=>{const img=document.getElementById('photo-crop-image');cropDrag={x:e.clientX,y:e.clientY,left:parseFloat(img.style.left)||0,top:parseFloat(img.style.top)||0};stage.setPointerCapture(e.pointerId);});stage.addEventListener('pointermove',e=>{if(!cropDrag)return;const img=document.getElementById('photo-crop-image');img.style.left=(cropDrag.left+e.clientX-cropDrag.x)+'px';img.style.top=(cropDrag.top+e.clientY-cropDrag.y)+'px';});const end=()=>cropDrag=null;stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);})();
         async function renderConnectedDairyProfile(p){
           const box=document.getElementById('connected-dairy-list');if(!box)return;if(!p||p.role!=='customer'){box.style.display='none';return;}
           try{const rows=await window.MilkScaleAuth.getMyConnections(),owners=rows.map(x=>x.dairyProfile).filter(Boolean);box.style.display='block';
@@ -1304,7 +1305,7 @@ function handleAppBack(){
  const photoViewer=document.getElementById('profile-photo-viewer');if(photoViewer?.classList.contains('show')){closeProfilePhotoViewer();return;}
  const customerPicker=document.getElementById('customer-picker-modal');if(customerPicker?.classList.contains('show')){closeCustomerPicker();return;}
  const editor=document.getElementById('edit-profile-modal');if(editor?.classList.contains('show')){closeProfileEditor();return;}
- const st=document.getElementById('settings-page');if(st?.classList.contains('show')){closeSettingsPage();return;}
+ const crop=document.getElementById('photo-crop-modal');if(crop?.classList.contains('show')){cancelProfilePhotoCrop();return;}const st=document.getElementById('settings-page');if(st?.classList.contains('show')){closeSettingsPage();return;}
  const r=document.getElementById('request-center');if(r?.classList.contains('show')){closeRequestCenter();return;}
  const ac=document.getElementById('auth-backdrop');if(ac?.classList.contains('show')){closeAccount();return;}
  const active=document.querySelector('.tab-content.active');
