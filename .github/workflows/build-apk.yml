@@ -10,6 +10,8 @@ on:
       - ".github/workflows/validate-web.yml"
       - "capacitor.config.json"
       - ".github/workflows/build-apk.yml"
+      - "resources/**"
+      - "scripts/**"
   workflow_dispatch:
 
 permissions:
@@ -52,6 +54,12 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+
+      - name: Generate Milk Scale Android launcher icons
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-cairosvg python3-pil
+          python3 scripts/generate-android-icons.py
 
       - name: Set Android version code for upgrade installs
         env:
