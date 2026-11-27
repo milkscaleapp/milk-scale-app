@@ -1,50 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
-  <linearGradient id="scene" x1="0" y1="0" x2="0.92" y2="1">
-    <stop offset="0" stop-color="#087cff"/>
-    <stop offset=".34" stop-color="#0752cf"/>
-    <stop offset=".72" stop-color="#061b68"/>
-    <stop offset="1" stop-color="#020725"/>
-  </linearGradient>
-  <radialGradient id="light" cx="0.08" cy="0.04" r=".78">
-    <stop offset="0" stop-color="#19a4ff" stop-opacity=".95"/>
-    <stop offset=".38" stop-color="#087bff" stop-opacity=".38"/>
-    <stop offset="1" stop-color="#00113f" stop-opacity="0"/>
-  </radialGradient>
-  <linearGradient id="body" x1="0" y1="0" x2=".2" y2="1">
-    <stop offset="0" stop-color="#ffffff"/>
-    <stop offset="1" stop-color="#f7fbff"/>
-  </linearGradient>
-  <linearGradient id="display" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#061b4b"/>
-    <stop offset="1" stop-color="#001033"/>
-  </linearGradient>
-  <filter id="shadow" x="-35%" y="-25%" width="180%" height="190%">
-    <feGaussianBlur stdDeviation="17"/>
-  </filter>
+  <linearGradient id="scene" x1="0" y1="0" x2="0.92" y2="1"><stop offset="0" stop-color="#087cff"/><stop offset=".34" stop-color="#0752cf"/><stop offset=".72" stop-color="#061b68"/><stop offset="1" stop-color="#020725"/></linearGradient>
+  <radialGradient id="light" cx="0.08" cy="0.04" r=".78"><stop offset="0" stop-color="#19a4ff" stop-opacity=".95"/><stop offset=".38" stop-color="#087bff" stop-opacity=".38"/><stop offset="1" stop-color="#00113f" stop-opacity="0"/></radialGradient>
+  <linearGradient id="body" x1="0" y1="0" x2=".2" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f7fbff"/></linearGradient>
+  <linearGradient id="display" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#061b4b"/><stop offset="1" stop-color="#001033"/></linearGradient>
+  <filter id="shadow" x="-35%" y="-25%" width="180%" height="190%"><feGaussianBlur stdDeviation="23"/></filter>
 </defs>
-<rect width="1024" height="1024" fill="url(#scene)"/>
-<rect width="1024" height="1024" fill="url(#light)"/>
-<!-- Dark, soft shadow cast down and right; calculator remains visually flat -->
-<rect x="354" y="292" width="500" height="585" rx="82" fill="#00051e" opacity=".78" filter="url(#shadow)" transform="translate(27 35)"/>
-<!-- Flat calculator face with only a hairline lower edge -->
-<rect x="273" y="244" width="478" height="535" rx="86" fill="#00103b" opacity=".9" transform="translate(0 5)"/>
+<rect width="1024" height="1024" fill="url(#scene)"/><rect width="1024" height="1024" fill="url(#light)"/>
+<rect x="273" y="244" width="478" height="535" rx="86" fill="#000319" opacity=".78" filter="url(#shadow)" transform="translate(30 42)"/>
 <rect x="273" y="244" width="478" height="535" rx="86" fill="url(#body)"/>
-<path d="M360 777 H665 Q719 777 744 741" fill="none" stroke="#0b4eaa" stroke-width="3" opacity=".58"/>
+<rect x="273" y="244" width="478" height="535" rx="86" fill="none" stroke="#0750ae" stroke-width="3" opacity=".52"/>
 <rect x="308" y="285" width="408" height="171" rx="49" fill="url(#display)"/>
 <text x="512" y="414" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="124" font-weight="700" font-style="italic" letter-spacing="-5" fill="#fff">Milk</text>
 <g fill="#06265f">
-  <rect x="315" y="485" width="116" height="70" rx="25"/>
-  <rect x="454" y="485" width="116" height="70" rx="25"/>
-  <rect x="593" y="485" width="116" height="70" rx="25"/>
-  <rect x="315" y="575" width="116" height="70" rx="25"/>
-  <rect x="454" y="575" width="116" height="70" rx="25"/>
-  <rect x="593" y="575" width="116" height="160" rx="25"/>
-  <rect x="315" y="665" width="116" height="70" rx="25"/>
-  <rect x="454" y="665" width="116" height="70" rx="25"/>
+<rect x="315" y="485" width="116" height="70" rx="25"/><rect x="454" y="485" width="116" height="70" rx="25"/><rect x="593" y="485" width="116" height="70" rx="25"/>
+<rect x="315" y="575" width="116" height="70" rx="25"/><rect x="454" y="575" width="116" height="70" rx="25"/><rect x="593" y="575" width="116" height="160" rx="25"/>
+<rect x="315" y="665" width="116" height="70" rx="25"/><rect x="454" y="665" width="116" height="70" rx="25"/>
 </g>
-<g fill="#fff">
-  <rect x="619" y="630" width="64" height="12" rx="5"/>
-  <rect x="619" y="653" width="64" height="12" rx="5"/>
-</g>
+<g fill="#fff"><rect x="619" y="630" width="64" height="12" rx="5"/><rect x="619" y="653" width="64" height="12" rx="5"/></g>
 </svg>
