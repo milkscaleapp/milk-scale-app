@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from io import BytesIO
-import cairosvg
 from PIL import Image, ImageDraw
 
 root = Path(__file__).resolve().parents[1]
-svg = root / "assets" / "milk-scale-icon.svg"
+image_file = root / "assets" / "milk-scale-icon.jpg"
 res = root / "android" / "app" / "src" / "main" / "res"
 
 # Render the same vector artwork for the adaptive icon and legacy launcher sizes.
-foreground_bytes = cairosvg.svg2png(url=str(svg), output_width=432, output_height=432)
-foreground = Image.open(BytesIO(foreground_bytes)).convert("RGBA")
+foreground = Image.open(image_file).convert("RGB").resize((432, 432), Image.Resampling.LANCZOS).convert("RGBA")
 (res / "drawable-nodpi").mkdir(parents=True, exist_ok=True)
 foreground.save(res / "drawable-nodpi" / "ic_launcher_foreground.png")
 
