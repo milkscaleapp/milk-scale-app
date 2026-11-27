@@ -243,13 +243,36 @@
 .backup-success-toast{position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translate(-50%,14px);z-index:7000;display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:12px;background:#ecfdf5;border:1px solid #86efac;color:#166534;font-size:13px;font-weight:800;box-shadow:0 8px 24px rgba(22,101,52,.16);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
 .backup-success-toast i{font-size:17px;color:#16a34a}
 .backup-success-toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* Refined offline loading, ticket-style fitted backup and compact controls */
+.app-brand-mark,.header-left h1{display:none!important}
+.customer-search-wrap{display:flex;align-items:stretch;gap:6px}.customer-search-wrap input{flex:1;min-width:0}
+.customer-picker-trigger{width:44px;flex:0 0 44px;border:1px solid #dbeafe;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:15px}
+.choose-json-label{display:block;margin:3px 0 13px;text-align:center;font-size:16px;font-weight:900;color:#1e293b;cursor:pointer}
+.managed-file{box-shadow:none!important;transform:none!important;border:1px solid #d1d5db!important;background:#f1f5f9!important}
+.managed-file:active{transform:none!important;box-shadow:none!important}
+.managed-file.active{order:-1!important;margin:5px 2px 10px!important;padding:14px!important;border:2px dashed #64748b!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important;transform:none!important}
+.managed-file.active:before,.managed-file.active:after{display:none!important;content:none!important}
+.managed-file.active .file-icon{filter:none!important;color:#2563eb}
+.managed-file.active .file-info p{color:#64748b!important;font-weight:500!important}
+.request-tab-with-dot{position:relative}.request-unread-dot{display:none;position:absolute;right:7px;top:5px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+.loading-skeleton{position:relative;overflow:hidden;border-radius:13px;background:#e8edf4}
+.loading-skeleton:after{content:'';position:absolute;inset:-40% -60%;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.8) 50%,transparent 62%);transform:translateX(-65%);animation:skeletonSweep 1.15s ease-in-out infinite}
+@keyframes skeletonSweep{to{transform:translateX(65%)}}
+.request-skeleton{height:150px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.request-skeleton span{height:12px;border-radius:8px;background:#d7dee8}.request-skeleton span:nth-child(1){width:58%}.request-skeleton span:nth-child(2){width:86%}.request-skeleton span:nth-child(3){width:42%}
+.auth-skeleton{height:76px;margin:14px 0}
+.offline-message{display:flex;align-items:center;gap:14px}
+.no-internet-icon{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;background:#fee2e2;color:#dc2626;font-size:22px}
+#dialog-ok{background:#2563eb;color:#fff}
+
     </style>
 </head>
 <body>
     <div id="app-splash" aria-label="Milk Scale loading"><div class="splash-mark"><i class="fa-solid fa-droplet"></i></div><div class="splash-wordmark">Milk Scale</div><div class="splash-loader"><span></span></div></div>
     <header class="app-header">
         <div class="header-left">
-            <span class="app-brand-mark" aria-hidden="true"><i class="fa-solid fa-droplet"></i></span><h1>Milk Scale</h1>
+            
             <!-- File status button -->
             <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" aria-label="JSON files">
                 <span class="header-file-icon-wrap"><i class="fa-solid fa-file-invoice"></i><span class="file-alert-dot" id="header-file-dot"></span></span><span id="header-file-name">JSON</span>
