@@ -77,6 +77,39 @@ jobs:
           .icon-venv/bin/pip install --quiet cairosvg pillow
           .icon-venv/bin/python scripts/generate-android-icons.py
 
+      - name: Force Milk Scale app launcher icon and validate package identity
+        run: |
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          config = json.loads(Path("capacitor.config.json").read_text())
+          firebase = json.loads(Path("google-services.json").read_text())
+          package_id = config["appId"]
+          if package_id != "com.milkscale.nakul":
+              raise SystemExit(f"Unexpected Capacitor appId: {package_id}")
+          firebase_ids = {
+              client.get("client_info", {}).get("android_client_info", {}).get("package_name")
+              for client in firebase.get("client", [])
+          }
+          if package_id not in firebase_ids:
+              raise SystemExit(f"Firebase package IDs {firebase_ids} do not contain {package_id}")
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          ns = "{http://schemas.android.com/apk/res/android}"
+          app = root.find("application")
+          if app is None:
+              raise SystemExit("AndroidManifest.xml has no application element")
+          app.set(ns + "icon", "@mipmap/ic_launcher")
+          app.set(ns + "roundIcon", "@mipmap/ic_launcher_round")
+          app.set(ns + "label", "Milk Scale")
+          tree.write(manifest, encoding="utf-8", xml_declaration=True)
+          print(f"Verified package ID {package_id}; set Milk Scale launcher and round icons.")
+          PY
+
       - name: Set light Milk Scale launch screen background
         run: |
           python3 - <<'PY'
@@ -221,7 +254,10 @@ jobs:
           BADGING="$("$BUILD_TOOLS/aapt" dump badging Milk-Scale.apk)"
           echo "$BADGING" | grep -F "package: name='com.milkscale.nakul'"
           echo "$BADGING" | grep -F "application-label:'Milk Scale'"
-          unzip -l Milk-Scale.apk | grep -E 'ic_launcher|milk_scale_launcher_foreground' || true
+          echo "$BADGING" | grep -F "application-icon-"
+          "$BUILD_TOOLS/aapt" dump resources Milk-Scale.apk | grep -F "milk_scale_icon_background"
+          "$BUILD_TOOLS/aapt" dump resources Milk-Scale.apk | grep -F "milk_scale_launcher_foreground"
+          "$BUILD_TOOLS/zipalign" -c -v 4 Milk-Scale.apk
           jarsigner -verify -strict Milk-Scale.aab
 
       - uses: actions/upload-artifact@v4
