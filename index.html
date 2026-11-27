@@ -1098,7 +1098,7 @@ async function refreshAccountStatus(){
   const img=document.getElementById('profile-photo'),avatar=document.getElementById('profile-avatar');
   img.onload=()=>{img.style.display='block';avatar.style.display='none';};img.onerror=()=>{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';};
   if(p?.avatarData){img.style.display='block';img.src=p.avatarData;}else{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';}
-  status.innerText='';await renderConnectedDairyProfile(p);
+  status.innerText='';await withNetworkTimeout(renderConnectedDairyProfile(p));
  }catch(e){if(isNetworkError(e)){pv.style.display='none';fv.style.display='block';status.innerText='';showNoInternet();}else{pv.style.display='block';fv.style.display='none';status.innerText=e.message||'अकाउंट जानकारी लोड नहीं हुई।';}}
 }
         function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input||!button)return;const isHidden=input.type==='password';input.type=isHidden?'text':'password';const isVisible=input.type==='text';button.innerHTML=isVisible?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',isVisible?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');button.setAttribute('aria-pressed',String(isVisible));}
@@ -1265,16 +1265,16 @@ async function syncConnectedCustomers(){
   const rows=await window.MilkScaleAuth.getMyConnections(),links={};
   for(const c of rows.filter(x=>x.status==='active')){const name=String(c.customerProfile?.displayName||'').trim();if(!name)continue;links[name]=c.customerUid;if(!customers.includes(name))customers.push(name);}
   localStorage.setItem('ms_customer_links',JSON.stringify({...JSON.parse(localStorage.getItem('ms_customer_links')||'{}'),...links}));saveLocal(false);renderCustomers();populateDropdowns();if(currentFileNumber>0)await autoSaveToFile(currentFileNumber,false);
- }catch(e){console.warn('Connected customers refresh:',e?.message||e);}
+ }catch(e){if(isNetworkError(e))showNoInternet();else console.warn('Connected customers refresh:',e?.message||e);}
 }
 async function loadRequestCenter(){
  const list=document.getElementById('incoming-request-list'),form=document.getElementById('customer-dairy-request'),heading=document.getElementById('request-list-heading');
  if(!list||!form)return;
  if(!navigator.onLine){list.innerHTML='';showNoInternet();return;}list.innerHTML='<div class="loading-skeleton request-skeleton"><span></span><span></span><span></span></div>';form.style.display='none';
  try{
-  const user=await window.MilkScaleAuth?.getCurrentUser();
+  const user=await withNetworkTimeout(window.MilkScaleAuth?.getCurrentUser());
   if(!user){heading.innerText=customerCenterView==='all'?'All Customers':'New Request';list.innerHTML='<div class="empty-state">Customers देखने के लिए पहले Account में Login करें।</div>';return;}
-  const p=await window.MilkScaleAuth.getProfile();if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';return;}
+  const p=await withNetworkTimeout(window.MilkScaleAuth.getProfile());if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';return;}
   const [connections,requests]=await withNetworkTimeout(Promise.all([window.MilkScaleAuth.getMyConnections(),window.MilkScaleAuth.getMyConnectionRequests()]));updateRequestUnread(requests.filter(x=>x.targetUid===user.uid&&x.status==='pending'));
   if(customerCenterView==='all'){
    heading.innerText='All Customers';const active=connections.filter(x=>x.status==='active');
