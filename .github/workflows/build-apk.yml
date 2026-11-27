@@ -95,6 +95,8 @@ jobs:
                       body += '\n        <item name="android:windowBackground">#F8FBFF</item>'
                   if "Launch" in name and "windowSplashScreenBackground" not in body:
                       body += '\n        <item name="windowSplashScreenBackground">#F8FBFF</item>'
+                  if "Launch" in name and "windowSplashScreenAnimatedIcon" not in body:
+                      body += '\n        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>'
                   return '<style name="' + name + '"' + attrs + '>' + body + '</style>'
               source = re.sub(r'<style name="([^"]+)"([^>]*)>(.*?)</style>', update_style, source, flags=re.S)
               path.write_text(source)
