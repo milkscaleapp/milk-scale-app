@@ -1043,11 +1043,13 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         async function loadEntryRequests(){
           const list=document.getElementById('entry-request-list'),form=document.getElementById('customer-request-form');
           if(!list||!window.MilkScaleAuth)return;
+          if(!navigator.onLine){list.innerHTML='';showNoInternet();return;}
+          list.innerHTML='<div class="loading-skeleton request-skeleton"><span></span><span></span><span></span></div>';
           try{
-            const user=await window.MilkScaleAuth.getCurrentUser();if(!user){list.innerHTML='<p class="request-time">Request के लिए पहले Account में Login करें।</p>';form.style.display='none';return;}
-            const profile=await window.MilkScaleAuth.getProfile();if(!profile){list.innerHTML='<p class="request-time">Account में अपनी भूमिका चुनें।</p>';form.style.display='none';return;}
+            const user=await withNetworkTimeout(window.MilkScaleAuth.getCurrentUser());if(!user){list.innerHTML='<p class="request-time">Request के लिए पहले Account में Login करें।</p>';form.style.display='none';return;}
+            const profile=await withNetworkTimeout(window.MilkScaleAuth.getProfile());if(!profile){list.innerHTML='<p class="request-time">Account में अपनी भूमिका चुनें।</p>';form.style.display='none';return;}
             form.style.display=profile.role==='customer'?'block':'none';
-            const rows=await window.MilkScaleAuth.getMyConnectionRequests();
+            const rows=await withNetworkTimeout(window.MilkScaleAuth.getMyConnectionRequests());
             if(!rows.length){list.innerHTML='<p class="request-time">अभी कोई Request नहीं है।</p>';return;}
             list.innerHTML=rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).map(x=>{
               const incoming=x.targetUid===user.uid;
@@ -1056,16 +1058,16 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
               const actions=incoming&&x.status==='pending'?'<div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideEntryRequest(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideEntryRequest(\''+x.id+'\',false)">Reject</button></div>':'';
               return '<div class="request-row"><strong>'+escapeHtml(title)+'</strong><div class="request-state">'+status+'</div><div class="request-time">भेजा: '+formatRequestTime(x.createdAt)+(x.respondedAt?' • जवाब: '+formatRequestTime(x.respondedAt):'')+'</div>'+actions+'</div>';
             }).join('');
-          }catch(e){list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request लोड नहीं हुई')+'</p>';}
+          }catch(e){if(isNetworkError(e)){list.innerHTML='';showNoInternet();}else list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request लोड नहीं हुई')+'</p>';}
         }
         async function sendEntryDairyRequest(){
           const field=document.getElementById('dairy-search-id'),list=document.getElementById('entry-request-list');
           try{const result=await window.MilkScaleAuth.sendDairyConnectionRequest(field.value);field.value='';list.innerHTML='<p class="request-time">Request '+escapeHtml(result.dairy.displayName||'Dudhiya')+' को भेज दी गई।</p>';await loadEntryRequests();}
-          catch(e){list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request नहीं भेजी जा सकी')+'</p>';}
+          catch(e){if(isNetworkError(e))showNoInternet();else list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request नहीं भेजी जा सकी')+'</p>';}
         }
         async function decideEntryRequest(id,accept){
           try{await window.MilkScaleAuth.decideDairyRequest(id,accept);await loadEntryRequests();}
-          catch(e){const list=document.getElementById('entry-request-list');list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'अपडेट नहीं हुआ')+'</p>';}
+          catch(e){if(isNetworkError(e))showNoInternet();else{const list=document.getElementById('entry-request-list');list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'अपडेट नहीं हुआ')+'</p>';}}
         }
 
         // Optional Firebase email/password authentication. Local/offline app data is never gated by login.
