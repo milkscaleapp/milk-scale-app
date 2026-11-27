@@ -73,8 +73,9 @@ jobs:
 
       - name: Generate Milk Scale launcher icons
         run: |
-          python3 -m pip install --quiet cairosvg pillow
-          python3 scripts/generate-android-icons.py
+          python3 -m venv .icon-venv
+          .icon-venv/bin/pip install --quiet cairosvg pillow
+          .icon-venv/bin/python scripts/generate-android-icons.py
 
       - name: Set light Milk Scale launch screen background
         run: |
