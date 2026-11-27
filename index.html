@@ -414,7 +414,7 @@
    </section>
   </section>
  </div>
-</div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"><section class="empty-state">अभी कोई Settings उपलब्ध नहीं हैं।</section></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
+</div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
       <div class="auth-card">
         <div class="auth-page-heading"><button class="back-icon" onclick="closeAccount()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2 id="account-page-title">Account</h2></div>
         <div id="profile-view" style="display:none">
@@ -592,11 +592,10 @@ function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage
         function showFileInHeader(fileNum){const btn=document.getElementById('header-file-btn'),name=document.getElementById('header-file-name'),dot=document.getElementById('header-file-dot');if(btn)btn.style.display='flex';const fitted=Number(fileNum)>0&&filePresence[String(fileNum)]===true;if(name)name.innerText=fitted?'('+fileNum+')':'JSON';if(dot)dot.style.display=fitted||localStorage.getItem('ms_file_dot_seen')==='1'?'none':'inline-block';const info=document.getElementById('current-backup-file');if(info)info.style.display=fitted?'block':'none';const title=document.getElementById('backup-filename');if(title&&fitted)title.innerText='MilkScale_Backup_('+fileNum+').json';}
         function renderCustomers() {
             const list = document.getElementById('cust-list');
-            document.getElementById('customer-count').innerText = 'Total: ' + customers.length;
-            if(customers.length === 0) {
-                list.innerHTML = '<p class="empty-state">अभी कोई Customer जुड़ा नहीं है।</p>';
-                return;
-            }
+            const count = document.getElementById('customer-count');
+            if(count) count.innerText = 'Total: ' + customers.length;
+            if(!list) return;
+            if(customers.length === 0) { list.innerHTML = ''; return; }
             list.innerHTML = customers.map((c, i) => `
                 <div class="customer-row" data-customer-index="${i}">
                     <span class="customer-order">${i + 1}.</span>
