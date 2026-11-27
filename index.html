@@ -330,7 +330,7 @@
 
             <div class="card">
                 <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
-                <div class="form-group"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" readonly onclick="openCustomerPicker()"><datalist id="customer-options"></datalist></div>
+                <div class="form-group"><div class="customer-search-wrap"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" readonly onclick="openCustomerPicker()"><button type="button" class="customer-picker-trigger" onclick="openCustomerPicker()" aria-label="Show all customers"><i class="fa-solid fa-chevron-down"></i></button></div><datalist id="customer-options"></datalist></div>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -383,13 +383,8 @@
                 </div>
             </div>
 
-            <div class="card">
-                <h2 style="color: var(--success); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-folder-open"></i> Restore backup</h2>
-                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importBackupFile(event)">
-                <button class="btn btn-warning" onclick="document.getElementById('fileInput').click()">
-                    <i class="fa-solid fa-upload"></i> Choose file
-                </button>
-            </div>
+            <label class="choose-json-label" for="fileInput">Choose JSON</label>
+            <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importBackupFile(event)">
         </div>
 
     </div>
@@ -418,7 +413,7 @@
   <section>
    <div class="customer-center-tabs">
     <button id="customer-tab-all" class="customer-center-tab active" type="button" onclick="setCustomerCenterView('all')">All Customers</button>
-    <button id="customer-tab-new" class="customer-center-tab" type="button" onclick="setCustomerCenterView('new')">New Request</button>
+    <button id="customer-tab-new" class="customer-center-tab request-tab-with-dot" type="button" onclick="setCustomerCenterView('new')">New Request<span id="new-request-dot" class="request-unread-dot" aria-hidden="true"></span></button>
     <button class="customer-center-refresh" type="button" onclick="loadRequestCenter()" aria-label="Refresh"><i class="fa-solid fa-rotate"></i></button>
    </div>
    <h3 id="request-list-heading">All Customers</h3>
@@ -473,7 +468,7 @@
         let dialogResolver = null;
         function appDialog(message, confirmMode=false, title='Milk Scale') {
             const modal=document.getElementById('app-dialog');
-            document.getElementById('dialog-title').textContent=title;
+            document.getElementById('dialog-title').textContent=title;document.getElementById('dialog-ok').textContent='OK';document.getElementById('dialog-message').classList.remove('offline-message');
             document.getElementById('dialog-message').textContent=message;
             document.getElementById('dialog-cancel').style.display=confirmMode?'inline-block':'none';
             modal.classList.add('show');
@@ -487,7 +482,11 @@
             document.getElementById('app-dialog').classList.remove('show');
             if(dialogResolver){const resolve=dialogResolver;dialogResolver=null;resolve(result);}
         }
-        function notify(message){appDialog(message,false);}
+        function notify(message){if(isNetworkError(message)){showNoInternet();return;}appDialog(message,false);}
+function isNetworkError(error){const s=String(error?.code||'')+' '+String(error?.message||error||'');return !navigator.onLine||/offline|network|unavailable|failed to get document because the client is offline|unreachable/i.test(s);}
+function showNoInternet(){const title=document.getElementById('dialog-title'),message=document.getElementById('dialog-message'),cancel=document.getElementById('dialog-cancel'),ok=document.getElementById('dialog-ok');title.innerText='No Internet Connection';message.classList.add('offline-message');message.innerHTML='<span class="no-internet-icon"><i class="fa-solid fa-wifi"></i></span><span>कृपया इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।</span>';cancel.style.display='none';ok.innerText='OK';document.getElementById('app-dialog').classList.add('show');dialogResolver=null;}
+function markRequestsSeen(){const dot=document.getElementById('new-request-dot');if(dot)dot.style.display='none';const ids=JSON.parse(localStorage.getItem('ms_seen_request_ids')||'[]');localStorage.setItem('ms_seen_request_ids',JSON.stringify([...new Set([...ids,...(window.__msPendingRequestIds||[])])]));}
+function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage.getItem('ms_seen_request_ids')||'[]'));const ids=pending.map(x=>x.id);window.__msPendingRequestIds=ids;const dot=document.getElementById('new-request-dot');if(dot)dot.style.display=ids.some(id=>!seen.has(id))?'block':'none';}
         let backupToastTimer=null;
         function showBackupToast(message){const toast=document.getElementById('backup-success-toast');if(!toast)return;toast.querySelector('span').textContent=message;toast.classList.add('show');clearTimeout(backupToastTimer);backupToastTimer=setTimeout(()=>toast.classList.remove('show'),1900);}
 
@@ -765,6 +764,7 @@
  }finally{if(fileWriteQueues[key]===task)delete fileWriteQueues[key];}
 }
         async function createNewBackupFile(){
+ if(!(await appDialog('नई JSON फाइल बनानी है?',true,'Create new file')))return;
  if(currentFileNumber>0)saveActiveFileData();
  const previous=currentFileNumber,oldCustomers=customers,oldEntries=entries;
  const n=Math.max(0,...Object.keys(fileStore).map(Number).filter(Number.isFinite))+1;
@@ -778,7 +778,7 @@
         function getKnownFileNumbers() {
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
-        function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().filter(n=>filePresence[String(n)]===true).sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+(active?'Fitted file · ':'')+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p class="empty-state">अभी कोई JSON फाइल उपलब्ध नहीं है।</p>';}
+        function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().filter(n=>filePresence[String(n)]===true).sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);list.innerHTML=nums.length?nums.map(n=>{const missing=filePresence[String(n)]!==true,active=n===currentFileNumber&&!missing;return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p>'+((fileStore[String(n)]?.entries||[]).length)+' entries</p></div>'+(missing?'<span class="file-alert-dot" aria-label="File not found"></span>':'')+'</div>';}).join(''):'<p class="empty-state">अभी कोई JSON फाइल उपलब्ध नहीं है।</p>';}
         async function refreshActiveFilePresence(loadCurrentData=true){
  const fs=window.Capacitor?.Plugins?.Filesystem,unreadable=new Set();
  if(fs?.readdir){
@@ -820,6 +820,8 @@
  showFileInHeader(currentFileNumber);renderFileList();
 }
         async function selectManagedFile(n){
+ if(Number(n)===Number(currentFileNumber)&&filePresence[String(n)]===true)return;
+ if(!(await appDialog('इस JSON टिकट को फिट करने पर वर्तमान फाइल बदल जाएगी। क्या आगे बढ़ें?',true,'Choose JSON file')))return;
  if(!fileStore[String(n)])return;
  const fs=window.Capacitor?.Plugins?.Filesystem;
  try{
@@ -832,7 +834,7 @@
  try{await readManagedFileData(n);}catch(e){filePresence[String(n)]=false;renderFileList();notify(e.message||'JSON फाइल पढ़ी नहीं जा सकी।');return;}
  currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal(false);
  renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();
- showFileInHeader(n);renderFileList();switchTab('scale',document.querySelector('.bottom-nav .nav-item'));
+ showFileInHeader(n);renderFileList();
 }
         async function recreateManagedFile(n) {
             if (!fileStore[String(n)]) return;
@@ -1071,6 +1073,7 @@
             document.getElementById('auth-backdrop').classList.add('show');
             document.body.classList.add('auth-open');
             history.pushState({page:'account'},'','#account');
+            if(!navigator.onLine){document.getElementById('profile-view').style.display='none';document.getElementById('auth-form-view').style.display='block';document.getElementById('auth-status').innerText='';document.getElementById('auth-form-status').innerText='';showNoInternet();return;}
             refreshAccountStatus();
         }
         function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); document.body.classList.remove('auth-open'); }
@@ -1078,7 +1081,7 @@
         async function refreshAccountStatus(){
  const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status'),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
  pv.style.display='block';fv.style.display='none';
- status.innerHTML='<span class="profile-loader"><i class="fa-solid fa-circle-notch"></i></span>';
+ if(!navigator.onLine){pv.style.display='none';fv.style.display='block';status.innerText='';formStatus.innerText='';showNoInternet();return;} status.innerHTML='<div class="loading-skeleton auth-skeleton"></div>';
  try{
   const user=await window.MilkScaleAuth?.getCurrentUser();
   if(!user){pv.style.display='none';fv.style.display='block';formStatus.innerText='';status.innerText='';return;}
@@ -1094,7 +1097,7 @@
   img.onload=()=>{img.style.display='block';avatar.style.display='none';};img.onerror=()=>{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';};
   if(p?.avatarData){img.style.display='block';img.src=p.avatarData;}else{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';}
   status.innerText='';await renderConnectedDairyProfile(p);
- }catch(e){pv.style.display='block';fv.style.display='none';status.innerText=e.message||'अकाउंट जानकारी लोड नहीं हुई।';}
+ }catch(e){if(isNetworkError(e)){pv.style.display='none';fv.style.display='block';status.innerText='';showNoInternet();}else{pv.style.display='block';fv.style.display='none';status.innerText=e.message||'अकाउंट जानकारी लोड नहीं हुई।';}}
 }
         function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input||!button)return;const isHidden=input.type==='password';input.type=isHidden?'text':'password';const isVisible=input.type==='text';button.innerHTML=isVisible?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',isVisible?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');button.setAttribute('aria-pressed',String(isVisible));}
         function toggleProfileSettings(){const p=document.getElementById('profile-settings-panel');p.style.display=p.style.display==='none'?'block':'none';}
@@ -1252,7 +1255,7 @@ function filterCustomerPicker(){
 }
 function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;closeCustomerPicker();}
 let customerCenterView='all';
-function setCustomerCenterView(view){customerCenterView=view==='new'?'new':'all';document.getElementById('customer-tab-all')?.classList.toggle('active',customerCenterView==='all');document.getElementById('customer-tab-new')?.classList.toggle('active',customerCenterView==='new');loadRequestCenter();}
+function setCustomerCenterView(view){customerCenterView=view==='new'?'new':'all';document.getElementById('customer-tab-all')?.classList.toggle('active',customerCenterView==='all');document.getElementById('customer-tab-new')?.classList.toggle('active',customerCenterView==='new');if(customerCenterView==='new')markRequestsSeen();loadRequestCenter();}
 function openRequestCenter(){const page=document.getElementById('request-center');customerCenterView='all';document.getElementById('customer-tab-all')?.classList.add('active');document.getElementById('customer-tab-new')?.classList.remove('active');page.classList.add('show');document.body.classList.add('auth-open');history.pushState({page:'requests'},'','#requests');loadRequestCenter();}
 function closeRequestCenter(){document.getElementById('request-center').classList.remove('show');document.body.classList.remove('auth-open');}
 async function syncConnectedCustomers(){
@@ -1265,12 +1268,12 @@ async function syncConnectedCustomers(){
 async function loadRequestCenter(){
  const list=document.getElementById('incoming-request-list'),form=document.getElementById('customer-dairy-request'),heading=document.getElementById('request-list-heading');
  if(!list||!form)return;
- list.innerHTML='<div class="profile-loader"><i class="fa-solid fa-circle-notch"></i></div>';form.style.display='none';
+ if(!navigator.onLine){list.innerHTML='';showNoInternet();return;}list.innerHTML='<div class="loading-skeleton request-skeleton"><span></span><span></span><span></span></div>';form.style.display='none';
  try{
   const user=await window.MilkScaleAuth?.getCurrentUser();
   if(!user){heading.innerText=customerCenterView==='all'?'All Customers':'New Request';list.innerHTML='<div class="empty-state">Customers देखने के लिए पहले Account में Login करें।</div>';return;}
   const p=await window.MilkScaleAuth.getProfile();if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';return;}
-  const [connections,requests]=await Promise.all([window.MilkScaleAuth.getMyConnections(),window.MilkScaleAuth.getMyConnectionRequests()]);
+  const [connections,requests]=await Promise.all([window.MilkScaleAuth.getMyConnections(),window.MilkScaleAuth.getMyConnectionRequests()]);updateRequestUnread(requests.filter(x=>x.targetUid===user.uid&&x.status==='pending'));
   if(customerCenterView==='all'){
    heading.innerText='All Customers';const active=connections.filter(x=>x.status==='active');
    if(p.role==='owner')list.innerHTML=active.length?active.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.customerProfile?.displayName||x.customerName||'Customer')+'</strong><div class="request-state">Connected Customer</div><div class="request-time">Connected</div></div>').join(''):'<div class="empty-state">अभी कोई Customer कनेक्ट नहीं है।</div>';
@@ -1287,7 +1290,7 @@ async function loadRequestCenter(){
     list.innerHTML=sent.length?sent.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.targetName||'Dairy')+'</strong><div class="request-state">'+(x.status==='pending'?'Pending':x.status==='accepted'?'Accepted':'Rejected')+'</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div></div>').join(''):'<div class="empty-state">अभी कोई Request नहीं भेजी गई है।</div>';
    }
   }
- }catch(e){list.innerHTML='<div class="empty-state">'+escapeHtml(e.message||'Customers लोड नहीं हुए')+'</div>';}
+ }catch(e){if(isNetworkError(e)){list.innerHTML='';showNoInternet();}else{list.innerHTML='<div class="empty-state">'+escapeHtml(e.message||'Customers लोड नहीं हुए')+'</div>';}}
 }
 async function sendEntryDairyRequest(){const field=document.getElementById('dairy-search-id'),out=document.getElementById('customer-request-status');try{const result=await window.MilkScaleAuth.sendDairyConnectionRequest(field.value);field.value='';out.innerText='Request '+(result.dairy.displayName||'Dairy')+' को भेज दी गई है।';await loadRequestCenter();}catch(e){out.innerText=e.message||'Request नहीं भेजी जा सकी।';}}
 async function decideRequestCenter(id,accept){try{await window.MilkScaleAuth.decideDairyRequest(id,accept);notify(accept?'Request स्वीकार हो गई।':'Request अस्वीकार कर दी गई।');await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
