@@ -1,14 +1,32 @@
 name: Build Milk Scale signed releases
 
 on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "index.html"
+      - "src/**"
+      - "assets/**"
+      - "scripts/**"
+      - "firestore.rules"
+      - "package.json"
+      - "build.js"
+      - "capacitor.config.json"
+      - "google-services.json"
+      - ".github/workflows/build-apk.yml"
   push:
     branches: ["main"]
     paths:
       - "index.html"
+      - "src/**"
+      - "assets/**"
+      - "scripts/**"
+      - "firestore.rules"
       - "package.json"
       - "build.js"
       - ".github/workflows/validate-web.yml"
       - "capacitor.config.json"
+      - "google-services.json"
       - ".github/workflows/build-apk.yml"
   workflow_dispatch:
 
@@ -52,6 +70,62 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+
+      - name: Generate Milk Scale launcher icons
+        run: |
+          python3 -m venv .icon-venv
+          .icon-venv/bin/pip install --quiet cairosvg pillow
+          .icon-venv/bin/python scripts/generate-android-icons.py
+
+      - name: Set light Milk Scale launch screen background
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          for path in (
+              Path("android/app/src/main/res/values/styles.xml"),
+              Path("android/app/src/main/res/values-v31/styles.xml"),
+          ):
+              if not path.exists():
+                  continue
+              source = path.read_text()
+              def update_style(match):
+                  name, attrs, body = match.group(1), match.group(2), match.group(3)
+                  if "android:windowBackground" not in body:
+                      body += '\n        <item name="android:windowBackground">#F8FBFF</item>'
+                  if "Launch" in name and "windowSplashScreenBackground" not in body:
+                      body += '\n        <item name="windowSplashScreenBackground">#F8FBFF</item>'
+                  if "Launch" in name and "windowSplashScreenAnimatedIcon" not in body:
+                      body += '\n        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>'
+                  return '<style name="' + name + '"' + attrs + '>' + body + '</style>'
+              source = re.sub(r'<style name="([^"]+)"([^>]*)>(.*?)</style>', update_style, source, flags=re.S)
+              path.write_text(source)
+          PY
+
+      - name: Configure Firebase for Android
+        run: |
+          test -s google-services.json
+          cp google-services.json android/app/google-services.json
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("android/build.gradle")
+          root_text = root.read_text()
+          dependency = "classpath 'com.google.gms:google-services:4.4.2'"
+          if dependency not in root_text:
+              marker = "dependencies {"
+              if marker not in root_text:
+                  raise SystemExit("Could not find root Gradle dependencies block")
+              root_text = root_text.replace(marker, marker + "\n        " + dependency, 1)
+              root.write_text(root_text)
+
+          app = Path("android/app/build.gradle")
+          app_text = app.read_text()
+          plugin = "apply plugin: 'com.google.gms.google-services'"
+          if plugin not in app_text:
+              app.write_text(app_text.rstrip() + "\n\n" + plugin + "\n")
+          PY
 
       - name: Set Android version code for upgrade installs
         env:
@@ -135,11 +209,14 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease bundleRelease
+          cd ..
+          cp android/app/build/outputs/apk/release/*.apk Milk-Scale.apk
+          cp android/app/build/outputs/bundle/release/*.aab Milk-Scale.aab
 
       - uses: actions/upload-artifact@v4
         with:
           name: Milk-Scale-production-release
           path: |
-            android/app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/bundle/release/*.aab
+            Milk-Scale.apk
+            Milk-Scale.aab
           if-no-files-found: error

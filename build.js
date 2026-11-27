@@ -18,6 +18,9 @@ fs.rmSync(www, { recursive: true, force: true });
 fs.mkdirSync(www, { recursive: true });
 fs.copyFileSync(path.join(root, 'index.html'), path.join(www, 'index.html'));
 
+const assetsDirectory = path.join(root, 'assets');
+if (fs.existsSync(assetsDirectory)) copyDirectory(assetsDirectory, path.join(www, 'assets'));
+
 const fontAwesome = path.join(root, 'node_modules', '@fortawesome', 'fontawesome-free');
 copyDirectory(path.join(fontAwesome, 'css'), path.join(www, 'vendor', 'fontawesome', 'css'));
 copyDirectory(path.join(fontAwesome, 'webfonts'), path.join(www, 'vendor', 'fontawesome', 'webfonts'));
@@ -32,4 +35,27 @@ if (!fs.existsSync(filesystemPlugin)) {
 fs.mkdirSync(path.join(www, 'vendor'), { recursive: true });
 fs.copyFileSync(filesystemPlugin, path.join(www, 'vendor', 'capacitor-filesystem.js'));
 
+const esbuild = require('esbuild');
+
+const nativeAppEntry = path.join(root, 'src', 'native-app.js');
+if (!fs.existsSync(nativeAppEntry)) throw new Error('Native App bridge entry was not found.');
+esbuild.buildSync({
+  entryPoints: [nativeAppEntry],
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  outfile: path.join(www, 'vendor', 'native-app.js'),
+  target: ['es2020']
+});
+
 console.log('Built local Milk Scale web assets in www/.');
+
+// Bundle the native Firebase Authentication bridge for the WebView.
+esbuild.buildSync({
+  entryPoints: [path.join(root, 'src', 'firebase-auth.js')],
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  outfile: path.join(www, 'vendor', 'firebase-auth.js'),
+  target: ['es2020']
+});

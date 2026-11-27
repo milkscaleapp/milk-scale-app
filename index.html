@@ -10,6 +10,7 @@
     <!-- Capacitor Plugin for Native File System -->
     <script src="capacitor.js"></script> 
     <script src="./vendor/capacitor-filesystem.js"></script>
+    <script src="./vendor/native-app.js"></script>
 
     <style>
         :root {
@@ -125,6 +126,10 @@
         .managed-file .file-info { min-width:0; cursor:pointer; }
         .managed-file .file-info h4 { overflow-wrap:anywhere; }
         .managed-file .file-pick { border:0; border-radius:9px; padding:9px 10px; background:var(--primary-light); color:var(--primary); font-weight:700; }
+        .managed-file{position:relative;overflow:visible}.managed-file .file-alert-dot{position:absolute;right:-5px;top:-5px;width:11px;height:11px;border:2px solid #fff;z-index:2}
+        .managed-file.active{position:relative;order:-1;margin:5px 2px 10px;padding:16px 14px 17px 18px;border:1px solid #1d4ed8;border-radius:12px;background:linear-gradient(145deg,#eff6ff,#dbeafe);box-shadow:inset 0 2px 5px rgba(30,64,175,.12),0 3px 0 #1e40af,0 8px 14px rgba(30,64,175,.16)}
+        .managed-file.active:before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:4px;border-radius:4px;background:linear-gradient(#93c5fd,#2563eb,#93c5fd);box-shadow:0 0 0 1px rgba(30,64,175,.15)}
+        .managed-file.active .file-icon{color:#1d4ed8;filter:drop-shadow(0 1px 1px rgba(30,64,175,.2))}.managed-file.active .file-info p{color:#1d4ed8;font-weight:700}.managed-file.active:after{content:'FITTED';position:absolute;right:12px;top:-8px;padding:3px 8px;border-radius:7px;background:#1d4ed8;color:#fff;font-size:9px;font-weight:800;letter-spacing:.7px;box-shadow:0 2px 4px rgba(30,64,175,.2)}
         .new-file-bottom { margin-top:14px; }
         .file-alert-dot { display:none; width:8px; height:8px; border-radius:50%; background:#ef4444; }
         .file-status-btn.file-missing { border:2px solid #ef4444; background:linear-gradient(135deg,#991b1b,#ef4444); box-shadow:0 0 0 3px #fee2e2; animation:none; }
@@ -147,19 +152,141 @@
         .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.dialog-actions button{border:0;border-radius:10px;padding:10px 16px;font:600 14px inherit;cursor:pointer}
         .dialog-cancel{background:var(--bg);color:var(--text)}.dialog-ok{background:var(--primary);color:white}
 
+
+        .account-btn{border:0;border-radius:14px;padding:10px 13px;background:#eaf1ff;color:#2563eb;font-weight:700;font-size:13px;margin-left:auto}
+        .app-header{gap:12px}.header-left{flex:1;min-width:0}.auth-card{max-height:88vh;overflow-y:auto}
+        .profile-summary{display:flex;align-items:center;gap:12px;background:#eff6ff;border-radius:14px;padding:13px;margin:12px 0}
+        .profile-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#2563eb;color:white;font-size:20px;font-weight:800}
+        .profile-meta{min-width:0}.profile-meta strong{display:block;font-size:15px}.profile-meta small{display:block;color:#64748b;overflow-wrap:anywhere}
+        .request-panel{display:none}.request-panel.open{display:block}.request-row{padding:12px 0;border-bottom:1px solid var(--border)}
+        .request-row:last-child{border-bottom:0}.request-actions{display:flex;gap:8px;margin-top:8px}.request-actions button{flex:1;border:0;border-radius:9px;padding:9px;font-weight:700}
+        .request-time{font-size:11px;color:var(--text-light);margin-top:4px}.request-state{font-size:12px;font-weight:700;color:var(--primary)}
+        .request-top-btn{width:100%;border:0;border-radius:12px;background:#eff6ff;color:#1d4ed8;padding:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+        .auth-backdrop{position:fixed;inset:0;z-index:2500;display:none;overflow-y:auto;background:#f8fafc;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+        .auth-backdrop.show{display:block}.auth-card{width:100%;min-height:100%;max-height:none;overflow:visible;background:#f8fafc;border-radius:0;padding:22px 20px 30px;box-shadow:none}
+        .auth-card .auth-page-heading{position:sticky;top:0;background:#f8fafc;padding:8px 0 14px;z-index:2}
+        .profile-hero{display:flex;align-items:center;gap:14px;padding:16px;background:#eff6ff;border-radius:16px;margin:14px 0}
+        .profile-photo-button{position:relative;width:76px;height:76px;flex:0 0 76px;border:0!important;padding:0!important;border-radius:50%!important;background:#2563eb;color:white;overflow:visible;display:grid;place-items:center;font-size:28px}
+        .profile-photo-button img{width:100%;height:100%;object-fit:cover;border-radius:50%}.profile-photo-button>i{position:absolute;right:-2px;bottom:-2px;background:#fff;color:#2563eb;border:1px solid #dbeafe;border-radius:50%;padding:7px;font-size:12px}
+        .profile-id-card{display:flex;flex-direction:column;gap:5px;border:1px solid #dbeafe;background:#fff;border-radius:14px;padding:14px}.profile-id-card small{font-size:12px;color:#64748b}.profile-id-card strong{font-size:20px;letter-spacing:.6px;color:#1d4ed8}.profile-role-label{display:inline-flex;align-self:flex-start;background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:5px 10px;font-size:12px;font-weight:700;margin-top:5px}
+        .profile-settings{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:18px;background:#f1f5f9;color:#334155}.logout-danger{width:100%;margin-top:24px;background:#dc2626!important;color:#fff!important;padding:15px!important;border-radius:12px!important}
+        .password-wrap{position:relative}.auth-card .password-wrap input{padding-right:52px}.password-eye{position:absolute;right:8px;top:13px;background:transparent!important;color:#64748b;padding:8px!important}
+        .connected-dairy-card{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e2e8f0}.connected-dairy-card img,.connected-dairy-card .fallback{width:46px;height:46px;object-fit:cover;border-radius:50%;background:#dbeafe;display:grid;place-items:center;color:#1d4ed8;font-weight:800}
+        body.auth-open{overflow:hidden} #entry-tools-panel.open{margin-top:12px}
+        .auth-card h2{margin:0 0 8px;font-size:21px;color:#1e293b}.auth-card p{font-size:13px;line-height:1.5;color:#64748b}
+        .auth-card input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;margin:8px 0 12px}
+        .auth-card button{border:0;border-radius:10px;padding:12px 15px;font-weight:700}.auth-primary{background:#2563eb;color:white;width:100%}.auth-secondary{background:#f1f5f9;color:#334155}
+        .auth-status{min-height:20px;color:#475569;font-size:12px;margin:8px 0}
+
+.file-status-btn{display:flex!important;position:relative;animation:none!important;box-shadow:none!important}.file-status-btn.file-missing{border:0!important;background:linear-gradient(135deg,#10b981,#059669)!important;box-shadow:none!important}
+.file-alert-dot{display:inline-block;position:absolute;right:-4px;top:-4px;width:10px;height:10px;border:2px solid var(--bg);background:#ef4444;border-radius:50%;z-index:3}
+.managed-file{background:linear-gradient(145deg,#f1f5f9,#e2e8f0);border:1px solid #d1d5db;box-shadow:0 5px 0 #cbd5e1,0 8px 15px rgba(15,23,42,.07)}.managed-file.missing{border:1px solid #d1d5db;background:linear-gradient(145deg,#f1f5f9,#e2e8f0);box-shadow:0 5px 0 #cbd5e1,0 8px 15px rgba(15,23,42,.07)}
+.managed-file.active{order:-1;border:1px solid #bfdbfe;background:#fff;box-shadow:0 2px 8px rgba(37,99,235,.12);transform:none;padding:16px}.managed-file.active:active,.managed-file:active{transform:none;box-shadow:0 2px 8px rgba(15,23,42,.07)}.managed-file .file-pick{display:none}.managed-file .file-info{cursor:pointer}
+.request-center-btn{border:0;border-radius:12px;padding:10px 11px;background:#eff6ff;color:#1d4ed8;font-weight:700;white-space:nowrap}.app-header{flex-wrap:wrap}
+.customer-center-tabs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:8px;align-items:center;margin-bottom:14px}
+.customer-center-tab{min-width:0;border:1px solid #dbeafe;border-radius:11px;background:#f8fafc;color:#64748b;padding:12px 7px;font-size:13px;font-weight:800;white-space:nowrap}
+.customer-center-tab.active{background:#2563eb;color:#fff;border-color:#2563eb;box-shadow:0 3px 8px rgba(37,99,235,.2)}
+.customer-center-refresh{width:42px;height:42px;border:0;border-radius:11px;background:#eff6ff;color:#1d4ed8;font-size:16px}
+.full-page-backdrop{position:fixed;inset:0;z-index:4200;background:var(--bg);display:none;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}.full-page-backdrop.show{display:flex}
+.full-page-header{height:58px;flex:0 0 58px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border)}.full-page-header h2{font-size:18px;margin:0;flex:1}.back-icon,.refresh-icon{width:40px;height:40px;border:0;border-radius:12px;background:#eff6ff;color:#1d4ed8;display:grid;place-items:center;font-size:17px}
+.full-page-body{flex:1;min-height:0;overflow:auto;padding:18px 16px 28px}.full-page-body section{background:#fff;border:1px solid var(--border);border-radius:16px;padding:15px;margin-bottom:14px}.full-page-body h3{font-size:15px;margin:0 0 12px}
+.profile-loader{height:54px;display:grid;place-items:center;color:#2563eb;font-size:27px}.profile-loader i{animation:profileSpin .75s linear infinite;font-weight:900}@keyframes profileSpin{to{transform:rotate(360deg)}}
+
+.customer-picker-modal{position:fixed;inset:0;z-index:4600;background:#f8fafc;display:none;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.customer-picker-modal.show{display:flex}.customer-picker-header{height:60px;flex:0 0 60px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border)}
+.customer-picker-header h2{font-size:18px;margin:0}.customer-picker-content{display:flex;flex-direction:column;gap:12px;padding:16px;min-height:0;flex:1}
+.customer-picker-content input{flex:0 0 auto}.customer-picker-list{display:flex;flex-direction:column;gap:0;overflow-y:auto;min-height:0;background:#fff;border:1px solid var(--border);border-radius:14px}
+.customer-picker-option{width:100%;border:0;border-bottom:1px solid #f1f5f9;background:#fff;text-align:left;padding:14px 15px;font:inherit;color:var(--text);font-size:14px}
+.customer-picker-option:last-child{border-bottom:0}.customer-picker-option:active{background:#eff6ff}.customer-picker-empty{padding:20px;text-align:center;color:var(--text-light);font-size:13px}
+
+.entry-reorder-handle{touch-action:none;user-select:none;-webkit-user-select:none}.customer-row{transition:transform 150ms cubic-bezier(.2,.75,.25,1),background .12s;will-change:transform}.customer-row.dragging{transition:none!important;opacity:.96;position:relative;z-index:6;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.16);border-radius:10px}
+
+.edit-profile-backdrop{position:fixed;inset:0;z-index:4500;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:20px}.edit-profile-backdrop.show{display:flex}
+.edit-profile-card{width:100%;max-width:440px;background:#fff;border-radius:22px;padding:20px;box-shadow:0 20px 60px rgba(15,23,42,.25)}.edit-profile-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.edit-profile-heading h3{margin:0}.edit-profile-card input{margin:7px 0 12px}
+.profile-board{border-radius:22px;padding:1px;background:linear-gradient(135deg,#2563eb,#38bdf8,#a5b4fc);margin:12px 0 10px;box-shadow:0 12px 28px rgba(37,99,235,.16)}
+.profile-board-top{display:flex;align-items:center;gap:13px;padding:17px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:21px;min-width:0}
+.profile-board-meta{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}.profile-board-meta strong{font-size:18px;overflow-wrap:anywhere}.profile-board-meta>span:not(.profile-role-label){font-size:12px;color:#475569;overflow-wrap:anywhere}
+.profile-edit-icon{flex:0 0 38px;width:38px;height:38px;border:0;border-radius:12px;background:#fff;color:#1d4ed8}
+.profile-switch-button{width:100%;border:0;border-radius:13px;padding:14px;background:#1d4ed8;color:#fff;font-weight:800;margin:4px 0 12px}
+#profile-settings-panel,.profile-id-card{display:none!important}
+.managed-file .file-alert-dot{position:static;flex:0 0 9px;width:9px;height:9px;box-shadow:none;border:0}.file-alert-dot[aria-label="File not found"]{background:#ef4444}
+.app-header h1{white-space:nowrap;flex:0 0 auto}.header-left{flex-wrap:nowrap;gap:10px;min-width:0}
+.file-status-btn{gap:7px;padding:7px 10px}.header-file-icon-wrap{position:relative;display:inline-grid;place-items:center;font-size:18px}
+#header-file-dot{position:absolute!important;display:none;right:-5px!important;top:50%!important;transform:translateY(-50%);width:11px!important;height:11px!important;border:2px solid #fff!important;border-radius:50%;background:#ef4444;box-shadow:0 0 0 1px rgba(15,23,42,.08)}
+.request-board{display:flex;flex-direction:column;min-height:calc(100% - 24px);gap:14px}.request-board section:first-child{flex:1;min-height:320px}.request-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.request-section-heading h3{margin:0!important}
+.refresh-icon{width:30px;height:30px;flex:0 0 30px;padding:0;border:0;border-radius:8px;background:transparent;color:#111827;font-size:14px}
+.request-help{margin:0 0 10px}.empty-state{padding:24px 12px;text-align:center;color:#64748b;font-size:14px}
+.profile-photo-button{overflow:hidden!important;border-radius:50%!important;clip-path:circle(50%)}.profile-photo-button img{display:block;width:100%;height:100%;min-width:76px;min-height:76px;object-fit:cover;object-position:center;border-radius:50%;aspect-ratio:1/1}
+.profile-photo-button>i{right:0;bottom:0;z-index:2}.profile-photo-viewer{position:fixed;inset:0;z-index:6000;display:none;flex-direction:column;background:#080d18;color:#fff;padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom)}
+.profile-photo-viewer.show{display:flex}.photo-viewer-top{height:58px;display:flex;align-items:center;gap:14px}.photo-viewer-top>span{flex:1;font-weight:700}.photo-edit-action{background:#fff;color:#111827;border:0;border-radius:10px;padding:9px 13px;font-weight:800}
+.photo-viewer-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;min-height:0}.photo-viewer-content img{width:min(82vw,440px);height:min(82vw,440px);object-fit:contain;border-radius:50%;background:#182235}.photo-viewer-content strong{font-size:25px;font-weight:900;text-align:center;overflow-wrap:anywhere}.photo-viewer-fallback{display:none;width:min(82vw,440px);height:min(82vw,440px);border-radius:50%;background:#2563eb;align-items:center;justify-content:center;font-size:100px;font-weight:900}
+.verified-check{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;background:#dcfce7;color:#15803d;font-size:38px;box-shadow:0 0 0 8px #f0fdf4}
+#app-splash{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(circle at 50% 42%,#fff 0%,#f0f8ff 48%,#dceeff 100%);color:#082e78;transition:opacity .42s ease,visibility .42s ease}
+#app-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+.splash-mark{position:relative;width:154px;height:154px;display:grid;place-items:center;animation:splashPulse 1.15s cubic-bezier(.4,0,.2,1) infinite}
+.splash-mark:before{content:'';position:absolute;inset:7px;border:2px solid rgba(37,99,235,.16);border-radius:50%;animation:splashOrbit 2.2s linear infinite}
+.splash-mark img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 15px 20px rgba(7,48,119,.2))}
+.splash-wordmark{font-size:31px;font-weight:950;letter-spacing:-1px;white-space:nowrap;background:linear-gradient(100deg,#082e78 12%,#087fe8 58%,#22a9e9 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.splash-loader{width:118px;height:4px;border-radius:8px;background:#cfe4ff;overflow:hidden;margin-top:4px}
+.splash-loader span{display:block;width:34%;height:100%;border-radius:8px;background:linear-gradient(90deg,#0755c9,#22b8f2,#32b34a);animation:splashLoad 1.05s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes splashFloat{to{transform:translateY(-7px) scale(1.04)}}
+@keyframes splashPulse{0%,100%{transform:translateY(0) scale(.96)}50%{transform:translateY(-7px) scale(1.035)}}
+@keyframes splashOrbit{to{transform:rotate(360deg)}}
+@keyframes splashLoad{from{transform:translateX(-120%)}to{transform:translateX(360%)}}
+@media(prefers-reduced-motion:reduce){.splash-mark,.splash-mark:before,.splash-loader span{animation-duration:2.5s}}
+
+/* Latest interface refinements */
+.app-brand-mark{width:31px;height:31px;flex:0 0 31px;border-radius:11px;background:linear-gradient(145deg,#2563eb,#38bdf8);display:grid;place-items:center;color:#fff;font-size:17px;box-shadow:0 5px 12px rgba(37,99,235,.2);animation:splashFloat .85s ease-in-out infinite alternate}
+.header-left h1{font-size:21px}
+.managed-file.active{position:relative;border:2px solid #2563eb!important;border-radius:11px!important;background:linear-gradient(145deg,#eaf3ff,#dbeafe)!important;box-shadow:inset 0 0 0 3px rgba(255,255,255,.8),inset 0 0 14px rgba(37,99,235,.13),0 3px 0 #93c5fd,0 7px 13px rgba(37,99,235,.12)!important;padding:16px 14px 17px 18px!important}
+.managed-file.active:before{content:'';position:absolute;left:9px;right:9px;top:-5px;height:5px;border-radius:5px 5px 0 0;background:repeating-linear-gradient(90deg,#94a3b8 0 8px,transparent 8px 15px);opacity:.9}
+.managed-file.active:after{content:'FITTED';position:absolute;right:10px;top:-8px;padding:3px 8px;border-radius:7px;background:#1d4ed8;color:#fff;font-size:9px;font-weight:800;letter-spacing:.7px;box-shadow:0 2px 4px rgba(30,64,175,.2)}
+.managed-file .file-alert-dot{left:auto!important;right:-5px!important;top:-5px!important;bottom:auto!important;transform:none!important;width:11px!important;height:11px!important;border:2px solid #fff!important;border-radius:50%!important;background:#ef4444!important;z-index:3}
+.profile-photo-button{width:76px!important;height:76px!important;flex:0 0 76px!important;border-radius:12px!important;clip-path:none!important;overflow:hidden!important}
+.profile-photo-button img{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;object-fit:cover!important;border-radius:0!important;aspect-ratio:auto!important}
+.profile-photo-button>i{display:none!important}
+.photo-viewer-content img{width:100%!important;height:min(74vh,760px)!important;max-width:100%!important;object-fit:contain!important;border-radius:16px!important;background:#182235!important}
+.photo-viewer-fallback{width:100%!important;height:min(74vh,760px)!important;max-width:100%!important;border-radius:16px!important}
+.photo-viewer-content{width:100%;padding:12px 0}
+.photo-edit-action{display:inline-flex;align-items:center;gap:7px}
+.backup-success-toast{position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translate(-50%,14px);z-index:7000;display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:12px;background:#ecfdf5;border:1px solid #86efac;color:#166534;font-size:13px;font-weight:800;box-shadow:0 8px 24px rgba(22,101,52,.16);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+.backup-success-toast i{font-size:17px;color:#16a34a}
+.backup-success-toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* Refined offline loading, ticket-style fitted backup and compact controls */
+.app-header{display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:center!important;gap:8px!important;padding:10px 14px!important}.header-left{display:contents!important}
+.header-left:before{content:'Milk Scale';grid-column:1;grid-row:1;font-size:19px;font-weight:900;letter-spacing:-.5px;color:#1d4ed8;justify-self:start}
+#header-file-btn{grid-column:2;grid-row:1;justify-self:center;width:42px;height:42px;padding:0!important;border:0!important;border-radius:13px!important;background:#ecfdf5!important;color:#059669!important;display:grid!important;place-items:center!important}
+#header-file-name{display:none!important}.header-file-icon-wrap{font-size:22px!important}.account-btn{grid-column:3;grid-row:1;justify-self:end;width:34px;height:34px;padding:0!important;margin:0!important;border-radius:50%!important;font-size:0!important;display:grid!important;place-items:center!important}.account-btn i{font-size:15px!important}
+.customer-search-wrap{display:flex;align-items:stretch;gap:5px}.customer-search-wrap input{flex:1;min-width:0}.customer-picker-trigger{width:34px;flex:0 0 34px;border:0;border-radius:9px;background:#eff6ff;color:#1d4ed8;font-size:13px}
+.entry-customers-mini{width:34px;height:34px;flex:0 0 34px;border:0;border-radius:9px;background:#eff6ff;color:#1d4ed8;font-size:16px}.entry-customer-toolbar{display:flex;align-items:center;gap:6px;margin:0 0 9px}
+.managed-file{box-shadow:none!important;transform:none!important;border:1px solid #d1d5db!important;background:#f1f5f9!important}.managed-file:active{transform:none!important;box-shadow:none!important}
+ .managed-file.active{order:-1!important;width:calc(100% + 8px)!important;margin:5px 2px 10px -4px!important;padding:17px 16px!important;min-height:82px;border:1px dashed #64748b!important;border-radius:11px!important;background:linear-gradient(135deg,#e8f2ff,#dceaff)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;transform:none!important}
+.managed-file.active:before,.managed-file.active:after{display:none!important;content:none!important}.managed-file.active .file-icon{filter:none!important;color:#059669!important;font-size:34px!important}.managed-file.active .file-info h4{font-size:14px;font-weight:800;color:#1e293b}
+.managed-file.active .file-info p{color:#1e293b!important;font-weight:800!important;font-size:12px!important;line-height:1.55}.managed-file .file-info p{font-size:11px;color:#94a3b8;font-weight:400}.managed-file.active .file-info p .file-meta-muted{color:#64748b;font-weight:400}
+.profile-photo-button{width:76px!important;height:76px!important;flex:0 0 76px!important;border-radius:50%!important;clip-path:circle(50%)!important;overflow:hidden!important}.profile-photo-button img{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;object-fit:cover!important;border-radius:50%!important;aspect-ratio:1/1!important}
+.photo-viewer-content img{width:auto!important;height:auto!important;max-width:94vw!important;max-height:76vh!important;object-fit:contain!important;border-radius:50%!important;background:transparent!important;image-rendering:auto}
+.profile-switch-button{display:flex!important;justify-content:space-between!important;align-items:center!important;text-align:left!important;padding:13px 15px!important}.profile-switch-button .switch-label{margin-right:auto}.profile-switch-button .switch-icon{margin-left:auto;font-size:20px}.profile-settings .fa-arrow-right{display:none!important}.profile-settings{justify-content:flex-start!important}
+.profile-placeholder-line{display:block;width:100%;height:13px;border-radius:6px;background:#e8edf4;position:relative;overflow:hidden}.profile-placeholder-line:after{content:'';position:absolute;inset:-50%;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.85) 50%,transparent 62%);animation:skeletonSweep 1.15s ease-in-out infinite}
+.profile-board-meta .profile-placeholder-line:nth-child(1){width:76%;height:17px}.profile-board-meta .profile-placeholder-line:nth-child(2){width:55%}.profile-board-meta .profile-placeholder-line:nth-child(3){width:66%}.settings-empty{padding:12px!important;min-height:0!important}
+.photo-crop-modal{position:fixed;inset:0;z-index:6500;background:#080d18;color:#fff;display:none;flex-direction:column;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}.photo-crop-modal.show{display:flex}.photo-crop-top{height:58px;display:flex;align-items:center;gap:14px}.photo-crop-top strong{flex:1}.photo-crop-save{border:0;border-radius:10px;padding:10px 16px;background:#2563eb;color:#fff;font-weight:800}
+.photo-crop-stage{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;display:flex;align-items:center;justify-content:center}.photo-crop-stage:after{content:'';position:absolute;width:min(86vw,420px);height:min(86vw,420px);max-height:65vh;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none}.photo-crop-stage img{position:absolute;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;touch-action:none}.photo-crop-hint{text-align:center;color:#cbd5e1;font-size:13px;padding:8px 0 16px}
+.request-tab-with-dot{position:relative}.request-unread-dot{display:none;position:absolute;right:7px;top:5px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+.loading-skeleton{position:relative;overflow:hidden;border-radius:13px;background:#e8edf4}
+.loading-skeleton:after{content:'';position:absolute;inset:-40% -60%;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.8) 50%,transparent 62%);transform:translateX(-65%);animation:skeletonSweep 1.15s ease-in-out infinite}
+@keyframes skeletonSweep{to{transform:translateX(65%)}}
+.request-skeleton{height:150px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.request-skeleton span{height:12px;border-radius:8px;background:#d7dee8}.request-skeleton span:nth-child(1){width:58%}.request-skeleton span:nth-child(2){width:86%}.request-skeleton span:nth-child(3){width:42%}
+.auth-skeleton{height:76px;margin:14px 0}
+.offline-message{display:flex;align-items:center;gap:14px}
+.no-internet-icon{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;background:#fee2e2;color:#dc2626;font-size:22px}
+#dialog-ok{background:#2563eb;color:#fff}
+
     </style>
 </head>
 <body>
-
-    <header class="app-header">
-        <div class="header-left">
-            <h1>Milk Scale</h1>
-            <!-- File status button -->
-            <button class="file-status-btn" id="header-file-btn" onclick="switchTab('backup', null)" style="display: none;">
-                <i class="fa-solid fa-file-invoice"></i> <span id="header-file-name">(1)</span>
-            </button>
-        </div>
-    </header>
+    <div id="app-splash" aria-label="Milk Scale loading"><div class="splash-mark"><img src="./assets/milk-scale-icon.jpg" alt="Milk Scale"/></div><div class="splash-wordmark">Milk Scale</div><div class="splash-loader"><span></span></div></div>
+    <header class="app-header"><div class="header-left"><button class="file-status-btn" id="header-file-btn" onclick="openBackupFiles()" aria-label="JSON files"><span class="header-file-icon-wrap"><i class="fa-solid fa-file-code"></i><span class="file-alert-dot" id="header-file-dot"></span></span><span id="header-file-name">JSON</span></button></div><button class="account-btn" onclick="openAccount()" aria-label="Account"><i class="fa-solid fa-user"></i></button></header>
     
     <div class="main-content">
         
@@ -201,23 +328,7 @@
         </div>
 
         <!-- ENTRY TAB -->
-        <div id="tab-entry" class="tab-content">
-            <div class="card">
-                <div class="row">
-                    <div class="form-group" style="flex:2; margin-bottom:0;">
-                        <input type="text" id="new-cust-name" class="form-control" placeholder="New customer name">
-                    </div>
-                    <div class="form-group" style="flex:1; margin-bottom:0;">
-                        <button class="btn btn-primary" onclick="addCustomer()" style="padding: 12px;"><i class="fa-solid fa-plus"></i></button>
-                    </div>
-                </div>
-                <div class="customer-summary"><span>Customers</span><span id="customer-count">Total: 0</span></div>
-                <div id="cust-list" style="max-height: 220px; overflow-y: auto; margin-top: 4px;"></div>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
-                <div class="form-group"><input type="text" id="entry-customer" class="form-control" list="customer-options" placeholder="Search or select customer" autocomplete="off"><datalist id="customer-options"></datalist></div>
+        <div id="tab-entry" class="tab-content"><div class="entry-customer-toolbar"><div class="customer-search-wrap" style="flex:1;min-width:0"><input type="text" id="entry-customer" class="form-control" placeholder="Search or select customer" autocomplete="off" readonly onclick="openCustomerPicker()"><button type="button" class="customer-picker-trigger" onclick="openCustomerPicker()" aria-label="Show all customers"><i class="fa-solid fa-chevron-down"></i></button></div><button type="button" class="entry-customers-mini" onclick="openRequestCenter()" aria-label="Customers"><i class="fa-solid fa-users"></i></button><datalist id="customer-options"></datalist></div><div class="card"><h3 style="margin-top:0; font-size:15px; color:var(--primary);"><i class="fa-solid fa-pen"></i> Milk entry</h3>
                 <div class="row">
                     <div class="form-group"><input type="date" id="entry-date" class="form-control"></div>
                     <div class="form-group">
@@ -235,7 +346,6 @@
                 <button class="btn btn-primary" onclick="saveEntry()"><i class="fa-solid fa-check"></i> Save</button>
             </div>
         </div>
-
         <!-- BILL TAB -->
         <div id="tab-bill" class="tab-content">
             <div class="card">
@@ -271,13 +381,7 @@
                 </div>
             </div>
 
-            <div class="card">
-                <h2 style="color: var(--success); font-size: 18px; margin-top: 0;"><i class="fa-solid fa-folder-open"></i> Restore backup</h2>
-                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importBackupFile(event)">
-                <button class="btn btn-warning" onclick="document.getElementById('fileInput').click()">
-                    <i class="fa-solid fa-upload"></i> Choose file
-                </button>
-            </div>
+            <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importBackupFile(event)">
         </div>
 
     </div>
@@ -296,7 +400,55 @@
         <!-- Backup icon removed from here, now it's in header -->
     </nav>
 
-    <div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+<div class="customer-picker-modal" id="customer-picker-modal" role="dialog" aria-modal="true">
+ <div class="customer-picker-header"><button class="back-icon" onclick="closeCustomerPicker()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2>Customer चुनें</h2></div>
+ <div class="customer-picker-content"><input id="customer-picker-search" class="form-control" type="search" placeholder="Customer खोजें..." oninput="filterCustomerPicker()"><div id="customer-picker-list" class="customer-picker-list"></div></div>
+</div>
+<div class="full-page-backdrop" id="request-center" role="dialog" aria-modal="true">
+ <div class="full-page-header"><button class="back-icon" onclick="closeRequestCenter()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2>Customers</h2></div>
+ <div class="full-page-body request-board">
+  <section>
+   <div class="customer-center-tabs">
+    <button id="customer-tab-all" class="customer-center-tab active" type="button" onclick="setCustomerCenterView('all')">All Customers</button>
+    <button id="customer-tab-new" class="customer-center-tab request-tab-with-dot" type="button" onclick="setCustomerCenterView('new')">New Request<span id="new-request-dot" class="request-unread-dot" aria-hidden="true"></span></button>
+    <button class="customer-center-refresh" type="button" onclick="loadRequestCenter()" aria-label="Refresh"><i class="fa-solid fa-rotate"></i></button>
+   </div>
+   <h3 id="request-list-heading">All Customers</h3>
+   <div id="incoming-request-list"><p class="empty-state">लोड हो रहा है...</p></div>
+   <section id="customer-dairy-request" style="display:none;margin:14px 0 0;padding:14px;border:1px solid var(--border);border-radius:14px;background:#fff">
+    <h3>दूधिया से जुड़ें</h3><p class="request-help">दूधिया की 6 अक्षरों वाली ID डालें।</p>
+    <input id="dairy-search-id" class="form-control" autocomplete="off" maxlength="10" autocapitalize="none" placeholder="दूधिया की ID" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9]/g,'')">
+    <button class="btn btn-primary" onclick="sendEntryDairyRequest()"><i class="fa-solid fa-paper-plane"></i> Request भेजें</button>
+    <div id="customer-request-status" class="auth-status"></div>
+   </section>
+  </section>
+ </div>
+</div><div class="full-page-backdrop" id="settings-page" role="dialog" aria-modal="true"><div class="full-page-header"><button class="back-icon" onclick="closeSettingsPage()"><i class="fa-solid fa-arrow-left"></i></button><h2>Settings</h2></div><div class="full-page-body"></div></div><div class="edit-profile-backdrop" id="edit-profile-modal" role="dialog" aria-modal="true"><div class="edit-profile-card"><div class="edit-profile-heading"><h3>प्रोफाइल एडिट करें</h3><button class="back-icon" onclick="closeProfileEditor()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button></div><input id="profile-edit-name" class="form-control" maxlength="60" placeholder="नाम"><button class="btn btn-primary" onclick="saveProfileSettings()">बदलाव सेव करें</button><div id="profile-edit-status" class="auth-status"></div></div></div>    <div class="auth-backdrop" id="auth-backdrop" role="dialog" aria-modal="true">
+      <div class="auth-card">
+        <div class="auth-page-heading"><button class="back-icon" onclick="closeAccount()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><h2 id="account-page-title">Account</h2></div>
+        <div id="profile-view" style="display:none">
+          <div class="profile-board"><div class="profile-board-top">
+            <button class="profile-photo-button" type="button" onclick="openProfilePhotoViewer()" aria-label="View or change profile photo"><img id="profile-photo" alt="Profile photo" style="display:none"><span id="profile-avatar">M</span></button>
+            <div class="profile-board-meta"><strong id="profile-name">User</strong><span id="profile-dairy-id">—</span><span id="profile-role-label" class="profile-role-label"></span></div>
+            <button class="profile-edit-icon" onclick="openProfileEditor()" aria-label="Edit profile"><i class="fa-solid fa-pen"></i></button>
+            <input id="profile-photo-input" type="file" accept="image/*" style="display:none" onchange="saveProfilePhoto(this)">
+          </div></div>
+          <button class="profile-switch-button" id="profile-switch-button" onclick="switchProfileRole()"><span class="switch-label">Switch to Customer</span><i class="fa-solid fa-toggle-on switch-icon" aria-hidden="true"></i></button>
+          <button class="profile-settings" type="button" onclick="openSettingsPage()"><span><i class="fa-solid fa-gear"></i> Settings</span></button>
+          <div class="auth-status" id="auth-status" aria-live="polite"></div><button class="logout-danger" id="auth-signout-btn" onclick="signOutAccount()"><i class="fa-solid fa-right-from-bracket"></i> लॉगआउट</button>
+        </div>
+        <div id="auth-form-view"><p id="auth-intro">अपने अकाउंट में लॉगिन करें या नया अकाउंट बनाएँ।</p>
+          <div id="auth-name-wrap" style="display:none"><label for="auth-name">Full name</label><input id="auth-name" type="text" placeholder="पूरा नाम" autocomplete="name"></div>
+          <div><label for="auth-email">ईमेल</label><input id="auth-email" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
+          <div><label for="auth-password">पासवर्ड</label><div class="password-wrap"><input id="auth-password" type="password" placeholder="कम से कम 6 अक्षर" autocomplete="current-password"><button type="button" class="password-eye" onclick="togglePasswordVisibility('auth-password',this)" aria-label="पासवर्ड दिखाएँ"><i class="fa-solid fa-eye"></i></button></div></div>
+          <button class="auth-primary" id="auth-submit-btn" onclick="submitAccountAuth()">लॉगिन करें</button><div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap"><button class="auth-secondary" id="auth-mode-btn" onclick="toggleAccountAuthMode()">नया अकाउंट बनाएँ</button><button class="auth-secondary" id="auth-reset-btn" onclick="resetAccountPassword()">पासवर्ड भूल गए?</button></div><div class="auth-status" id="auth-form-status" aria-live="polite"></div>
+          <div id="email-verified-view" style="display:none;text-align:center;padding:28px 12px"><div class="verified-check"><i class="fa-solid fa-check"></i></div><h2 style="color:#15803d">Email Verification Successful</h2><p>आपका ईमेल सफलतापूर्वक Verify हो गया है। अब Milk Scale App खोल सकते हैं।</p><button class="auth-primary" type="button" onclick="finishEmailVerification()">Open App</button></div>
+        </div>      </div>
+    </div>
+
+    <div class="profile-photo-viewer" id="profile-photo-viewer" role="dialog" aria-modal="true"><div class="photo-viewer-top"><button class="back-icon" onclick="closeProfilePhotoViewer()" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button><span>Profile Photo</span><button class="photo-edit-action" onclick="document.getElementById('profile-photo-input').click()"><i class="fa-solid fa-pen"></i> Edit</button></div><div class="photo-viewer-content"><img id="profile-photo-full" alt="Profile photo preview"><div id="profile-photo-fallback" class="photo-viewer-fallback">M</div><strong id="profile-photo-full-name">User</strong></div></div><div class="photo-crop-modal" id="photo-crop-modal" role="dialog" aria-modal="true"><div class="photo-crop-top"><button type="button" class="back-icon" onclick="cancelProfilePhotoCrop()"><i class="fa-solid fa-xmark"></i></button><strong>फोटो सेट करें</strong><button type="button" class="photo-crop-save" onclick="saveCroppedProfilePhoto()">Save</button></div><div class="photo-crop-stage" id="photo-crop-stage"><img id="photo-crop-image" alt="Crop photo"></div><p class="photo-crop-hint">फोटो को एक उंगली से खिसकाकर चेहरा गोल फ्रेम में सेट करें</p></div>
+<div id="backup-success-toast" class="backup-success-toast" role="status" aria-live="polite"><i class="fa-solid fa-circle-check"></i><span>File created successfully</span></div>
+<div class="dialog-backdrop" id="app-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <div class="app-dialog">
             <h3 id="dialog-title">Milk Scale</h3>
             <p id="dialog-message"></p>
@@ -307,12 +459,13 @@
         </div>
     </div>
 
+    <script src="./vendor/firebase-auth.js"></script>
     <script>
 
         let dialogResolver = null;
         function appDialog(message, confirmMode=false, title='Milk Scale') {
             const modal=document.getElementById('app-dialog');
-            document.getElementById('dialog-title').textContent=title;
+            document.getElementById('dialog-title').textContent=title;document.getElementById('dialog-ok').textContent='OK';document.getElementById('dialog-message').classList.remove('offline-message');
             document.getElementById('dialog-message').textContent=message;
             document.getElementById('dialog-cancel').style.display=confirmMode?'inline-block':'none';
             modal.classList.add('show');
@@ -326,7 +479,13 @@
             document.getElementById('app-dialog').classList.remove('show');
             if(dialogResolver){const resolve=dialogResolver;dialogResolver=null;resolve(result);}
         }
-        function notify(message){appDialog(message,false);}
+        function notify(message){if(isNetworkError(message)){showNoInternet();return;}appDialog(message,false);}
+function isNetworkError(error){const s=String(error?.code||'')+' '+String(error?.message||error||'');return !navigator.onLine||/offline|network|unavailable|failed to get document because the client is offline|unreachable/i.test(s);}
+function showNoInternet(){const title=document.getElementById('dialog-title'),message=document.getElementById('dialog-message'),cancel=document.getElementById('dialog-cancel'),ok=document.getElementById('dialog-ok');title.innerText='No Internet Connection';message.classList.add('offline-message');message.innerHTML='<span class="no-internet-icon"><i class="fa-solid fa-wifi"></i></span><span>कृपया इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।</span>';cancel.style.display='none';ok.innerText='OK';document.getElementById('app-dialog').classList.add('show');dialogResolver=null;}
+function markRequestsSeen(){const dot=document.getElementById('new-request-dot');if(dot)dot.style.display='none';const ids=JSON.parse(localStorage.getItem('ms_seen_request_ids')||'[]');localStorage.setItem('ms_seen_request_ids',JSON.stringify([...new Set([...ids,...(window.__msPendingRequestIds||[])])]));}
+function updateRequestUnread(pending){const seen=new Set(JSON.parse(localStorage.getItem('ms_seen_request_ids')||'[]'));const ids=pending.map(x=>x.id);window.__msPendingRequestIds=ids;if(customerCenterView==='new'){ids.forEach(id=>seen.add(id));localStorage.setItem('ms_seen_request_ids',JSON.stringify([...seen]));}const dot=document.getElementById('new-request-dot');if(dot)dot.style.display=customerCenterView==='new'?'none':(ids.some(id=>!seen.has(id))?'block':'none');}
+        let backupToastTimer=null;
+        function showBackupToast(message){const toast=document.getElementById('backup-success-toast');if(!toast)return;toast.querySelector('span').textContent=message;toast.classList.add('show');clearTimeout(backupToastTimer);backupToastTimer=setTimeout(()=>toast.classList.remove('show'),1900);}
 
         // --- Variables ---
         let customers = JSON.parse(localStorage.getItem('ms_cust')) || [];
@@ -337,6 +496,28 @@
         let draggedCustomerIndex = null;
         let pointerDrag = null;
         let filePresence = {};
+        let fileWriteQueues = {};
+        let fileStats = {};
+        let pendingProfilePhotoData = null;
+        let cropDrag = null;
+
+        const BACKUP_FOLDER='MilkScale Backup json';
+        async function ensureBackupFolder(){
+            const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.mkdir)throw new Error('Documents फोल्डर बनाने की अनुमति उपलब्ध नहीं है।');
+            try{await fs.mkdir({path:BACKUP_FOLDER,directory:'DOCUMENTS',recursive:true});}
+            catch(error){try{await fs.stat({path:BACKUP_FOLDER,directory:'DOCUMENTS'});}catch(_){throw error;}}
+        }
+        async function readManagedFileData(fileNum){
+            const fs=window.Capacitor?.Plugins?.Filesystem;
+            if(!fs?.readFile)throw new Error('File Manager से JSON पढ़ने की सुविधा उपलब्ध नहीं है।');
+            await ensureBackupFolder();
+            const result=await fs.readFile({path:BACKUP_FOLDER+'/MilkScale_Backup_('+fileNum+').json',directory:'DOCUMENTS',encoding:'utf8'});
+            const parsed=JSON.parse(result.data);
+            if(!parsed||!Array.isArray(parsed.customers)||!Array.isArray(parsed.entries))throw new Error('यह वैध Milk Scale JSON फाइल नहीं है।');
+            fileStore[String(fileNum)]={customers:parsed.customers,entries:parsed.entries,scale:Array.isArray(parsed.scale)?parsed.scale:[],rate:parsed.rate==null?'':String(parsed.rate),createdAt:parsed._milkScaleMeta?.createdAt||fileStore[String(fileNum)]?.createdAt||null};
+            localStorage.setItem('ms_file_store',JSON.stringify(fileStore));
+            return fileStore[String(fileNum)];
+        }
 
         function saveActiveFileData() {
             if (currentFileNumber > 0) {
@@ -387,36 +568,28 @@
             // Show the file in the header if one exists
             if(currentFileNumber > 0) showFileInHeader(currentFileNumber);
             renderFileList();
-            refreshActiveFilePresence();
+            await refreshActiveFilePresence();
+            syncConnectedCustomers();
         }
 
         // --- Navigation ---
-        function switchTab(tabId, el) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            const target = document.getElementById('tab-' + tabId);
-            if (!target) return;
-            target.classList.add('active');
-            if (tabId === 'entry' && currentFileNumber === 0) {
-                appDialog('Please add or create a JSON file before adding entries.', false, 'File required');
-                switchTab('backup', null);
-                return;
-            }
-            if (el) el.classList.add('active');
-            else if (tabId === 'backup') document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
-        }
-
-        function saveLocal() {
-            try {
-                localStorage.setItem('ms_cust', JSON.stringify(customers));
-                localStorage.setItem('ms_entries', JSON.stringify(entries));
-                saveActiveFileData();
-            } catch (error) {
-                console.error('Local save error:', error);
-                notify('Storage is full. Create a backup and free up space.');
-            }
-        }
-
+        function openBackupFiles(){localStorage.setItem('ms_file_dot_seen','1');const dot=document.getElementById('header-file-dot');if(dot)dot.style.display='none';switchTab('backup',null);}
+        function switchTab(tabId,el,fromBack=false){
+ const previous=document.querySelector('.tab-content.active')?.id?.replace('tab-','');
+ if(previous&&previous!==tabId&&!fromBack){window.__msTabStack=window.__msTabStack||[];window.__msTabStack.push(previous);history.pushState({tab:tabId},'','#'+tabId);}
+ document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+ const target=document.getElementById('tab-'+tabId);if(!target)return;target.classList.add('active');
+ if(el)el.classList.add('active');else if(tabId==='backup')document.querySelector('.bottom-nav .nav-item')?.classList.add('active');
+ if(tabId==='backup')refreshActiveFilePresence(false);
+}
+        function saveLocal(persistFile=true){
+ try{
+  localStorage.setItem('ms_cust',JSON.stringify(customers));
+  localStorage.setItem('ms_entries',JSON.stringify(entries));
+  saveActiveFileData();
+  if(persistFile&&currentFileNumber>0)autoSaveToFile(currentFileNumber,false);
+ }catch(error){console.error('Local save error:',error);notify('Storage is full. Create a backup and free up space.');}
+}
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, ch => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -424,24 +597,13 @@
         }
 
         // --- Header File Display Logic ---
-        function showFileInHeader(fileNum) {
-            const btn = document.getElementById('header-file-btn');
-            const nameSpan = document.getElementById('header-file-name');
-            btn.style.display = 'flex';
-            nameSpan.innerText = `(${fileNum})`;
-            btn.classList.toggle('file-missing', filePresence[String(fileNum)] === false);
-            document.getElementById('current-backup-file').style.display = 'block';
-            document.getElementById('backup-filename').innerText = `MilkScale_Backup_(${fileNum}).json`;
-        }
-
-        // --- Customer Logic ---
+        function showFileInHeader(fileNum){const btn=document.getElementById('header-file-btn'),name=document.getElementById('header-file-name'),dot=document.getElementById('header-file-dot');if(btn)btn.style.display='flex';const fitted=Number(fileNum)>0&&filePresence[String(fileNum)]===true;if(name)name.innerText=fitted?'('+fileNum+')':'JSON';if(dot)dot.style.display=fitted||localStorage.getItem('ms_file_dot_seen')==='1'?'none':'inline-block';const info=document.getElementById('current-backup-file');if(info)info.style.display=fitted?'block':'none';const title=document.getElementById('backup-filename');if(title&&fitted)title.innerText='MilkScale_Backup_('+fileNum+').json';}
         function renderCustomers() {
             const list = document.getElementById('cust-list');
-            document.getElementById('customer-count').innerText = 'Total: ' + customers.length;
-            if(customers.length === 0) {
-                list.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-light);">No customers</p>';
-                return;
-            }
+            const count = document.getElementById('customer-count');
+            if(count) count.innerText = 'Total: ' + customers.length;
+            if(!list) return;
+            if(customers.length === 0) { list.innerHTML = ''; return; }
             list.innerHTML = customers.map((c, i) => `
                 <div class="customer-row" data-customer-index="${i}">
                     <span class="customer-order">${i + 1}.</span>
@@ -459,65 +621,48 @@
                 handle.addEventListener('pointerdown', event => startCustomerPointerDrag(event, Number(handle.dataset.dragIndex)));
             });
         }
-        function startCustomerPointerDrag(event, index) {
-            if (event.pointerType === 'mouse' && event.button !== 0) return;
-            event.preventDefault();
-            const handle = event.currentTarget;
-            const row = handle.closest('.customer-row');
-            const list = document.getElementById('cust-list');
-            const placeholder = document.createElement('div');
-            placeholder.className = 'drag-placeholder';
-            let activated = false;
-            const startY = event.clientY;
-            let timer = setTimeout(() => {
-                activated = true;
-                pointerDrag = { index, row, placeholder, list };
-                row.classList.add('dragging');
-                row.after(placeholder);
-                try { handle.setPointerCapture(event.pointerId); } catch(e) {}
-            }, 320);
-            const move = e => {
-                if (!activated) {
-                    if (Math.abs(e.clientY - startY) > 12) { clearTimeout(timer); cleanup(); }
-                    return;
-                }
-                e.preventDefault();
-                const rows = [...list.querySelectorAll('.customer-row:not(.dragging)')];
-                let placed = false;
-                for (const candidate of rows) {
-                    const rect = candidate.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2) {
-                        candidate.before(placeholder); placed = true; break;
-                    }
-                }
-                if (!placed) list.appendChild(placeholder);
-            };
-            const end = e => {
-                clearTimeout(timer);
-                if (activated && pointerDrag) {
-                    const children = [...list.children];
-                    const newIndex = children.indexOf(placeholder);
-                    const moved = customers.splice(index, 1)[0];
-                    const adjusted = Math.max(0, Math.min(customers.length, newIndex > index ? newIndex - 1 : newIndex));
-                    customers.splice(adjusted, 0, moved);
-                    saveLocal(); renderCustomers(); populateDropdowns();
-                }
-                cleanup();
-            };
-            function cleanup() {
-                clearTimeout(timer);
-                row.classList.remove('dragging');
-                placeholder.remove();
-                handle.removeEventListener('pointermove', move);
-                handle.removeEventListener('pointerup', end);
-                handle.removeEventListener('pointercancel', end);
-                pointerDrag = null;
-            }
-            handle.addEventListener('pointermove', move);
-            handle.addEventListener('pointerup', end);
-            handle.addEventListener('pointercancel', end);
-        }
-
+        function startCustomerPointerDrag(event,index){
+ if(event.pointerType==='mouse'&&event.button!==0)return;
+ event.preventDefault();
+ const handle=event.currentTarget,row=handle.closest('.customer-row'),list=document.getElementById('cust-list');
+ const placeholder=document.createElement('div');placeholder.className='drag-placeholder';
+ const startY=event.clientY;
+ pointerDrag={index,row,placeholder,list};
+ row.classList.add('dragging');row.after(placeholder);
+ try{handle.setPointerCapture(event.pointerId);}catch(e){}
+ const move=e=>{
+  e.preventDefault();
+  row.style.transform='translateY('+(e.clientY-startY)+'px)';
+  const rows=[...list.querySelectorAll('.customer-row:not(.dragging)')];
+  const before=new Map(rows.map(node=>[node,node.getBoundingClientRect().top]));
+  let placed=false;
+  for(const candidate of rows){
+   const rect=candidate.getBoundingClientRect();
+   if(e.clientY<rect.top+rect.height/2){candidate.before(placeholder);placed=true;break;}
+  }
+  if(!placed)list.appendChild(placeholder);
+  requestAnimationFrame(()=>rows.forEach(node=>{
+   const delta=before.get(node)-node.getBoundingClientRect().top;
+   if(delta){node.style.transition='none';node.style.transform='translateY('+delta+'px)';requestAnimationFrame(()=>{node.style.transition='transform 150ms cubic-bezier(.2,.75,.25,1)';node.style.transform='';});}
+  }));
+ };
+ const end=()=>{
+  if(pointerDrag){
+   const children=[...list.children],newIndex=children.indexOf(placeholder);
+   const moved=customers.splice(index,1)[0];
+   const adjusted=Math.max(0,Math.min(customers.length,newIndex>index?newIndex-1:newIndex));
+   customers.splice(adjusted,0,moved);saveLocal();renderCustomers();populateDropdowns();
+  }
+  cleanup();
+ };
+ const cancel=()=>cleanup();
+ function cleanup(){
+  row.classList.remove('dragging');row.style.transform='';row.style.transition='';
+  placeholder.remove();handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);
+  handle.removeEventListener('pointercancel',cancel);pointerDrag=null;
+ }
+ handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',cancel);
+}
         function customerDragStart(event, index) {
             draggedCustomerIndex = index;
             event.dataTransfer.effectAllowed = 'move';
@@ -545,18 +690,6 @@
             const previous = bill.value;
             bill.innerHTML = `<option value="">-- Select customer --</option>` + customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
             if (customers.includes(previous)) bill.value = previous;
-        }
-
-        function addCustomer() {
-            const name = document.getElementById('new-cust-name').value.trim();
-            if(!name) return;
-            if(!customers.includes(name)) {
-                customers.push(name);
-                saveLocal();
-                renderCustomers();
-                populateDropdowns();
-                document.getElementById('new-cust-name').value = '';
-            }
         }
 
         async function deleteCustomer(index) {
@@ -588,18 +721,11 @@
                 kg: kg, sample: sample, rate: rate, total: kg * rate
             });
             
-            saveLocal(); 
-            
-            // Create the first file for the first entry
-            if(currentFileNumber === 0) {
-                currentFileNumber = 1;
-                localStorage.setItem('ms_file_num', currentFileNumber);
-                await autoSaveToFile(currentFileNumber);
-                showFileInHeader(currentFileNumber);
-            } else {
-                // Update the active file
-                await autoSaveToFile(currentFileNumber);
-            }
+            saveLocal(false);
+            if(!(await autoSaveToFile(currentFileNumber,false))){entries.pop();saveLocal(false);return;}
+            // Sync to cloud only after the fitted JSON file was saved successfully.
+            const linkedUid = (JSON.parse(localStorage.getItem('ms_customer_links') || '{}'))[cust];
+            if (linkedUid) queueCloudMilkEntry(entries[entries.length - 1], linkedUid);
             
             
             
@@ -613,125 +739,111 @@
         }
 
         // --- Auto File Save Logic ---
-        async function autoSaveToFile(fileNum) {
-            const dataToSave = {
-                customers: customers, entries: entries,
-                scale: JSON.parse(localStorage.getItem('ms_scale') || '[]'),
-                rate: document.getElementById('scale-rate').value
-            };
-            const fileName = `MilkScale_Backup_(${fileNum}).json`;
-            
-            const json = JSON.stringify(dataToSave, null, 2);
-            try {
-                const fs = window.Capacitor?.Plugins?.Filesystem;
-                if (fs?.writeFile) {
-                    await fs.writeFile({
-                        path: fileName,
-                        data: json,
-                        directory: 'DOCUMENTS',
-                        encoding: 'utf8'
-                    });
-                    document.getElementById('backup-filedate').innerText = `Updated: ${new Date().toLocaleString()}`;
-                    document.getElementById('current-backup-file').style.display = 'block';
-                    document.getElementById('backup-filename').innerText = fileName;
-                    return true;
-                }
-            } catch (e) {
-                console.error('Native file save failed; using download fallback:', e);
-            }
-
-            try {
-                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-                document.getElementById('current-backup-file').style.display = 'block';
-                document.getElementById('backup-filename').innerText = fileName;
-                document.getElementById('backup-filedate').innerText = `Downloaded: ${new Date().toLocaleString()}`;
-                return true;
-            } catch (e) {
-                console.error('Backup download failed:', e);
-                notify('Could not create backup file. Please try again.');
-                return false;
-            }
-        }
-
-        // --- Create New Backup File Manually ---
-        async function createNewBackupFile() {
-            saveActiveFileData();
-            currentFileNumber = Math.max(0, ...Object.keys(fileStore).map(Number).filter(Number.isFinite)) + 1;
-            fileStore[String(currentFileNumber)] = { customers: [], entries: [], scale: [], rate: '' };
-            loadActiveFileData(currentFileNumber);
-            localStorage.setItem('ms_file_num', currentFileNumber);
-            saveLocal();
-            renderCustomers(); populateDropdowns();
-            document.getElementById('entry-customer').value = '';
-            initScaleBoard(); loadBill();
-            await autoSaveToFile(currentFileNumber);
-            showFileInHeader(currentFileNumber);
-            renderFileList();
-            refreshActiveFilePresence();
-            notify('A new empty file has been created.');
-        }
-
+        async function autoSaveToFile(fileNum,createIfMissing=false){
+ const fs=window.Capacitor?.Plugins?.Filesystem;if(!fs?.writeFile){notify('File Manager storage उपलब्ध नहीं है।');return false;}
+ const key=String(fileNum),fileName=BACKUP_FOLDER+'/MilkScale_Backup_('+fileNum+').json';
+ const createdAt=fileStore[key]?.createdAt||new Date().toISOString();fileStore[key]={...(fileStore[key]||{}),customers:[...customers],entries:[...entries],scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value,createdAt};const data={customers:[...customers],entries:[...entries],scale:JSON.parse(localStorage.getItem('ms_scale')||'[]'),rate:document.getElementById('scale-rate').value,_milkScaleMeta:{createdAt}};
+ const previous=fileWriteQueues[key]||Promise.resolve();
+ const task=previous.catch(()=>{}).then(async()=>{
+  await ensureBackupFolder();
+  if(!createIfMissing){if(!fs.stat)throw new Error('stat unavailable');await fs.stat({path:fileName,directory:'DOCUMENTS'});}
+  await fs.writeFile({path:fileName,data:JSON.stringify(data,null,2),directory:'DOCUMENTS',encoding:'utf8'});
+ });
+ fileWriteQueues[key]=task;
+ try{
+  await task;filePresence[key]=true;
+  const d=document.getElementById('backup-filedate');if(d)d.innerText='Updated: '+new Date().toLocaleString();
+  if(Number(currentFileNumber)===Number(fileNum))showFileInHeader(fileNum);
+  renderFileList();return true;
+ }catch(e){
+  if(!createIfMissing&&Number(currentFileNumber)===Number(fileNum)){
+   filePresence[key]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);
+  }
+  console.error('Native file save failed:',e);notify(e.message||'JSON फाइल सेव नहीं हुई।');renderFileList();return false;
+ }finally{if(fileWriteQueues[key]===task)delete fileWriteQueues[key];}
+}
+        async function createNewBackupFile(){
+ if(!(await appDialog('नई JSON फाइल बनानी है?',true,'Create new file')))return;
+ if(currentFileNumber>0)saveActiveFileData();
+ const previous=currentFileNumber,oldCustomers=customers,oldEntries=entries;
+ const n=Math.max(0,...Object.keys(fileStore).map(Number).filter(Number.isFinite))+1;
+ fileStore[String(n)]={customers:[],entries:[],scale:[],rate:'',createdAt:new Date().toISOString()};currentFileNumber=n;customers=[];entries=[];
+ const ok=await autoSaveToFile(n,true);
+ if(!ok){delete fileStore[String(n)];currentFileNumber=previous;customers=oldCustomers;entries=oldEntries;if(previous>0)loadActiveFileData(previous);localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',previous);return;}
+ localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',n);saveLocal();
+ renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();showFileInHeader(n);renderFileList();
+ showBackupToast('New file created successfully');
+}
         function getKnownFileNumbers() {
             return Object.keys(fileStore).map(Number).filter(n => Number.isInteger(n) && n > 0).sort((a,b)=>a-b);
         }
-        function renderFileList() {
-            const list = document.getElementById('file-list');
-            if (!list) return;
-            const nums = getKnownFileNumbers();
-            list.innerHTML = nums.length ? nums.map(n => {
-                const missing = filePresence[String(n)] === false;
-                const active = n === currentFileNumber;
-                return `<div class="managed-file ${active?'active':''} ${missing?'missing':''}" data-file-number="${n}">
-                    <i class="fa-solid fa-file-code file-icon"></i>
-                    <div class="file-info" onclick="selectManagedFile(${n})">
-                        <h4>MilkScale_Backup_(${n}).json</h4>
-                        <p>${active?'Currently selected': 'Tap to select'} · ${(fileStore[String(n)]?.entries||[]).length} entries</p>
-                    </div>
-                    ${missing ? `<button class="file-pick" onclick="recreateManagedFile(${n})">Restore</button>` : `<button class="file-pick" onclick="selectManagedFile(${n})">Select</button>`}
-                </div>`;
-            }).join('') : '<p style="text-align:center;color:var(--text-light);font-size:13px;padding:12px;">No JSON files added yet. Choose a JSON file or create a new file.</p>';
-        }
-        async function refreshActiveFilePresence() {
-            const fs = window.Capacitor?.Plugins?.Filesystem;
-            for (const n of getKnownFileNumbers()) {
-                try {
-                    if (!fs?.stat) { filePresence[String(n)] = true; continue; }
-                    await fs.stat({ path: `MilkScale_Backup_(${n}).json`, directory: 'DOCUMENTS' });
-                    filePresence[String(n)] = true;
-                } catch(e) { filePresence[String(n)] = false; }
-            }
-            if (currentFileNumber > 0) showFileInHeader(currentFileNumber);
-            renderFileList();
-        }
-        async function selectManagedFile(n) {
-            if (!fileStore[String(n)]) return;
-            saveActiveFileData();
-            currentFileNumber = n;
-            loadActiveFileData(n);
-            localStorage.setItem('ms_file_num', n);
-            saveLocal();
-            renderCustomers(); populateDropdowns();
-            document.getElementById('entry-customer').value = '';
-            initScaleBoard(); loadBill();
-            showFileInHeader(n);
-            await refreshActiveFilePresence();
-            switchTab('scale', document.querySelector('.bottom-nav .nav-item'));
-        }
+        function formatFileSize(bytes){const n=Number(bytes)||0;if(n>=1073741824)return (n/1073741824).toFixed(2)+' GB';if(n>=1048576)return (n/1048576).toFixed(1)+' MB';if(n>=1024)return (n/1024).toFixed(1)+' KB';return n+' B';}
+function formatFileCreated(n){const d=fileStore[String(n)]?.createdAt||fileStats[String(n)]?.ctime||fileStats[String(n)]?.mtime;const date=d?new Date(d):null;return date&&!isNaN(date)?date.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' • '+date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'तारीख उपलब्ध नहीं';}
+function renderFileList(){const list=document.getElementById('file-list');if(!list)return;const nums=getKnownFileNumbers().filter(n=>filePresence[String(n)]===true).sort((a,b)=>(b===currentFileNumber)-(a===currentFileNumber)||a-b);nums.forEach(n=>{if(!fileStats[String(n)]){const fs=window.Capacitor?.Plugins?.Filesystem;fs?.stat?.({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'}).then(v=>{fileStats[String(n)]=v;renderFileList();}).catch(()=>{});}});list.innerHTML=nums.length?nums.map(n=>{const active=n===currentFileNumber,stat=fileStats[String(n)]||{};return '<div class="managed-file '+(active?'active':'')+'" data-file-number="'+n+'" role="button" tabindex="0" onclick="selectManagedFile('+n+')" onkeydown="if(event.key===\'Enter\')selectManagedFile('+n+')"><i class="fa-solid fa-file-code file-icon"></i><div class="file-info"><h4>MilkScale_Backup_('+n+').json</h4><p><strong>'+formatFileSize(stat.size)+'</strong> <strong>'+formatFileCreated(n)+'</strong> <span class="file-meta-muted"> • '+((fileStore[String(n)]?.entries||[]).length)+' entries</span></p></div></div>';}).join(''):'<p class="empty-state">अभी कोई JSON फाइल उपलब्ध नहीं है।</p>';}
+        async function refreshActiveFilePresence(loadCurrentData=true){
+ const fs=window.Capacitor?.Plugins?.Filesystem,unreadable=new Set();
+ if(fs?.readdir){
+  try{
+   await ensureBackupFolder();
+   const directory=await fs.readdir({path:BACKUP_FOLDER,directory:'DOCUMENTS'});
+   for(const item of (directory.files||[])){
+    const match=String(item.name||'').match(/^MilkScale_Backup_\((\d+)\)\.json$/i);
+    if(!match)continue;
+    const n=Number(match[1]),key=String(n);
+    if(!fileStore[key])fileStore[key]={customers:[],entries:[],scale:[],rate:''};
+    try{
+     const pending=fileWriteQueues[key];if(pending)await pending.catch(()=>{});
+     await readManagedFileData(n);filePresence[key]=true;
+    }catch(e){unreadable.add(key);filePresence[key]=false;}
+   }
+   localStorage.setItem('ms_file_store',JSON.stringify(fileStore));
+  }catch(e){console.warn('Documents folder scan unavailable:',e);}
+ }
+ for(const n of getKnownFileNumbers()){
+  const key=String(n);
+  try{
+   const pending=fileWriteQueues[key];if(pending)await pending.catch(()=>{});
+   if(!fs?.stat)throw new Error('Native file storage unavailable');
+   await ensureBackupFolder();
+   fileStats[key]=await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+   filePresence[key]=unreadable.has(key)?false:true;
+  }catch(e){filePresence[key]=false;}
+ }
+ if(currentFileNumber>0&&filePresence[String(currentFileNumber)]===true&&loadCurrentData){
+  try{
+   const pending=fileWriteQueues[String(currentFileNumber)];if(pending)await pending.catch(()=>{});
+   await readManagedFileData(currentFileNumber);loadActiveFileData(currentFileNumber);
+   renderCustomers();populateDropdowns();initScaleBoard();loadBill();
+  }catch(e){filePresence[String(currentFileNumber)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');}
+ }else if(currentFileNumber>0&&filePresence[String(currentFileNumber)]!==true){
+  currentFileNumber=0;localStorage.removeItem('ms_file_num');
+ }
+ showFileInHeader(currentFileNumber);renderFileList();
+}
+        async function selectManagedFile(n){
+ if(Number(n)===Number(currentFileNumber)&&filePresence[String(n)]===true){localStorage.setItem('ms_file_dot_seen','1');const d=document.getElementById('header-file-dot');if(d)d.style.display='none';return;}
+ if(!(await appDialog('इस JSON टिकट को फिट करने पर वर्तमान फाइल बदल जाएगी। क्या आगे बढ़ें?',true,'Choose JSON file')))return;
+ if(!fileStore[String(n)])return;
+ const fs=window.Capacitor?.Plugins?.Filesystem;
+ try{
+  const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
+  if(!fs?.stat)throw new Error('File Manager storage unavailable');
+  await ensureBackupFolder();
+   await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+ }catch(e){filePresence[String(n)]=false;renderFileList();notify('यह JSON फाइल File Manager में नहीं मिली।');return;}
+ if(currentFileNumber>0&&currentFileNumber!==n)saveActiveFileData();
+ try{await readManagedFileData(n);}catch(e){filePresence[String(n)]=false;renderFileList();notify(e.message||'JSON फाइल पढ़ी नहीं जा सकी।');return;}
+ currentFileNumber=n;filePresence[String(n)]=true;loadActiveFileData(n);localStorage.setItem('ms_file_num',n);saveLocal(false);
+ renderCustomers();populateDropdowns();document.getElementById('entry-customer').value='';initScaleBoard();loadBill();
+ showFileInHeader(n);renderFileList();
+}
         async function recreateManagedFile(n) {
             if (!fileStore[String(n)]) return;
             const old = currentFileNumber;
             saveActiveFileData();
             currentFileNumber = n;
             loadActiveFileData(n);
-            const ok = await autoSaveToFile(n);
+            const ok = await autoSaveToFile(n,true);
             currentFileNumber = old;
             if (old > 0) loadActiveFileData(old);
             localStorage.setItem('ms_file_num', currentFileNumber);
@@ -742,63 +854,43 @@
                 notify('The JSON file has been recreated in File Manager / Documents.');
             }
         }
-        async function ensureFileSelected() {
-            if (currentFileNumber > 0) return true;
-            await appDialog('Add a JSON file first. Choose an existing backup or create a new file before adding entries.', false, 'JSON file required');
-            switchTab('backup', null);
-            return false;
-        }
-
-        // --- Restore Logic ---
-        async function importBackupFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const content = e.target.result;
-                    const savedData = JSON.parse(content);
-
-                    if(savedData.customers && savedData.entries) {
-                        if(await appDialog('Add this JSON file to your file list?',true,'Add backup file')) {
-                            const match = file.name.match(/\((\d+)\)/);
-                            const fileNum = match ? parseInt(match[1]) : (Math.max(0, ...getKnownFileNumbers()) + 1);
-                            fileStore[String(fileNum)] = { customers:savedData.customers, entries:savedData.entries, scale:savedData.scale||[], rate:savedData.rate||'' };
-                            localStorage.setItem('ms_file_store', JSON.stringify(fileStore));
-                            currentFileNumber = fileNum;
-                            customers = savedData.customers;
-                            entries = savedData.entries;
-                            
-                            if(savedData.scale) localStorage.setItem('ms_scale', JSON.stringify(savedData.scale));
-                            if(savedData.rate) document.getElementById('scale-rate').value = savedData.rate;
-                            
-                            saveLocal();
-                            
-                            // File number was already assigned above.
-                            localStorage.setItem('ms_file_num', currentFileNumber);
-                            await autoSaveToFile(currentFileNumber);
-                            showFileInHeader(currentFileNumber);
-                            renderFileList();
-                            refreshActiveFilePresence();
-
-                            renderCustomers();
-                            populateDropdowns();
-                            initScaleBoard();
-                            loadBill();
-                            
-                            
-                            switchTab('scale', document.querySelector('.nav-item'));
-                        }
-                    } else {
-                        notify('This is not a valid backup file.');
-                    }
-                } catch(err) {
-                    notify('Could not read the file.');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; 
+        async function ensureFileSelected(){
+ const n=Number(currentFileNumber),fs=window.Capacitor?.Plugins?.Filesystem;
+ if(n>0&&fs?.stat){
+  try{
+   const pending=fileWriteQueues[String(n)];if(pending)await pending.catch(()=>{});
+   await ensureBackupFolder();
+   await fs.stat({path:BACKUP_FOLDER+'/MilkScale_Backup_('+n+').json',directory:'DOCUMENTS'});
+   filePresence[String(n)]=true;showFileInHeader(n);renderFileList();return true;
+  }catch(e){filePresence[String(n)]=false;currentFileNumber=0;localStorage.removeItem('ms_file_num');showFileInHeader(0);renderFileList();}
+ }
+ await appDialog('नई Entry जोड़ने से पहले File Manager से मौजूद JSON फाइल फिट करें या नई JSON फाइल बनाएँ।',false,'JSON file required');
+ switchTab('backup',null);return false;
+}
+        async function importBackupFile(event){
+            const file=event.target.files?.[0];if(!file)return;
+            const previous={number:currentFileNumber,customers,entries,store:JSON.parse(JSON.stringify(fileStore))};
+            try{
+                const content=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('फाइल पढ़ी नहीं जा सकी।'));reader.readAsText(file);});
+                const savedData=JSON.parse(content);
+                if(!savedData||!Array.isArray(savedData.customers)||!Array.isArray(savedData.entries))throw new Error('यह वैध Milk Scale JSON फाइल नहीं है।');
+                if(!(await appDialog('इस JSON फाइल को Milk Scale में जोड़ें?',true,'Add backup file')))return;
+                const match=file.name.match(/\((\d+)\)/),fileNum=match?parseInt(match[1],10):(Math.max(0,...getKnownFileNumbers())+1);
+                fileStore[String(fileNum)]={customers:savedData.customers,entries:savedData.entries,scale:Array.isArray(savedData.scale)?savedData.scale:[],rate:savedData.rate==null?'':String(savedData.rate),createdAt:savedData._milkScaleMeta?.createdAt||new Date().toISOString()};
+                currentFileNumber=fileNum;customers=savedData.customers;entries=savedData.entries;
+                localStorage.setItem('ms_scale',JSON.stringify(fileStore[String(fileNum)].scale));
+                document.getElementById('scale-rate').value=fileStore[String(fileNum)].rate;
+                saveActiveFileData();
+                if(!(await autoSaveToFile(fileNum,true)))throw new Error('JSON फाइल Documents में सेव नहीं हो सकी।');
+                localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',fileNum);saveLocal(false);
+                showFileInHeader(fileNum);renderFileList();renderCustomers();populateDropdowns();initScaleBoard();loadBill();
+                switchTab('scale',document.querySelector('.nav-item'));
+            }catch(err){
+                fileStore=previous.store;currentFileNumber=previous.number;customers=previous.customers;entries=previous.entries;
+                localStorage.setItem('ms_file_store',JSON.stringify(fileStore));localStorage.setItem('ms_file_num',currentFileNumber);
+                if(currentFileNumber>0)loadActiveFileData(currentFileNumber);else{localStorage.setItem('ms_cust',JSON.stringify(customers));localStorage.setItem('ms_entries',JSON.stringify(entries));}
+                notify(err.message||'JSON फाइल इम्पोर्ट नहीं हुई।');
+            }finally{event.target.value='';}
         }
 
         // --- Bill & Scale Logic (Existing calculation and bill logic) ---
@@ -812,35 +904,14 @@
         }
 
         function loadBill() {
-            const cust = document.getElementById('bill-customer').value;
-            const start = document.getElementById('bill-start').value;
-            const end = document.getElementById('bill-end').value;
-            const dataDiv = document.getElementById('bill-data');
-            
-            if(!cust) { dataDiv.style.display = 'none'; return; }
-
-            let filtered = entries.filter(e => e.customer === cust && e.date >= start && e.date <= end);
-            filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-            let totalKg = 0, totalAmt = 0;
-            const listHtml = filtered.map(e => {
-                totalKg += e.kg;
-                totalAmt += e.total;
-                const d = e.date.split('-').reverse().join('/');
-                return `
-                    <div class="list-item">
-                        <div class="info">
-                            <h4>${d} <span style="font-size:10px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${e.shift}</span></h4>
-                            <p>${e.kg} Kg | Sample: ${e.sample}</p>
-                        </div>
-                        <div class="amount">₹${e.total.toFixed(0)}</div>
-                    </div>`;
-            }).join('');
-
-            document.getElementById('bill-total-kg').innerText = totalKg.toFixed(1);
-            document.getElementById('bill-total-amt').innerText = '₹' + totalAmt.toFixed(0);
-            document.getElementById('bill-list').innerHTML = listHtml || '<p style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No entries</p>';
-            dataDiv.style.display = 'block';
+            const cust=document.getElementById('bill-customer').value,start=document.getElementById('bill-start').value,end=document.getElementById('bill-end').value;
+            const dataDiv=document.getElementById('bill-data'),list=document.getElementById('bill-list');
+            if(!cust){document.getElementById('bill-total-kg').innerText='0.0';document.getElementById('bill-total-amt').innerText='₹0';list.innerHTML='<div class="empty-state">'+(customers.length?'Customer चुनें':'अभी कोई Customer जुड़ा नहीं है।')+'</div>';dataDiv.style.display='block';return;}
+            const filtered=entries.filter(e=>e.customer===cust&&e.date>=start&&e.date<=end).sort((a,b)=>new Date(b.date)-new Date(a.date));
+            let totalKg=0,totalAmt=0;
+            const html=filtered.map(e=>{totalKg+=Number(e.kg)||0;totalAmt+=Number(e.total)||0;const d=String(e.date||'').split('-').reverse().join('/');return '<div class="list-item"><div class="info"><h4>'+escapeHtml(d)+' <span style="font-size:10px;background:#e2e8f0;padding:2px 6px;border-radius:4px;">'+escapeHtml(e.shift||'')+'</span></h4><p>'+Number(e.kg||0)+' Kg | Sample: '+Number(e.sample||0)+'</p></div><div class="amount">₹'+Number(e.total||0).toFixed(0)+'</div></div>';}).join('');
+            document.getElementById('bill-total-kg').innerText=totalKg.toFixed(1);document.getElementById('bill-total-amt').innerText='₹'+totalAmt.toFixed(0);
+            list.innerHTML=html||'<div class="empty-state">इस अवधि में कोई Bill Entry नहीं है।</div>';dataDiv.style.display='block';
         }
 
         function shareWhatsApp() {
@@ -959,9 +1030,329 @@
             });
         }
 
-        // Start App
-        window.onload = () => {
-            init();
+
+
+        function toggleEntryRequests(){
+          const p=document.getElementById('entry-request-panel');p.classList.toggle('open');if(p.classList.contains('open'))loadEntryRequests();
+        }
+        function toggleEntryTools(){document.getElementById('entry-tools-panel').classList.toggle('open');}
+        function formatRequestTime(ts){
+          const d=ts?.toDate?ts.toDate():(ts?.seconds?new Date(ts.seconds*1000):null);
+          return d?d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' • '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'समय उपलब्ध नहीं';
+        }
+        async function loadEntryRequests(){
+          const list=document.getElementById('entry-request-list'),form=document.getElementById('customer-request-form');
+          if(!list||!window.MilkScaleAuth)return;
+          if(!navigator.onLine){list.innerHTML='';showNoInternet();return;}
+          list.innerHTML='<div class="loading-skeleton request-skeleton"><span></span><span></span><span></span></div>';
+          try{
+            const user=await withNetworkTimeout(window.MilkScaleAuth.getCurrentUser());if(!user){list.innerHTML='<p class="request-time">Request के लिए पहले Account में Login करें।</p>';form.style.display='none';return;}
+            const profile=await withNetworkTimeout(window.MilkScaleAuth.getProfile());if(!profile){list.innerHTML='<p class="request-time">Account में अपनी भूमिका चुनें।</p>';form.style.display='none';return;}
+            form.style.display=profile.role==='customer'?'block':'none';
+            const rows=await withNetworkTimeout(window.MilkScaleAuth.getMyConnectionRequests());
+            if(!rows.length){list.innerHTML='<p class="request-time">अभी कोई Request नहीं है।</p>';return;}
+            list.innerHTML=rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).map(x=>{
+              const incoming=x.targetUid===user.uid;
+              const title=incoming?(x.requesterName||x.requesterEmail||'Customer'):(x.targetName||'Dudhiya');
+              const status=x.status==='pending'?'Pending':x.status==='accepted'?'Accepted':'Rejected';
+              const actions=incoming&&x.status==='pending'?'<div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideEntryRequest(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideEntryRequest(\''+x.id+'\',false)">Reject</button></div>':'';
+              return '<div class="request-row"><strong>'+escapeHtml(title)+'</strong><div class="request-state">'+status+'</div><div class="request-time">भेजा: '+formatRequestTime(x.createdAt)+(x.respondedAt?' • जवाब: '+formatRequestTime(x.respondedAt):'')+'</div>'+actions+'</div>';
+            }).join('');
+          }catch(e){if(isNetworkError(e)){list.innerHTML='';showNoInternet();}else list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request लोड नहीं हुई')+'</p>';}
+        }
+        async function sendEntryDairyRequest(){
+          const field=document.getElementById('dairy-search-id'),list=document.getElementById('entry-request-list');
+          try{const result=await window.MilkScaleAuth.sendDairyConnectionRequest(field.value);field.value='';list.innerHTML='<p class="request-time">Request '+escapeHtml(result.dairy.displayName||'Dudhiya')+' को भेज दी गई।</p>';await loadEntryRequests();}
+          catch(e){if(isNetworkError(e))showNoInternet();else list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'Request नहीं भेजी जा सकी')+'</p>';}
+        }
+        async function decideEntryRequest(id,accept){
+          try{await window.MilkScaleAuth.decideDairyRequest(id,accept);await loadEntryRequests();}
+          catch(e){if(isNetworkError(e))showNoInternet();else{const list=document.getElementById('entry-request-list');list.innerHTML='<p class="request-time">'+escapeHtml(e.message||'अपडेट नहीं हुआ')+'</p>';}}
+        }
+
+        // Optional Firebase email/password authentication. Local/offline app data is never gated by login.
+        let accountAuthMode = 'login';
+        function openAccount() {
+            document.getElementById('auth-backdrop').classList.add('show');
+            document.getElementById('profile-name').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-dairy-id').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-role-label').innerHTML='<span class="profile-placeholder-line"></span>';
+            document.body.classList.add('auth-open');
+            history.pushState({page:'account'},'','#account');
+            if(!navigator.onLine){document.getElementById('profile-view').style.display='none';document.getElementById('auth-form-view').style.display='block';document.getElementById('auth-status').innerText='';document.getElementById('auth-form-status').innerText='';showNoInternet();return;}
+            refreshAccountStatus();
+        }
+        function closeAccount() { document.getElementById('auth-backdrop').classList.remove('show'); document.body.classList.remove('auth-open'); }
+        function toggleAccountAuthMode(){accountAuthMode=accountAuthMode==='login'?'register':'login';document.getElementById('auth-submit-btn').innerText=accountAuthMode==='login'?'लॉगिन करें':'अकाउंट बनाएँ';document.getElementById('auth-name-wrap').style.display=accountAuthMode==='register'?'block':'none';document.getElementById('auth-mode-btn').innerText=accountAuthMode==='login'?'नया अकाउंट बनाएँ':'पहले से अकाउंट है? लॉगिन';document.getElementById('auth-password').autocomplete=accountAuthMode==='login'?'current-password':'new-password';document.getElementById('auth-form-status').innerText='';document.getElementById('email-verified-view').style.display='none';}
+        function withNetworkTimeout(promise){let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('network timeout')),5000);})]).finally(()=>clearTimeout(timer));}
+async function refreshAccountStatus(){
+ const status=document.getElementById('auth-status'),formStatus=document.getElementById('auth-form-status'),pv=document.getElementById('profile-view'),fv=document.getElementById('auth-form-view');
+ document.getElementById('profile-name').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-dairy-id').innerHTML='<span class="profile-placeholder-line"></span>';document.getElementById('profile-role-label').innerHTML='<span class="profile-placeholder-line"></span>';
+ pv.style.display='block';fv.style.display='none';
+ if(!navigator.onLine){pv.style.display='none';fv.style.display='block';status.innerText='';formStatus.innerText='';showNoInternet();return;} status.innerHTML='<div class="loading-skeleton auth-skeleton"></div>';
+ try{
+  const user=await withNetworkTimeout(window.MilkScaleAuth?.getCurrentUser());
+  if(!user){pv.style.display='none';fv.style.display='block';formStatus.innerText='';status.innerText='';return;}
+  pv.style.display='block';fv.style.display='none';formStatus.innerText='';
+  let p=await withNetworkTimeout(window.MilkScaleAuth.getProfile());if(!p)p=await withNetworkTimeout(window.MilkScaleAuth.ensureProfile('customer',user.displayName));else if(p.role)p=await withNetworkTimeout(window.MilkScaleAuth.ensureProfile(p.role,p.displayName||user.displayName));
+  const name=p?.displayName||user.displayName||user.email?.split('@')[0]||'User';
+  document.getElementById('profile-name').innerText=name;document.getElementById('profile-avatar').innerText=name.charAt(0).toUpperCase();
+  document.getElementById('profile-dairy-id').innerText='ID: '+(p?.dairyId||'—');
+  const role=p?.role==='owner'?'दूधिया / Milkman':'ग्राहक / Customer',roleEl=document.getElementById('profile-role-label');
+  roleEl.innerText=role;roleEl.dataset.role=p?.role||'customer';
+  document.querySelector('#profile-switch-button .switch-label').innerText=p?.role==='owner'?'Switch to Customer':'Switch to Milkman';
+  const img=document.getElementById('profile-photo'),avatar=document.getElementById('profile-avatar');
+  img.onload=()=>{img.style.display='block';avatar.style.display='none';};img.onerror=()=>{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';};
+  if(p?.avatarData){img.style.display='block';img.src=p.avatarData;}else{img.removeAttribute('src');img.style.display='none';avatar.style.display='block';}
+  status.innerText='';await withNetworkTimeout(renderConnectedDairyProfile(p));
+ }catch(e){if(isNetworkError(e)){pv.style.display='none';fv.style.display='block';status.innerText='';showNoInternet();}else{pv.style.display='block';fv.style.display='none';status.innerText=e.message||'अकाउंट जानकारी लोड नहीं हुई।';}}
+}
+        function togglePasswordVisibility(id,button){const input=document.getElementById(id);if(!input||!button)return;const isHidden=input.type==='password';input.type=isHidden?'text':'password';const isVisible=input.type==='text';button.innerHTML=isVisible?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';button.setAttribute('aria-label',isVisible?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ');button.setAttribute('aria-pressed',String(isVisible));}
+        function toggleProfileSettings(){const p=document.getElementById('profile-settings-panel');p.style.display=p.style.display==='none'?'block':'none';}
+        async function saveProfileSettings(){
+ const name=document.getElementById('profile-edit-name').value.trim(),status=document.getElementById('profile-edit-status');
+ try{const role=document.getElementById('profile-role-label').dataset.role||'customer';await window.MilkScaleAuth.updateProfileDetails(name,role);document.getElementById('edit-profile-modal').classList.remove('show');await refreshAccountStatus();notify('प्रोफाइल अपडेट हो गई।');}
+ catch(e){status.innerText=e.message||'बदलाव सेव नहीं हुए।';}
+}
+        async function saveProfilePhoto(input){
+ const file=input.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){notify('कृपया फोटो फ़ाइल चुनें।');input.value='';return;}
+ try{pendingProfilePhotoData=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('फोटो पढ़ी नहीं जा सकी।'));r.readAsDataURL(file);});
+  const im=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो खुल नहीं सकी।'));x.src=pendingProfilePhotoData;});
+  const stage=document.getElementById('photo-crop-stage'),img=document.getElementById('photo-crop-image'),frame=Math.min(window.innerWidth*.86,420,window.innerHeight*.65),scale=Math.max(frame/im.width,frame/im.height);
+  img.src=pendingProfilePhotoData;img.style.width=(im.width*scale)+'px';img.style.height=(im.height*scale)+'px';img.dataset.scale=String(scale);img.dataset.sourceWidth=String(im.width);img.dataset.sourceHeight=String(im.height);document.getElementById('photo-crop-modal').classList.add('show');requestAnimationFrame(()=>{img.style.left=((stage.clientWidth-im.width*scale)/2)+'px';img.style.top=((stage.clientHeight-im.height*scale)/2)+'px';});
+ }catch(e){notify(e.message||'फोटो पढ़ी नहीं जा सकी।');input.value='';}
+}
+function cancelProfilePhotoCrop(){document.getElementById('photo-crop-modal').classList.remove('show');pendingProfilePhotoData=null;document.getElementById('profile-photo-input').value='';}
+async function saveCroppedProfilePhoto(){
+ try{const stage=document.getElementById('photo-crop-stage'),img=document.getElementById('photo-crop-image'),rect=stage.getBoundingClientRect(),frame=Math.min(rect.width*.86,420,rect.height*.65),cx=rect.width/2,cy=rect.height/2,left=parseFloat(img.style.left)||0,top=parseFloat(img.style.top)||0,scale=Number(img.dataset.scale),sw=Number(img.dataset.sourceWidth),sh=Number(img.dataset.sourceHeight),sourceSize=frame/scale,sx=Math.min(Math.max(0,(cx-frame/2-left)/scale),Math.max(0,sw-sourceSize)),sy=Math.min(Math.max(0,(cy-frame/2-top)/scale),Math.max(0,sh-sourceSize)),out=document.createElement('canvas'),target=Math.min(1200,Math.max(640,Math.round(frame/scale)));
+  out.width=target;out.height=target;const ctx=out.getContext('2d'),photo=await new Promise((ok,no)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=()=>no(new Error('फोटो तैयार नहीं हुई।'));x.src=pendingProfilePhotoData;});ctx.drawImage(photo,sx,sy,Math.min(sourceSize,sw-sx),Math.min(sourceSize,sh-sy),0,0,target,target);
+  const cropped=out.toDataURL('image/jpeg',.9);await window.MilkScaleAuth.updateProfilePhoto(cropped);document.getElementById('photo-crop-modal').classList.remove('show');pendingProfilePhotoData=null;await refreshAccountStatus();const full=document.getElementById('profile-photo-full');if(full){full.src=cropped;full.style.display='block';document.getElementById('profile-photo-fallback').style.display='none';}notify('प्रोफाइल फोटो सेव हो गई।');
+ }catch(e){notify(e.message||'फोटो सेव नहीं हो सकी।');}finally{document.getElementById('profile-photo-input').value='';}
+}
+(function(){const stage=document.getElementById('photo-crop-stage');if(!stage)return;stage.addEventListener('pointerdown',e=>{const img=document.getElementById('photo-crop-image');cropDrag={x:e.clientX,y:e.clientY,left:parseFloat(img.style.left)||0,top:parseFloat(img.style.top)||0};stage.setPointerCapture(e.pointerId);});stage.addEventListener('pointermove',e=>{if(!cropDrag)return;const img=document.getElementById('photo-crop-image');img.style.left=(cropDrag.left+e.clientX-cropDrag.x)+'px';img.style.top=(cropDrag.top+e.clientY-cropDrag.y)+'px';});const end=()=>cropDrag=null;stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);})();
+        async function renderConnectedDairyProfile(p){
+          const box=document.getElementById('connected-dairy-list');if(!box)return;if(!p||p.role!=='customer'){box.style.display='none';return;}
+          try{const rows=await window.MilkScaleAuth.getMyConnections(),owners=rows.map(x=>x.dairyProfile).filter(Boolean);box.style.display='block';
+            box.innerHTML='<strong>मेरा दूधिया</strong>'+(owners.length?owners.map(x=>'<div class="connected-dairy-card">'+(x.avatarData?'<img src="'+x.avatarData+'" alt="Dairy profile">':'<span class="fallback">'+escapeHtml((x.displayName||'D').charAt(0))+'</span>')+'<div><b>'+escapeHtml(x.displayName||'Dairy Owner')+'</b><div class="request-time">ID: '+escapeHtml(x.dairyId||'')+'</div></div></div>').join(''):'<p class="request-time">अभी कोई दूधिया कनेक्ट नहीं है।</p>');
+          }catch(e){box.style.display='none';}
+        }
+        function showDairyRoleTools(role) {
+            const tools=document.getElementById('owner-cloud-tools');
+            if(tools) tools.style.display=role==='owner'?'block':'none';
+        }
+        async function saveDairyRole() {
+            const role = document.getElementById('dairy-role').value;
+            const status = document.getElementById('auth-status');
+            try {
+                await window.MilkScaleAuth.ensureProfile(role, document.getElementById('auth-name').value.trim());
+                document.getElementById('dairy-role').disabled = true;
+                showDairyRoleTools(role);
+                status.innerText = role === 'owner' ? 'Dairy Owner प्रोफाइल बन गई।' : 'Customer प्रोफाइल बन गई।';
+                await renderDairyConnections();
+            } catch (error) { status.innerText = (error.code === 'permission-denied' || /permission/i.test(error.message||'')) ? 'Firebase Firestore Rules में profiles create की अनुमति नहीं मिली। Firebase Console में PR #12 की firestore.rules Publish करें, फिर दोबारा प्रयास करें।' : (error.message || 'प्रोफाइल सेव नहीं हुई।'); }
+        }
+        async function renderDairyConnections() {
+            const target=document.getElementById('dairy-connections'); if(!target)return;
+            try { const profile=await window.MilkScaleAuth.getProfile(); if(!profile){target.innerText='भूमिका सेव करने के बाद कनेक्शन उपलब्ध होंगे।';return;}
+              const connections=await window.MilkScaleAuth.getMyConnections(); target.innerText='सक्रिय कनेक्शन: '+connections.length;
+            } catch(e){target.innerText=e.message||'कनेक्शन लोड नहीं हुए।';}
+        }
+
+        function saveCustomerCloudLink(){
+            const name=document.getElementById('link-local-customer').value.trim(), uid=document.getElementById('link-customer-uid').value.trim();
+            if(!name||!uid){document.getElementById('cloud-ledger-result').innerText='ग्राहक का नाम और UID दोनों दर्ज करें।';return;}
+            const links=JSON.parse(localStorage.getItem('ms_customer_links')||'{}'); links[name]=uid; localStorage.setItem('ms_customer_links',JSON.stringify(links));
+            document.getElementById('cloud-ledger-result').innerText='ग्राहक लिंक सेव हो गया। अब नई एंट्री अपने-आप Sync queue में जाएगी।';
+        }
+        function queueCloudMilkEntry(entry,uid){
+            const queue=JSON.parse(localStorage.getItem('ms_cloud_queue')||'[]');
+            if(!queue.some(x=>String(x.entry.id)===String(entry.id)&&x.uid===uid)){queue.push({entry,uid});localStorage.setItem('ms_cloud_queue',JSON.stringify(queue));}
+            flushCloudMilkQueue();
+        }
+        async function flushCloudMilkQueue(){
+            if(!navigator.onLine||!window.MilkScaleAuth)return;
+            let queue=JSON.parse(localStorage.getItem('ms_cloud_queue')||'[]'); if(!queue.length)return;
+            const remain=[];
+            for(const item of queue){try{await window.MilkScaleAuth.syncMilkEntry(item.entry,item.uid);}catch(e){remain.push(item);}}
+            localStorage.setItem('ms_cloud_queue',JSON.stringify(remain));
+            const out=document.getElementById('cloud-ledger-result'); if(out)out.innerText=remain.length?'Sync बाकी: '+remain.length+' एंट्री (इंटरनेट/कनेक्शन जाँचें)।':'Cloud Sync पूरा हो गया।';
+        }
+        window.addEventListener('online',flushCloudMilkQueue);
+        async function syncAllLocalEntries(){
+            const links=JSON.parse(localStorage.getItem('ms_customer_links')||'{}');
+            for(const e of entries){const uid=links[e.customer];if(uid)queueCloudMilkEntry(e,uid);}
+            await flushCloudMilkQueue();
+        }
+        async function saveCloudPayment(){
+            try{const id=await window.MilkScaleAuth.addPayment(document.getElementById('payment-customer-uid').value.trim(),document.getElementById('payment-amount').value,document.getElementById('payment-note').value);document.getElementById('cloud-ledger-result').innerText='भुगतान दर्ज हुआ: '+id;await loadCloudLedger();}
+            catch(e){document.getElementById('cloud-ledger-result').innerText=e.message||'भुगतान सेव नहीं हुआ।';}
+        }
+
+        function setCloudReportPeriod(period){
+            const now=new Date(), fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+            let start,end=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+            if(period==='week'){const day=(now.getDay()+6)%7;start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-day);}
+            else if(period==='month'){start=new Date(now.getFullYear(),now.getMonth(),1);}
+            else {start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0);}
+            document.getElementById('report-start').value=fmt(start);document.getElementById('report-end').value=fmt(end);loadCloudLedger();
+        }
+        async function saveLedgerAdjustment(){
+            const uid=document.getElementById('payment-customer-uid').value.trim();
+            const note=document.getElementById('adjust-note').value.trim();
+            if(!note){document.getElementById('cloud-ledger-result').innerText='सुधार का कारण लिखना आवश्यक है।';return;}
+            try{const id=await window.MilkScaleAuth.addLedgerAdjustment(uid,document.getElementById('adjust-kind').value,document.getElementById('adjust-delta').value,note);document.getElementById('cloud-ledger-result').innerText='Audit सुधार दर्ज हुआ: '+id;document.getElementById('adjust-delta').value='';document.getElementById('adjust-note').value='';await loadCloudLedger();}
+            catch(e){document.getElementById('cloud-ledger-result').innerText=e.message||'सुधार सेव नहीं हुआ।';}
+        }
+        async function loadCloudLedger(){
+            const out=document.getElementById('cloud-ledger-result');
+            try{
+                const [rows,payments,adjustments,profile]=await Promise.all([window.MilkScaleAuth.getMyMilkEntries(),window.MilkScaleAuth.getMyPayments(),window.MilkScaleAuth.getMyAdjustments(),window.MilkScaleAuth.getProfile()]);
+                const start=document.getElementById('report-start').value, end=document.getElementById('report-end').value;
+                const uid=document.getElementById('report-customer-uid').value.trim();
+                const inRange=x=>(!start||String(x.date)>=start)&&(!end||String(x.date)<=end);
+                const byCustomer=x=>profile.role!=='owner'||!uid||x.customerUid===uid;
+                const milk=rows.filter(x=>inRange(x)&&byCustomer(x)), paidRows=payments.filter(x=>inRange(x)&&byCustomer(x)), adj=adjustments.filter(x=>inRange(x)&&byCustomer(x));
+                const milkTotal=milk.reduce((a,x)=>a+(Number(x.total)||0),0), kg=milk.reduce((a,x)=>a+(Number(x.kg)||0),0);
+                const paid=paidRows.reduce((a,x)=>a+(Number(x.amount)||0),0);
+                const amountDelta=adj.filter(x=>x.kind==='amount').reduce((a,x)=>a+(Number(x.delta)||0),0);
+                const kgDelta=adj.filter(x=>x.kind==='kg').reduce((a,x)=>a+(Number(x.delta)||0),0);
+                const balance=milkTotal+amountDelta-paid;
+                const lines=[];
+                milk.forEach(x=>lines.push(x.date+' '+x.shift+' — '+x.kg+' kg — ₹'+Number(x.total).toFixed(2)));
+                paidRows.forEach(x=>lines.push(x.date+' भुगतान — ₹'+Number(x.amount).toFixed(2)+' '+(x.note||'')));
+                adj.forEach(x=>lines.push(x.date+' Audit '+x.kind+' '+(Number(x.delta)>0?'+':'')+x.delta+' — '+x.note));
+                out.innerText='अवधि: '+(start||'शुरू से')+' से '+(end||'आज तक')+'\nदूध: '+kg.toFixed(2)+' Kg | दूध राशि: ₹'+milkTotal.toFixed(2)+'\nमात्रा सुधार: '+kgDelta.toFixed(2)+' Kg | रकम सुधार: ₹'+amountDelta.toFixed(2)+'\nजमा भुगतान: ₹'+paid.toFixed(2)+'\nकुल बकाया: ₹'+balance.toFixed(2)+'\n\n'+(lines.join('\n')||'इस अवधि में कोई रिकॉर्ड नहीं।');
+            }catch(e){out.innerText=e.message||'Cloud खाता लोड नहीं हुआ।';}
+        }
+
+        async function submitAccountAuth(){
+ const email=document.getElementById('auth-email').value.trim(),password=document.getElementById('auth-password').value,status=document.getElementById('auth-form-status'),button=document.getElementById('auth-submit-btn');
+ button.disabled=true;status.innerText=accountAuthMode==='login'?'लॉगिन हो रहा है…':'अकाउंट बनाया जा रहा है…';
+ try{if(accountAuthMode==='register'){
+  await window.MilkScaleAuth.createAccount(document.getElementById('auth-name').value.trim(),email,password);
+  status.innerHTML='Verification Link '+escapeHtml(email)+' पर भेज दिया गया है। ईमेल खोलकर Verify करें, फिर नीचे बटन दबाएँ। <button class="auth-primary" type="button" style="margin-top:12px" onclick="confirmEmailVerification()">मैंने Email Verify कर लिया</button>';
+ }else{await window.MilkScaleAuth.signIn(email,password);await refreshAccountStatus();}}
+ catch(error){const messages={'auth/invalid-email':'ईमेल पता सही नहीं है।','auth/user-not-found':'यह ईमेल अकाउंट नहीं मिला। पहले नया अकाउंट बनाएँ।','auth/wrong-password':'पासवर्ड गलत है।','auth/invalid-credential':'ईमेल या पासवर्ड सही नहीं है।','auth/email-already-in-use':'इस ईमेल से अकाउंट पहले से बना है। लॉगिन करें।','auth/weak-password':'पासवर्ड कम से कम 6 अक्षरों का रखें।','auth/network-request-failed':'इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।','auth/operation-not-allowed':'Firebase Console में Email/Password sign-in चालू करना बाकी है।','auth/email-not-verified':error.message||'पहले ईमेल सत्यापित करें।'};status.innerText=messages[error.code]||error.message||'लॉगिन में समस्या हुई।';}
+ finally{button.disabled=false;}
+}
+async function confirmEmailVerification(){const email=document.getElementById('auth-email').value.trim(),password=document.getElementById('auth-password').value,status=document.getElementById('auth-form-status');try{await window.MilkScaleAuth.signIn(email,password);showEmailVerifiedScreen();}catch(e){status.innerText=e.code==='auth/email-not-verified'?'ईमेल Verify नहीं हुआ है। पहले ईमेल में आया लिंक खोलें।':(e.message||'Verification जाँच नहीं हो सकी।');}}
+function showEmailVerifiedScreen(){document.getElementById('auth-intro').style.display='none';document.getElementById('auth-submit-btn').style.display='none';document.getElementById('auth-mode-btn').style.display='none';document.getElementById('auth-reset-btn').style.display='none';document.getElementById('auth-form-status').style.display='none';document.getElementById('auth-name-wrap').style.display='none';document.getElementById('email-verified-view').style.display='block';}
+async function finishEmailVerification(){document.getElementById('email-verified-view').style.display='none';document.getElementById('auth-intro').style.display='block';document.getElementById('auth-submit-btn').style.display='block';document.getElementById('auth-mode-btn').style.display='inline-block';document.getElementById('auth-reset-btn').style.display='inline-block';document.getElementById('auth-form-status').style.display='block';closeAccount();await refreshAccountStatus();}
+        async function resetAccountPassword() {
+            const email = document.getElementById('auth-email').value.trim();
+            const status = document.getElementById('auth-form-status');
+            if (!email) { status.innerText = 'पहले अपना ईमेल पता लिखें।'; return; }
+            try {
+                await window.MilkScaleAuth.sendPasswordReset(email);
+                status.innerText = 'पासवर्ड रीसेट लिंक ईमेल पर भेज दिया गया है।';
+            } catch (error) {
+                status.innerText = error.code === 'auth/user-not-found' ? 'इस ईमेल का अकाउंट नहीं मिला।' : (error.message || 'रीसेट ईमेल नहीं भेजा जा सका।');
+            }
+        }
+        async function signOutAccount() {
+            try {
+                await window.MilkScaleAuth.signOut();
+                await refreshAccountStatus();
+            } catch (error) { document.getElementById('auth-status').innerText = 'लॉगआउट नहीं हो सका।'; }
+        }
+
+
+function openCustomerPicker(){
+ const modal=document.getElementById('customer-picker-modal'),search=document.getElementById('customer-picker-search');
+ search.value='';filterCustomerPicker();modal.classList.add('show');history.pushState({page:'customer-picker'},'','#customer-picker');
+}
+function closeCustomerPicker(){document.getElementById('customer-picker-modal').classList.remove('show');}
+function filterCustomerPicker(){
+ const box=document.getElementById('customer-picker-list'),q=(document.getElementById('customer-picker-search').value||'').trim().toLowerCase();
+ const rows=customers.filter(x=>x.toLowerCase().includes(q));
+ box.innerHTML=rows.length?rows.map(x=>'<button type="button" class="customer-picker-option" onclick="chooseEntryCustomer(\''+escapeHtml(x).replace(/'/g,"\\'")+'\')">'+escapeHtml(x)+'</button>').join(''):'<div class="customer-picker-empty">कोई Customer नहीं मिला</div>';
+}
+function chooseEntryCustomer(name){document.getElementById('entry-customer').value=name;closeCustomerPicker();}
+let customerCenterView='all';
+function setCustomerCenterView(view){customerCenterView=view==='new'?'new':'all';document.getElementById('customer-tab-all')?.classList.toggle('active',customerCenterView==='all');document.getElementById('customer-tab-new')?.classList.toggle('active',customerCenterView==='new');document.getElementById('request-list-heading').innerText=customerCenterView==='new'?'New Request':'All Customers';if(customerCenterView==='new')markRequestsSeen();loadRequestCenter();}
+function openRequestCenter(){const page=document.getElementById('request-center');customerCenterView='all';document.getElementById('customer-tab-all')?.classList.add('active');document.getElementById('customer-tab-new')?.classList.remove('active');page.classList.add('show');document.body.classList.add('auth-open');history.pushState({page:'requests'},'','#requests');loadRequestCenter();}
+function closeRequestCenter(){document.getElementById('request-center').classList.remove('show');document.body.classList.remove('auth-open');}
+async function syncConnectedCustomers(){
+ try{const user=await window.MilkScaleAuth?.getCurrentUser();if(!user)return;const p=await window.MilkScaleAuth.getProfile();if(p?.role!=='owner')return;
+  const rows=await window.MilkScaleAuth.getMyConnections(),links={};
+  for(const c of rows.filter(x=>x.status==='active')){const name=String(c.customerProfile?.displayName||'').trim();if(!name)continue;links[name]=c.customerUid;if(!customers.includes(name))customers.push(name);}
+  localStorage.setItem('ms_customer_links',JSON.stringify({...JSON.parse(localStorage.getItem('ms_customer_links')||'{}'),...links}));saveLocal(false);renderCustomers();populateDropdowns();if(currentFileNumber>0)await autoSaveToFile(currentFileNumber,false);
+ }catch(e){if(isNetworkError(e))showNoInternet();else console.warn('Connected customers refresh:',e?.message||e);}
+}
+async function loadRequestCenter(){
+ const list=document.getElementById('incoming-request-list'),form=document.getElementById('customer-dairy-request'),heading=document.getElementById('request-list-heading');
+ if(!list||!form)return;
+ if(!navigator.onLine){list.innerHTML='';showNoInternet();return;}list.innerHTML='<div class="loading-skeleton request-skeleton"><span></span><span></span><span></span></div>';form.style.display='none';
+ try{
+  const user=await withNetworkTimeout(window.MilkScaleAuth?.getCurrentUser());
+  if(!user){heading.innerText=customerCenterView==='all'?'All Customers':'New Request';list.innerHTML='<div class="empty-state">Customers देखने के लिए पहले Account में Login करें।</div>';return;}
+  const p=await withNetworkTimeout(window.MilkScaleAuth.getProfile());if(!p){list.innerHTML='<div class="empty-state">Account प्रोफाइल उपलब्ध नहीं है।</div>';return;}
+  const [connections,requests]=await withNetworkTimeout(Promise.all([window.MilkScaleAuth.getMyConnections(),window.MilkScaleAuth.getMyConnectionRequests()]));updateRequestUnread(requests.filter(x=>x.targetUid===user.uid&&x.status==='pending'));
+  if(customerCenterView==='all'){
+   heading.innerText='All Customers';const active=connections.filter(x=>x.status==='active');
+   if(p.role==='owner')list.innerHTML=active.length?active.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.customerProfile?.displayName||x.customerName||'Customer')+'</strong><div class="request-state">Connected Customer</div><div class="request-time">Connected</div></div>').join(''):'<div class="empty-state">अभी कोई Customer कनेक्ट नहीं है।</div>';
+   else list.innerHTML=active.length?active.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.dairyProfile?.displayName||'Dairy')+'</strong><div class="request-state">Connected Dairy</div><div class="request-time">'+escapeHtml(x.dairyProfile?.dairyId||'')+'</div></div>').join(''):'<div class="empty-state">अभी कोई Dairy कनेक्ट नहीं है।</div>';
+  }else{
+   heading.innerText='New Request';
+   if(p.role==='owner'){
+    const incoming=requests.filter(x=>x.targetUid===user.uid&&x.status==='pending');
+    list.innerHTML=incoming.length?incoming.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.requesterName||x.requesterEmail||'Customer')+'</strong><div class="request-state">नई Request</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div><div class="request-actions"><button style="background:#dcfce7;color:#166534" onclick="decideRequestCenter(\''+x.id+'\',true)">Accept</button><button style="background:#fee2e2;color:#991b1b" onclick="decideRequestCenter(\''+x.id+'\',false)">Reject</button></div></div>').join(''):'<div class="empty-state">अभी कोई नई Customer Request नहीं है।</div>';
+    await syncConnectedCustomers();
+   }else{
+    form.style.display='block';
+    const sent=requests.filter(x=>x.requesterUid===user.uid).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    list.innerHTML=sent.length?sent.map(x=>'<div class="request-row"><strong>'+escapeHtml(x.targetName||'Dairy')+'</strong><div class="request-state">'+(x.status==='pending'?'Pending':x.status==='accepted'?'Accepted':'Rejected')+'</div><div class="request-time">'+formatRequestTime(x.createdAt)+'</div></div>').join(''):'<div class="empty-state">अभी कोई Request नहीं भेजी गई है।</div>';
+   }
+  }
+ }catch(e){if(isNetworkError(e)){list.innerHTML='';showNoInternet();}else{list.innerHTML='<div class="empty-state">'+escapeHtml(e.message||'Customers लोड नहीं हुए')+'</div>';}}
+}
+async function sendEntryDairyRequest(){const field=document.getElementById('dairy-search-id'),out=document.getElementById('customer-request-status');try{const result=await window.MilkScaleAuth.sendDairyConnectionRequest(field.value);field.value='';out.innerText='Request '+(result.dairy.displayName||'Dairy')+' को भेज दी गई है।';await loadRequestCenter();}catch(e){out.innerText=e.message||'Request नहीं भेजी जा सकी।';}}
+async function decideRequestCenter(id,accept){try{await window.MilkScaleAuth.decideDairyRequest(id,accept);notify(accept?'Request स्वीकार हो गई।':'Request अस्वीकार कर दी गई।');await loadRequestCenter();}catch(e){notify(e.message||'Request अपडेट नहीं हुई।');}}
+function openSettingsPage(){document.getElementById('settings-page').classList.add('show');history.pushState({page:'settings'},'','#settings');}
+function closeSettingsPage(){document.getElementById('settings-page').classList.remove('show');}
+function handleAppBack(){
+ const photoViewer=document.getElementById('profile-photo-viewer');if(photoViewer?.classList.contains('show')){closeProfilePhotoViewer();return;}
+ const customerPicker=document.getElementById('customer-picker-modal');if(customerPicker?.classList.contains('show')){closeCustomerPicker();return;}
+ const editor=document.getElementById('edit-profile-modal');if(editor?.classList.contains('show')){closeProfileEditor();return;}
+ const crop=document.getElementById('photo-crop-modal');if(crop?.classList.contains('show')){cancelProfilePhotoCrop();return;}const st=document.getElementById('settings-page');if(st?.classList.contains('show')){closeSettingsPage();return;}
+ const r=document.getElementById('request-center');if(r?.classList.contains('show')){closeRequestCenter();return;}
+ const ac=document.getElementById('auth-backdrop');if(ac?.classList.contains('show')){closeAccount();return;}
+ const active=document.querySelector('.tab-content.active');
+ if(!active||active.id==='tab-scale'){(window.MilkScaleNativeApp?.exitApp?.()||window.Capacitor?.Plugins?.App?.exitApp?.());return;}
+ const stack=window.__msTabStack||[],previous=stack.pop()||'scale';
+ switchTab(previous,null,true);
+}
+        document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshActiveFilePresence();});
+        window.addEventListener('popstate',handleAppBack);
+        document.addEventListener('backbutton',e=>{e.preventDefault?.();handleAppBack();},false);
+        function openProfileEditor(){document.getElementById('profile-edit-status').innerText='';document.getElementById('profile-edit-name').value=document.getElementById('profile-name').innerText;document.getElementById('edit-profile-modal').classList.add('show');}
+        function openProfilePhotoViewer(){const img=document.getElementById('profile-photo'),full=document.getElementById('profile-photo-full'),fallback=document.getElementById('profile-photo-fallback'),name=document.getElementById('profile-name').innerText;document.getElementById('profile-photo-full-name').innerText=name;fallback.innerText=(name||'M').charAt(0).toUpperCase();if(img?.src&&img.style.display!=='none'){full.src=img.src;full.style.display='block';fallback.style.display='none';}else{full.style.display='none';fallback.style.display='flex';}document.getElementById('profile-photo-viewer').classList.add('show');}
+        function closeProfilePhotoViewer(){document.getElementById('profile-photo-viewer').classList.remove('show');}
+        function closeProfileEditor(){document.getElementById('edit-profile-modal').classList.remove('show');}
+        async function switchProfileRole(){const roleEl=document.getElementById('profile-role-label'),current=roleEl.dataset.role||'customer',next=current==='owner'?'customer':'owner';try{await window.MilkScaleAuth.updateProfileDetails(document.getElementById('profile-name').innerText,next);await refreshAccountStatus();notify('Account type बदल गया।');}catch(e){notify(e.message||'Account type नहीं बदल सका।');}}
+        function setupAuthKeyboardNavigation(){
+            const name=document.getElementById('auth-name'),email=document.getElementById('auth-email'),password=document.getElementById('auth-password');
+            if(!email||!password)return;
+            [name,email,password].filter(Boolean).forEach((input,index,items)=>{
+                input.setAttribute('enterkeyhint',index===items.length-1?'go':'next');
+                input.addEventListener('keydown',event=>{
+                    if(event.key!=='Enter')return;
+                    event.preventDefault();
+                    if(input===password){submitAccountAuth();return;}
+                    const next=input===name?email:password;
+                    if(next){next.focus();if(next.select)next.select();}
+                });
+            });
+        }
+        window.onload = async () => {
+            setupAuthKeyboardNavigation();
+            const startupStartedAt = Date.now();
+            try {
+                await init();
+            } catch (error) {
+                console.error('Milk Scale startup failed:', error);
+            } finally {
+                const animationTimeLeft = Math.max(0, 2300 - (Date.now() - startupStartedAt));
+                setTimeout(() => document.getElementById('app-splash')?.classList.add('hide'), animationTimeLeft);
+            }
         };
     </script>
 </body>
