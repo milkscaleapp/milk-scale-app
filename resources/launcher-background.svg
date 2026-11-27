@@ -1,13 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
- <linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#061b55"/><stop offset=".48" stop-color="#1267c9"/><stop offset="1" stop-color="#57b8f5"/></linearGradient>
- <linearGradient id="wave1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#063a91"/><stop offset="1" stop-color="#258ce4"/></linearGradient>
- <linearGradient id="wave2" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#8bdcff"/><stop offset="1" stop-color="#287be0"/></linearGradient>
+  <linearGradient id="bg" x1="0" y1="0" x2="0.92" y2="1">
+    <stop offset="0" stop-color="#078cff"/>
+    <stop offset=".34" stop-color="#0756dc"/>
+    <stop offset=".7" stop-color="#062b91"/>
+    <stop offset="1" stop-color="#020b32"/>
+  </linearGradient>
+  <radialGradient id="light" cx="12%" cy="7%" r="76%">
+    <stop offset="0" stop-color="#19a5ff" stop-opacity=".78"/>
+    <stop offset=".42" stop-color="#0874f5" stop-opacity=".26"/>
+    <stop offset="1" stop-color="#001044" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="lower" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#00164f" stop-opacity="0"/>
+    <stop offset="1" stop-color="#00051d" stop-opacity=".72"/>
+  </linearGradient>
 </defs>
-<rect width="1024" height="1024" fill="url(#base)"/>
-<path d="M0 120 C190 40 330 220 520 160 S850 50 1024 150 V0 H0Z" fill="#0a2d73" opacity=".8"/>
-<path d="M0 520 C170 390 320 610 510 500 S820 370 1024 500 V1024 H0Z" fill="url(#wave1)" opacity=".9"/>
-<path d="M0 760 C210 630 340 830 560 720 S850 630 1024 730 V1024 H0Z" fill="url(#wave2)" opacity=".58"/>
-<path d="M0 900 C190 810 370 960 560 870 S850 790 1024 880 V1024 H0Z" fill="#061b55" opacity=".45"/>
-<path d="M-40 340 C180 240 300 390 470 320 S810 220 1060 320" fill="none" stroke="#9de7ff" stroke-width="24" opacity=".18"/>
+<rect width="1024" height="1024" fill="url(#bg)"/>
+<rect width="1024" height="1024" fill="url(#light)"/>
+<rect width="1024" height="1024" fill="url(#lower)"/>
 </svg>

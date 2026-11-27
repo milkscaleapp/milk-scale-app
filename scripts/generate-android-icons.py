@@ -14,15 +14,15 @@ def render(svg_path, size):
 bg_432 = render(BG_SVG, 432)
 fg_432 = render(FG_SVG, 432)
 (RES / "drawable").mkdir(parents=True, exist_ok=True)
-bg_432.save(RES / "drawable" / "ic_launcher_background.png")
-fg_432.save(RES / "drawable" / "ic_launcher_foreground.png")
+bg_432.save(RES / "drawable" / "milk_scale_launcher_background.png")
+fg_432.save(RES / "drawable" / "milk_scale_launcher_foreground.png")
 
 adaptive = RES / "mipmap-anydpi-v26"
 adaptive.mkdir(parents=True, exist_ok=True)
 xml = """<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background"/>
-    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+    <background android:drawable="@drawable/milk_scale_launcher_background"/>
+    <foreground android:drawable="@drawable/milk_scale_launcher_foreground"/>
 </adaptive-icon>
 """
 (adaptive / "ic_launcher.xml").write_text(xml, encoding="utf-8")

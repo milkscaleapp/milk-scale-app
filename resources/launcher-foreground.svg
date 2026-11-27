@@ -1,27 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
- <linearGradient id="milk" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#d8f3ff"/></linearGradient>
- <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#073b91"/><stop offset="1" stop-color="#1688e8"/></linearGradient>
- <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+  <filter id="shadow" x="-35%" y="-30%" width="180%" height="190%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="19" result="blur"/>
+    <feOffset in="blur" dx="36" dy="49" result="offset"/>
+    <feComponentTransfer in="offset" result="dark">
+      <feFuncA type="linear" slope=".78"/>
+    </feComponentTransfer>
+    <feMerge><feMergeNode in="dark"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset="1" stop-color="#f7f9ff"/>
+  </linearGradient>
 </defs>
-<ellipse cx="512" cy="790" rx="260" ry="34" fill="#00133f" opacity=".25" filter="url(#shadow)"/>
-<!-- milk bottle/carton -->
-<path d="M270 320 L355 220 L520 220 L600 320 L600 680 Q600 720 560 720 L310 720 Q270 720 270 680Z" fill="url(#milk)" stroke="#fff" stroke-width="18" stroke-linejoin="round"/>
-<path d="M355 220 L520 220 L600 320 L270 320Z" fill="#bdeaff"/>
-<path d="M355 220 L410 150 L470 150 L520 220" fill="#effaff" stroke="#fff" stroke-width="14" stroke-linejoin="round"/>
-<path d="M330 410 Q435 365 550 410 L550 625 Q435 670 330 625Z" fill="#e6f7ff"/>
-<path d="M385 515 C385 465 430 430 430 430 C430 430 475 465 475 515 C475 548 455 570 430 570 C405 570 385 548 385 515Z" fill="#1688e8"/>
-<path d="M410 515 Q430 490 450 515" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
-<!-- calculator -->
-<g transform="translate(555 365) rotate(8)">
- <rect x="0" y="0" width="205" height="330" rx="30" fill="url(#blue)" stroke="#fff" stroke-width="18"/>
- <rect x="28" y="35" width="149" height="62" rx="12" fill="#d8f4ff"/>
- <g fill="#eaf8ff">
-  <rect x="28" y="125" width="42" height="42" rx="10"/><rect x="82" y="125" width="42" height="42" rx="10"/><rect x="136" y="125" width="42" height="42" rx="10"/>
-  <rect x="28" y="180" width="42" height="42" rx="10"/><rect x="82" y="180" width="42" height="42" rx="10"/><rect x="136" y="180" width="42" height="42" rx="10"/>
-  <rect x="28" y="235" width="42" height="42" rx="10"/><rect x="82" y="235" width="96" height="42" rx="10"/>
- </g>
+<g filter="url(#shadow)">
+  <rect x="276" y="248" width="472" height="622" rx="86" fill="url(#body)"/>
+  <rect x="278" y="868" width="468" height="5" rx="2.5" fill="#1266d9" opacity=".72"/>
 </g>
-<!-- horizontal brand label -->
-<text x="512" y="855" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="700" letter-spacing="-2" fill="#ffffff">Milk Scale</text>
+<rect x="310" y="286" width="404" height="170" rx="48" fill="#061b50"/>
+<text x="512" y="415" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="126" font-weight="700" font-style="italic" letter-spacing="-5" fill="#ffffff">Milk</text>
+<g fill="#061b50">
+  <rect x="324" y="486" width="116" height="70" rx="25"/>
+  <rect x="454" y="486" width="116" height="70" rx="25"/>
+  <rect x="584" y="486" width="116" height="70" rx="25"/>
+  <rect x="324" y="577" width="116" height="70" rx="25"/>
+  <rect x="454" y="577" width="116" height="70" rx="25"/>
+  <rect x="584" y="577" width="116" height="161" rx="25"/>
+  <rect x="324" y="668" width="116" height="70" rx="25"/>
+  <rect x="454" y="668" width="116" height="70" rx="25"/>
+</g>
+<g fill="#ffffff">
+  <rect x="613" y="635" width="58" height="10" rx="5"/>
+  <rect x="613" y="660" width="58" height="10" rx="5"/>
+</g>
 </svg>
