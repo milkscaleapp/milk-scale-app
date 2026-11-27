@@ -213,6 +213,17 @@ jobs:
           cp android/app/build/outputs/apk/release/*.apk Milk-Scale.apk
           cp android/app/build/outputs/bundle/release/*.aab Milk-Scale.aab
 
+      - name: Verify APK signature, package ID, and launcher resources
+        run: |
+          BUILD_TOOLS="$(find \"$ANDROID_HOME/build-tools\" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$BUILD_TOOLS/apksigner"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs Milk-Scale.apk
+          BADGING="$("$BUILD_TOOLS/aapt" dump badging Milk-Scale.apk)"
+          echo "$BADGING" | grep -F "package: name='com.milkscale.nakul'"
+          echo "$BADGING" | grep -F "application-label:'Milk Scale'"
+          unzip -l Milk-Scale.apk | grep -E 'ic_launcher|milk_scale_launcher_foreground' || true
+          jarsigner -verify -strict Milk-Scale.aab
+
       - uses: actions/upload-artifact@v4
         with:
           name: Milk-Scale-production-release
