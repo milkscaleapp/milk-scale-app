@@ -6,6 +6,8 @@ on:
     paths:
       - "index.html"
       - "src/**"
+      - "assets/**"
+      - "scripts/**"
       - "firestore.rules"
       - "package.json"
       - "build.js"
@@ -17,6 +19,8 @@ on:
     paths:
       - "index.html"
       - "src/**"
+      - "assets/**"
+      - "scripts/**"
       - "firestore.rules"
       - "package.json"
       - "build.js"
@@ -66,6 +70,11 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+
+      - name: Generate Milk Scale launcher icons
+        run: |
+          python3 -m pip install --quiet cairosvg pillow
+          python3 scripts/generate-android-icons.py
 
       - name: Set light Milk Scale launch screen background
         run: |
