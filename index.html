@@ -147,14 +147,14 @@
         .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.dialog-actions button{border:0;border-radius:10px;padding:10px 16px;font:600 14px inherit;cursor:pointer}
         .dialog-cancel{background:var(--bg);color:var(--text)}.dialog-ok{background:var(--primary);color:white}
 
-        #startup-splash{position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:24px;transition:opacity .28s ease,visibility .28s ease}
+        #startup-splash{position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:24px;transition:opacity .28s ease,visibility .28s ease}
         #startup-splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-        #startup-splash img{display:block;width:min(72vw,310px);height:auto;aspect-ratio:1;object-fit:cover;border-radius:58px;overflow:hidden;clip-path:inset(0 round 58px)}
-        .startup-loader{width:min(76vw,320px);height:16px;position:relative;border-radius:999px;background:#dbeafe;box-shadow:inset 0 2px 4px rgba(15,23,42,.16);overflow:visible}
-        .startup-loader-fill{position:absolute;inset:0 auto 0 0;width:42%;border-radius:999px;background:linear-gradient(90deg,#1d4ed8,#38bdf8);animation:startupFill 1.45s ease-in-out infinite}
-        .startup-loader-arrow{position:absolute;top:50%;left:0;width:32px;height:32px;margin-top:-16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;color:#1d4ed8;font-size:20px;font-weight:900;box-shadow:0 2px 9px rgba(37,99,235,.35);animation:startupArrow 1.45s ease-in-out infinite}
-        @keyframes startupFill{0%{width:8%}50%{width:76%}100%{width:8%}}
-        @keyframes startupArrow{0%{left:0;transform:translateX(-2px)}50%{left:calc(100% - 32px);transform:translateX(0)}100%{left:0;transform:translateX(-2px)}}
+        #startup-splash img{display:block;width:58px;height:58px;object-fit:contain;border-radius:12px}
+        .startup-loader{width:min(72vw,280px);height:13px;position:relative;border-radius:999px;background:#252525;box-shadow:inset 0 2px 4px rgba(255,255,255,.12);overflow:visible}
+        .startup-loader-fill{position:absolute;inset:0 auto 0 0;width:0%;border-radius:999px;background:linear-gradient(90deg,#1d4ed8,#38bdf8);animation:startupFill 5s linear forwards}
+        .startup-loader-arrow{position:absolute;top:50%;left:0;width:28px;height:28px;margin-top:-14px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;color:#1d4ed8;font-size:18px;font-weight:900;box-shadow:0 2px 9px rgba(37,99,235,.35);animation:startupArrow 5s linear forwards}
+        @keyframes startupFill{from{width:0%}to{width:100%}}
+        @keyframes startupArrow{from{left:0}to{left:calc(100% - 28px)}}
     </style>
 </head>
 <body>
@@ -974,11 +974,19 @@
         function finishStartupSplash() {
             const splash = document.getElementById('startup-splash');
             if (!splash) return;
+            const fill = splash.querySelector('.startup-loader-fill');
+            const arrow = splash.querySelector('.startup-loader-arrow');
+            if (fill) fill.style.width = '100%';
+            if (arrow) arrow.style.left = 'calc(100% - 28px)';
             splash.classList.add('hide');
             setTimeout(() => splash.remove(), 350);
         }
         window.onload = () => {
-            init().catch(error => console.error('Milk Scale startup error:', error)).finally(finishStartupSplash);
+            const splashStartedAt = Date.now();
+            init().catch(error => console.error('Milk Scale startup error:', error)).finally(() => {
+                const remaining = Math.max(0, 5000 - (Date.now() - splashStartedAt));
+                setTimeout(finishStartupSplash, remaining);
+            });
         };
     </script>
 </body>
