@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+ <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1c3558"/><stop offset=".58" stop-color="#0b1d38"/><stop offset="1" stop-color="#061326"/></linearGradient>
+ <linearGradient id="white" x1="0" y1="0" x2=".15" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8eef6"/></linearGradient>
+ <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="18"/><feOffset dy="18"/><feComponentTransfer><feFuncA type="linear" slope=".32"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="inner" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<rect x="112" y="112" width="800" height="800" rx="150" fill="url(#navy)" stroke="#354c6b" stroke-width="8" filter="url(#shadow)"/>
+<rect x="124" y="124" width="776" height="776" rx="140" fill="none" stroke="#6d829e" stroke-opacity=".22" stroke-width="4"/>
+<!-- White calculator body -->
+<rect x="360" y="240" width="304" height="440" rx="48" fill="url(#white)"/>
+<rect x="392" y="272" width="240" height="100" rx="28" fill="#10233f"/>
+<!-- 3x3 dark calculator keys, lower row fully visible -->
+<g fill="#10233f">
+ <rect x="392" y="406" width="76" height="62" rx="17"/><rect x="474" y="406" width="76" height="62" rx="17"/><rect x="556" y="406" width="76" height="62" rx="17"/>
+ <rect x="392" y="482" width="76" height="62" rx="17"/><rect x="474" y="482" width="76" height="62" rx="17"/><rect x="556" y="482" width="76" height="62" rx="17"/>
+ <rect x="392" y="558" width="76" height="62" rx="17"/><rect x="474" y="558" width="76" height="62" rx="17"/><rect x="556" y="558" width="76" height="62" rx="17"/>
+</g>
+<!-- Milk wave in front of the calculator -->
+<path d="M258 612 C312 554 350 574 402 621 C458 671 536 690 600 660 C651 636 680 585 696 550 C703 534 722 538 724 556 C727 590 707 641 676 677 C623 741 524 760 425 729 C351 706 304 651 258 612Z" fill="url(#white)"/>
+<path d="M696 547 C699 510 718 482 741 468 C754 460 767 472 760 487 C746 514 728 532 696 547Z" fill="#fff"/>
+<path d="M721 564 C745 527 775 516 795 529 C810 540 800 560 782 570 C760 582 742 579 721 564Z" fill="#fff"/>
+<text x="512" y="826" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="102" font-weight="700" letter-spacing="-5" fill="#fff">Milk Scale</text>
+</svg>
