@@ -249,7 +249,7 @@ jobs:
 
       - name: Verify APK signature, package ID, and launcher resources
         run: |
-          BUILD_TOOLS="$(find \"$ANDROID_HOME/build-tools\" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           test -x "$BUILD_TOOLS/apksigner"
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs Milk-Scale.apk
           BADGING="$("$BUILD_TOOLS/aapt" dump badging Milk-Scale.apk)"
