@@ -1,32 +1,37 @@
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image
+import io
+import cairosvg
 
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "android" / "app" / "src" / "main" / "res"
-LOGO = ROOT / "resources" / "milk-scale-logo.jpg"
-BG_NAME = "ms_launcher_background"
-FG_NAME = "ms_launcher_foreground"
-
-import io
-import cairosvg
-logo_png = cairosvg.svg2png(url=str(LOGO.with_suffix(".svg")), output_width=1024, output_height=1024)
-logo = Image.open(io.BytesIO(logo_png)).convert("RGBA")
+SVG = ROOT / "resources" / "milk-scale-logo.svg"
 (RES / "drawable").mkdir(parents=True, exist_ok=True)
 
-def fit_logo(source, box_size):
-    fitted = source.copy()
-    fitted.thumbnail((box_size, box_size), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGBA", (box_size, box_size), (0, 0, 0, 0))
-    canvas.alpha_composite(fitted, ((box_size - fitted.width) // 2, (box_size - fitted.height) // 2))
+# Render the selected Milk calculator artwork once. Reuse this exact master
+# for the launcher artwork and the loading screen to avoid mismatched designs.
+png = cairosvg.svg2png(url=str(SVG), output_width=1024, output_height=1024)
+master = Image.open(io.BytesIO(png)).convert("RGBA")
+
+def fit(source, size):
+    image = source.copy()
+    image.thumbnail((size, size), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    canvas.alpha_composite(image, ((size-image.width)//2, (size-image.height)//2))
     return canvas
 
-# One master logo is reused unchanged for launcher and native splash.
-master = fit_logo(logo, 1024)
-size = 432
-foreground = fit_logo(master, size)
-icon_bg = Image.new("RGBA", (size, size), (8, 27, 57, 255))
-icon_bg.save(RES / "drawable" / "ms_launcher_background.png")
-foreground.save(RES / "drawable" / "ms_launcher_foreground.png")
+# Adaptive icon: use a safe-zone-sized foreground over a matching cyan/blue
+# background. Legacy icons use the complete square artwork without cropping.
+bg = Image.new("RGBA", (432, 432), (0, 0, 0, 255))
+pix = bg.load()
+for y in range(432):
+    for x in range(432):
+        t = (x + y) / (2 * 431)
+        pix[x, y] = (round(8 + 1*t), round(190 - 145*t), round(237 - 35*t), 255)
+fg = fit(master, 250)
+(RES / "drawable" / "ms_launcher_background.png").parent.mkdir(parents=True, exist_ok=True)
+bg.save(RES / "drawable" / "ms_launcher_background.png")
+fg.save(RES / "drawable" / "ms_launcher_foreground.png")
 
 adaptive = RES / "mipmap-anydpi-v26"
 adaptive.mkdir(parents=True, exist_ok=True)
@@ -42,17 +47,17 @@ xml = '''<?xml version="1.0" encoding="utf-8"?>
 for density, px in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
     folder = RES / ("mipmap-" + density)
     folder.mkdir(parents=True, exist_ok=True)
-    icon = fit_logo(master, px)
+    icon = master.resize((px, px), Image.Resampling.LANCZOS)
     icon.save(folder / "ic_launcher.png")
     icon.save(folder / "ic_launcher_round.png")
 
-# Same exact master artwork centered on a clean near-white splash background.
-splash_canvas = Image.new("RGBA", (1080, 1920), (252, 253, 255, 255))
-splash_logo = fit_logo(master, 620)
-splash_canvas.alpha_composite(splash_logo, ((1080-620)//2, (1920-620)//2))
-for folder_name in ["drawable", "drawable-port", "drawable-land"]:
-    folder = RES / folder_name
+# Same full selected icon centered on the native splash.
+splash = Image.new("RGBA", (1080, 1920), (252, 253, 255, 255))
+splash_icon = fit(master, 620)
+splash.alpha_composite(splash_icon, ((1080-620)//2, (1920-620)//2))
+for name in ["drawable", "drawable-port", "drawable-land"]:
+    folder = RES / name
     folder.mkdir(parents=True, exist_ok=True)
-    splash_canvas.convert("RGB").save(folder / "splash.png")
+    splash.convert("RGB").save(folder / "splash.png")
 
-print("Generated identical Milk Scale master logo for launcher and splash.")
+print("Applied selected Milk calculator icon consistently to launcher and splash.")
