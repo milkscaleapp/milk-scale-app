@@ -1,24 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
- <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1c3558"/><stop offset=".58" stop-color="#0b1d38"/><stop offset="1" stop-color="#061326"/></linearGradient>
- <linearGradient id="white" x1="0" y1="0" x2=".15" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8eef6"/></linearGradient>
- <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="18"/><feOffset dy="18"/><feComponentTransfer><feFuncA type="linear" slope=".32"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
- <filter id="inner" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+ <linearGradient id="tile" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#ffffff"/><stop offset=".48" stop-color="#f1f8ff"/><stop offset="1" stop-color="#dcecff"/></linearGradient>
+ <linearGradient id="case" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#536985"/><stop offset=".22" stop-color="#263b59"/><stop offset="1" stop-color="#07172d"/></linearGradient>
+ <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f8fdff"/><stop offset="1" stop-color="#cdeeff"/></linearGradient>
+ <linearGradient id="milk" x1="0" y1="0" x2=".15" y2="1"><stop stop-color="#fff"/><stop offset=".55" stop-color="#f8fbff"/><stop offset="1" stop-color="#dce8f5"/></linearGradient>
+ <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#39baff"/><stop offset="1" stop-color="#0876dc"/></linearGradient>
+ <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="22"/><feOffset dy="18"/><feComponentTransfer><feFuncA type="linear" slope=".26"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="objectShadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="12"/><feOffset dy="13"/><feComponentTransfer><feFuncA type="linear" slope=".38"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-<rect x="112" y="112" width="800" height="800" rx="150" fill="url(#navy)" stroke="#354c6b" stroke-width="8" filter="url(#shadow)"/>
-<rect x="124" y="124" width="776" height="776" rx="140" fill="none" stroke="#6d829e" stroke-opacity=".22" stroke-width="4"/>
-<!-- White calculator body -->
-<rect x="360" y="240" width="304" height="440" rx="48" fill="url(#white)"/>
-<rect x="392" y="272" width="240" height="100" rx="28" fill="#10233f"/>
-<!-- 3x3 dark calculator keys, lower row fully visible -->
-<g fill="#10233f">
- <rect x="392" y="406" width="76" height="62" rx="17"/><rect x="474" y="406" width="76" height="62" rx="17"/><rect x="556" y="406" width="76" height="62" rx="17"/>
- <rect x="392" y="482" width="76" height="62" rx="17"/><rect x="474" y="482" width="76" height="62" rx="17"/><rect x="556" y="482" width="76" height="62" rx="17"/>
- <rect x="392" y="558" width="76" height="62" rx="17"/><rect x="474" y="558" width="76" height="62" rx="17"/><rect x="556" y="558" width="76" height="62" rx="17"/>
+<!-- pale, almost-white tile with a soft realistic shadow -->
+<rect x="68" y="68" width="888" height="888" rx="178" fill="url(#tile)" stroke="#d9e8f8" stroke-width="7" filter="url(#tileShadow)"/>
+<rect x="82" y="82" width="860" height="860" rx="164" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="5"/>
+<!-- glossy calculator -->
+<g filter="url(#objectShadow)">
+ <rect x="270" y="198" width="484" height="650" rx="100" fill="url(#case)" stroke="#8097b4" stroke-width="12"/>
+ <rect x="292" y="220" width="440" height="606" rx="82" fill="none" stroke="#a9bdd5" stroke-opacity=".2" stroke-width="5"/>
+ <rect x="326" y="264" width="372" height="158" rx="46" fill="url(#screen)" stroke="#a7d7f5" stroke-width="9"/>
+ <text x="512" y="371" text-anchor="middle" font-family="DejaVu Sans,Arial,sans-serif" font-size="92" font-weight="700" font-style="italic" fill="#102844">Milk</text>
+ <!-- keypad, fully visible with realistic raised buttons -->
+ <g font-family="DejaVu Sans,Arial,sans-serif" font-size="55" font-weight="700" text-anchor="middle">
+  <g fill="url(#milk)" stroke="#c8d5e4" stroke-width="5">
+   <rect x="324" y="458" width="91" height="78" rx="25"/><rect x="432" y="458" width="91" height="78" rx="25"/><rect x="540" y="458" width="91" height="78" rx="25"/>
+   <rect x="324" y="552" width="91" height="78" rx="25"/><rect x="432" y="552" width="91" height="78" rx="25"/><rect x="540" y="552" width="91" height="78" rx="25"/>
+   <rect x="324" y="646" width="91" height="78" rx="25"/><rect x="432" y="646" width="91" height="78" rx="25"/><rect x="540" y="646" width="91" height="78" rx="25"/>
+   <rect x="324" y="740" width="199" height="78" rx="25"/>
+  </g>
+  <g fill="#142b47">
+   <text x="369" y="514">7</text><text x="477" y="514">8</text><text x="585" y="514">9</text>
+   <text x="369" y="608">4</text><text x="477" y="608">5</text><text x="585" y="608">6</text>
+   <text x="369" y="702">1</text><text x="477" y="702">2</text><text x="585" y="702">3</text>
+   <text x="424" y="796">0</text>
+  </g>
+  <g fill="url(#blue)" stroke="#0871cb" stroke-width="5">
+   <rect x="648" y="458" width="72" height="78" rx="24"/><rect x="648" y="552" width="72" height="78" rx="24"/><rect x="648" y="646" width="72" height="78" rx="24"/><rect x="648" y="740" width="72" height="78" rx="24"/>
+  </g>
+  <g fill="#fff" font-size="56"><text x="684" y="514">÷</text><text x="684" y="608">×</text><text x="684" y="702">−</text><text x="684" y="796">=</text></g>
+  <rect x="540" y="740" width="91" height="78" rx="25" fill="url(#milk)" stroke="#c8d5e4" stroke-width="5"/>
+  <text x="585" y="796" fill="#142b47" font-size="48">.</text>
+ </g>
 </g>
-<!-- Milk wave in front of the calculator -->
-<path d="M258 612 C312 554 350 574 402 621 C458 671 536 690 600 660 C651 636 680 585 696 550 C703 534 722 538 724 556 C727 590 707 641 676 677 C623 741 524 760 425 729 C351 706 304 651 258 612Z" fill="url(#white)"/>
-<path d="M696 547 C699 510 718 482 741 468 C754 460 767 472 760 487 C746 514 728 532 696 547Z" fill="#fff"/>
-<path d="M721 564 C745 527 775 516 795 529 C810 540 800 560 782 570 C760 582 742 579 721 564Z" fill="#fff"/>
-<text x="512" y="826" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="102" font-weight="700" letter-spacing="-5" fill="#fff">Milk Scale</text>
+<!-- flowing white milk ribbon across the lower calculator and splashes -->
+<g filter="url(#objectShadow)">
+ <path d="M142 704 C207 641 257 661 328 716 C405 776 497 813 592 785 C676 760 723 700 752 634 C766 601 790 608 792 638 C797 705 754 780 695 824 C605 892 468 890 354 844 C267 809 205 746 142 704Z" fill="url(#milk)" stroke="#d6e5f3" stroke-width="7"/>
+ <path d="M757 637 C759 577 785 523 825 493 C846 477 868 494 856 519 C833 566 800 608 757 637Z" fill="url(#milk)"/>
+ <path d="M789 673 C825 620 873 605 899 628 C918 646 901 673 875 688 C841 707 812 700 789 673Z" fill="url(#milk)"/>
+</g>
 </svg>
