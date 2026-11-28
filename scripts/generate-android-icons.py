@@ -10,27 +10,51 @@ FG_NAME = "ms_launcher_foreground"
 logo = Image.open(LOGO).convert("RGBA")
 (RES / "drawable").mkdir(parents=True, exist_ok=True)
 
-def fit_logo(source, box_size):
-    """Scale artwork proportionally; never squash the calculator vertically."""
-    fitted = source.copy()
-    fitted.thumbnail((box_size, box_size), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGBA", (box_size, box_size), (0, 0, 0, 0))
-    canvas.alpha_composite(fitted, ((box_size - fitted.width) // 2, (box_size - fitted.height) // 2))
-    return canvas
+def make_launcher_icon(size):
+    """Minimal white calculator on deep navy with a restrained soft shadow."""
+    icon = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(icon)
+    margin = int(size * 0.055)
+    radius = int(size * 0.22)
+    # Soft, subtle shadow and a clean dark navy tile.
+    shadow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    sd.rounded_rectangle((margin, margin + int(size*.018), size-margin, size-margin + int(size*.018)),
+                         radius=radius, fill=(0, 0, 0, 48))
+    shadow = shadow.filter(__import__("PIL.ImageFilter", fromlist=["GaussianBlur"]).GaussianBlur(max(2, int(size*.018))))
+    icon.alpha_composite(shadow)
+    d = ImageDraw.Draw(icon)
+    d.rounded_rectangle((margin, margin, size-margin, size-margin), radius=radius,
+                        fill=(8, 27, 57, 255), outline=(39, 61, 91, 255), width=max(2, int(size*.012)))
+    # Calculator body: proportional, centered, and with full bottom keypad visible.
+    cw, ch = int(size*.48), int(size*.66)
+    cx, cy = size//2, int(size*.49)
+    x0, y0 = cx-cw//2, cy-ch//2
+    x1, y1 = x0+cw, y0+ch
+    white=(248, 251, 255, 255)
+    d.rounded_rectangle((x0, y0, x1, y1), radius=int(size*.055), outline=white, width=max(4,int(size*.025)))
+    # Display window
+    pad=int(size*.055)
+    d.rounded_rectangle((x0+pad,y0+pad,x1-pad,y0+int(ch*.28)), radius=int(size*.018),
+                        outline=white, width=max(3,int(size*.018)))
+    # 3 x 3 keypad, evenly spaced and fully contained.
+    gx0=x0+pad; gx1=x1-pad
+    gy0=y0+int(ch*.38); gy1=y1-pad
+    gap=int(size*.025)
+    bw=(gx1-gx0-2*gap)//3
+    bh=(gy1-gy0-2*gap)//3
+    for row in range(3):
+        for col in range(3):
+            bx=gx0+col*(bw+gap); by=gy0+row*(bh+gap)
+            d.rounded_rectangle((bx,by,bx+bw,by+bh), radius=max(3,int(size*.012)), fill=white)
+    return icon
 
 size = 432
-icon_bg = Image.new("RGBA", (size, size), (5, 20, 65, 255))
-# Keep the full calculator artwork within the adaptive safe zone, preserving its original proportions.
-art_size = 330
-art = fit_logo(logo, art_size)
-mask = Image.new("L", (art_size, art_size), 0)
-ImageDraw.Draw(mask).rounded_rectangle((0, 0, art_size - 1, art_size - 1), radius=38, fill=255)
-art.putalpha(mask)
-foreground = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-offset = (size - art_size) // 2
-foreground.alpha_composite(art, (offset, offset))
-icon_bg.save(RES / "drawable" / (BG_NAME + ".png"))
-foreground.save(RES / "drawable" / (FG_NAME + ".png"))
+foreground = make_launcher_icon(size)
+icon_bg = Image.new("RGBA", (size, size), (8, 27, 57, 255))
+(RES / "drawable" / "ms_launcher_background.png").parent.mkdir(parents=True, exist_ok=True)
+icon_bg.save(RES / "drawable" / "ms_launcher_background.png")
+foreground.save(RES / "drawable" / "ms_launcher_foreground.png")
 
 adaptive = RES / "mipmap-anydpi-v26"
 adaptive.mkdir(parents=True, exist_ok=True)
@@ -46,42 +70,23 @@ xml = '''<?xml version="1.0" encoding="utf-8"?>
 for density, px in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
     folder = RES / ("mipmap-" + density)
     folder.mkdir(parents=True, exist_ok=True)
-    art = fit_logo(logo, int(px * 0.82))
-    icon = Image.new("RGBA", (px, px), (5, 20, 65, 255))
-    m = Image.new("L", art.size, 0)
-    ImageDraw.Draw(m).rounded_rectangle((0, 0, art.width - 1, art.height - 1), radius=max(4, int(px * 0.09)), fill=255)
-    art.putalpha(m)
-    icon.alpha_composite(art, ((px - art.width) // 2, (px - art.height) // 2))
+    icon = make_launcher_icon(px)
     icon.save(folder / "ic_launcher.png")
     icon.save(folder / "ic_launcher_round.png")
 
-# Native Android splash is solid black with a deliberately small centered logo.
-splash = Image.new("RGB", (1080, 1920), (0, 0, 0))
-pixels = splash.load()
-top = (11, 79, 145)
-middle = (22, 127, 189)
-bottom = (85, 197, 232)
-for y in range(1920):
-    t = y / 1919
-    if t < 0.48:
-        q = t / 0.48
-        color = tuple(round(top[i] * (1-q) + middle[i] * q) for i in range(3))
-    else:
-        q = (t - 0.48) / 0.52
-        color = tuple(round(middle[i] * (1-q) + bottom[i] * q) for i in range(3))
-    for x in range(1080):
-        pixels[x, y] = color
-splash_size = 280
-splash_logo = fit_logo(logo, splash_size)
+# Native Android splash: almost-white, perfectly flat background.
+splash = Image.new("RGB", (1080, 1920), (252, 253, 255))
+splash_size = 260
+splash_logo = logo.resize((splash_size, splash_size), Image.Resampling.LANCZOS)
 splash_mask = Image.new("L", (splash_size, splash_size), 0)
-ImageDraw.Draw(splash_mask).rounded_rectangle((0, 0, splash_size - 1, splash_size - 1), radius=24, fill=255)
+ImageDraw.Draw(splash_mask).rounded_rectangle((0, 0, splash_size - 1, splash_size - 1), radius=28, fill=255)
 splash_rgba = splash_logo.copy()
 splash_rgba.putalpha(splash_mask)
-splash_rgba_canvas = Image.new("RGBA", splash.size, (0, 0, 0, 255))
+splash_rgba_canvas = Image.new("RGBA", splash.size, (252, 253, 255, 255))
 splash_rgba_canvas.alpha_composite(splash_rgba, ((1080 - splash_size) // 2, (1920 - splash_size) // 2))
 for folder_name in ["drawable", "drawable-port", "drawable-land"]:
     folder = RES / folder_name
     folder.mkdir(parents=True, exist_ok=True)
     splash_rgba_canvas.convert("RGB").save(folder / "splash.png")
 
-print("Generated proportionally scaled calculator icons and blue gradient splash.")
+print("Generated minimal white calculator launcher icon and clean near-white splash.")
