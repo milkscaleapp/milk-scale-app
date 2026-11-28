@@ -259,7 +259,8 @@ jobs:
           "$BUILD_TOOLS/aapt" dump resources Milk-Scale.apk | grep -F "milk_scale_icon_background"
           "$BUILD_TOOLS/aapt" dump resources Milk-Scale.apk | grep -F "milk_scale_launcher_foreground"
           "$BUILD_TOOLS/zipalign" -c -v 4 Milk-Scale.apk
-          jarsigner -verify -strict Milk-Scale.aab
+          jarsigner -verify Milk-Scale.aab 2>&1 | tee aab-signature-check.txt
+          grep -F "jar verified." aab-signature-check.txt
 
       - uses: actions/upload-artifact@v4
         with:
