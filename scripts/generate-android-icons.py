@@ -8,21 +8,26 @@ RES = ROOT / "android" / "app" / "src" / "main" / "res"
 BG_SVG = ROOT / "resources" / "launcher-background.svg"
 FG_SVG = ROOT / "resources" / "launcher-foreground.svg"
 
+# Use Milk Scale-specific resource names to avoid collisions with
+# the default Capacitor Android template resources.
+BG_NAME = "ms_launcher_background"
+FG_NAME = "ms_launcher_foreground"
+
 def render(svg_path, size):
     return Image.open(BytesIO(cairosvg.svg2png(url=str(svg_path), output_width=size, output_height=size))).convert("RGBA")
 
 bg_432 = render(BG_SVG, 432)
 fg_432 = render(FG_SVG, 432)
 (RES / "drawable").mkdir(parents=True, exist_ok=True)
-bg_432.save(RES / "drawable" / "ic_launcher_background.png")
-fg_432.save(RES / "drawable" / "ic_launcher_foreground.png")
+bg_432.save(RES / "drawable" / f"{BG_NAME}.png")
+fg_432.save(RES / "drawable" / f"{FG_NAME}.png")
 
 adaptive = RES / "mipmap-anydpi-v26"
 adaptive.mkdir(parents=True, exist_ok=True)
-xml = """<?xml version="1.0" encoding="utf-8"?>
+xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background"/>
-    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+    <background android:drawable="@drawable/{BG_NAME}"/>
+    <foreground android:drawable="@drawable/{FG_NAME}"/>
 </adaptive-icon>
 """
 (adaptive / "ic_launcher.xml").write_text(xml, encoding="utf-8")
