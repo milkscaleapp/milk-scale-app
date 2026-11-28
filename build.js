@@ -20,7 +20,7 @@ fs.copyFileSync(path.join(root, 'index.html'), path.join(www, 'index.html'));
 
 const imagesDir = path.join(www, 'images');
 fs.mkdirSync(imagesDir, { recursive: true });
-fs.copyFileSync(path.join(root, 'resources', 'milk-scale-logo.svg'), path.join(imagesDir, 'milk-scale-logo.svg'));
+fs.copyFileSync(path.join(root, 'resources', 'milk-scale-logo.png'), path.join(imagesDir, 'milk-scale-logo.svg'));
 
 const fontAwesome = path.join(root, 'node_modules', '@fortawesome', 'fontawesome-free');
 copyDirectory(path.join(fontAwesome, 'css'), path.join(www, 'vendor', 'fontawesome', 'css'));
