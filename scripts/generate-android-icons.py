@@ -1,44 +1,45 @@
 from pathlib import Path
-from io import BytesIO
-import cairosvg
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "android" / "app" / "src" / "main" / "res"
-BG_SVG = ROOT / "resources" / "launcher-background.svg"
-FG_SVG = ROOT / "resources" / "launcher-foreground.svg"
-
-# Use Milk Scale-specific resource names to avoid collisions with
-# the default Capacitor Android template resources.
+LOGO = ROOT / "resources" / "milk-scale-logo.jpg"
 BG_NAME = "ms_launcher_background"
 FG_NAME = "ms_launcher_foreground"
 
-def render(svg_path, size):
-    return Image.open(BytesIO(cairosvg.svg2png(url=str(svg_path), output_width=size, output_height=size))).convert("RGBA")
-
-bg_432 = render(BG_SVG, 432)
-fg_432 = render(FG_SVG, 432)
+logo = Image.open(LOGO).convert("RGBA")
 (RES / "drawable").mkdir(parents=True, exist_ok=True)
-bg_432.save(RES / "drawable" / f"{BG_NAME}.png")
-fg_432.save(RES / "drawable" / f"{FG_NAME}.png")
+logo_432 = logo.resize((432, 432), Image.Resampling.LANCZOS)
+logo_432.save(RES / "drawable" / (BG_NAME + ".png"))
+Image.new("RGBA", (432, 432), (0, 0, 0, 0)).save(RES / "drawable" / (FG_NAME + ".png"))
 
 adaptive = RES / "mipmap-anydpi-v26"
 adaptive.mkdir(parents=True, exist_ok=True)
-xml = f"""<?xml version="1.0" encoding="utf-8"?>
+xml = '''<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/{BG_NAME}"/>
-    <foreground android:drawable="@drawable/{FG_NAME}"/>
+    <background android:drawable="@drawable/ms_launcher_background"/>
+    <foreground android:drawable="@drawable/ms_launcher_foreground"/>
 </adaptive-icon>
-"""
+'''
 (adaptive / "ic_launcher.xml").write_text(xml, encoding="utf-8")
 (adaptive / "ic_launcher_round.xml").write_text(xml, encoding="utf-8")
 
 for density, px in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
-    folder = RES / f"mipmap-{density}"
+    folder = RES / ("mipmap-" + density)
     folder.mkdir(parents=True, exist_ok=True)
-    bg = render(BG_SVG, px)
-    fg = render(FG_SVG, px)
-    Image.alpha_composite(bg, fg).save(folder / "ic_launcher.png")
-    Image.alpha_composite(bg, fg).save(folder / "ic_launcher_round.png")
+    icon = logo.resize((px, px), Image.Resampling.LANCZOS)
+    icon.save(folder / "ic_launcher.png")
+    icon.save(folder / "ic_launcher_round.png")
 
-print("Generated Milk Scale adaptive and legacy Android launcher icons.")
+splash = Image.new("RGB", (1080, 1920), (255, 255, 255))
+splash_logo = logo.convert("RGB")
+splash_logo.thumbnail((760, 760), Image.Resampling.LANCZOS)
+x = (1080 - splash_logo.width) // 2
+y = (1920 - splash_logo.height) // 2
+splash.paste(splash_logo, (x, y))
+for folder_name in ["drawable", "drawable-port", "drawable-land"]:
+    folder = RES / folder_name
+    folder.mkdir(parents=True, exist_ok=True)
+    splash.save(folder / "splash.png")
+
+print("Generated launcher icons and white native splash from supplied Milk Scale artwork.")
